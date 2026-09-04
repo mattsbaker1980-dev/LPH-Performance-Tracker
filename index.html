@@ -971,16 +971,18 @@ function buildDefaultRoster(){
   return roster;
 }
 
-// ---- Shared storage: hosted on GitHub Pages. Everyone who opens the site reads the same data;
-// people with a Sync Key (set in Admin > Access) can save changes for everyone. ----
+// ---- Shared storage: hosted on GitHub Pages. Everyone who opens the site reads the same data
+// straight from GitHub (no auth needed for that). Writes go through a private relay (Cloudflare
+// Worker) that holds the real GitHub token server-side, so people with a Sync Key (set in
+// Admin > Access) can save changes for everyone without this device ever holding that token. ----
 const GH_OWNER = 'mattsbaker1980-dev';
 const GH_REPO = 'LPH-Performance-Tracker';
 const GH_BRANCH = 'main';
-const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/`;
 const GH_RAW = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/`;
+const RELAY_URL = 'https://young-sound-f090.mattsbaker1980.workers.dev';
 
 function ghToken(){ try{ return localStorage.getItem('lph_gh_token') || ''; }catch(e){ return ''; } }
-function ghHeaders(){ const h = {'Accept':'application/vnd.github+json'}; const t = ghToken(); if(t) h['Authorization'] = 'Bearer '+t; return h; }
+function ghHeaders(){ const h = {}; const t = ghToken(); if(t) h['X-App-Password'] = t; return h; }
 function b64EncodeUnicode(str){ return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m,p)=>String.fromCharCode(parseInt(p,16)))); }
 function b64DecodeUnicode(str){ return decodeURIComponent(atob(str.replace(/\n/g,'')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')); }
 function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
@@ -992,18 +994,20 @@ async function ghReadRaw(path){
   return await res.json();
 }
 async function ghGetForWrite(path){
-  const res = await fetch(GH_API + path, {headers: ghHeaders(), cache:'no-store'});
+  const res = await fetch(RELAY_URL + '/api/file?path=' + encodeURIComponent(path), {headers: ghHeaders(), cache:'no-store'});
   if(res.status===404) return {json:null, sha:null};
+  if(res.status===401) throw new Error('unauthorized — check your Sync Key');
   if(!res.ok) throw new Error('read failed '+res.status);
   const body = await res.json();
   return {json: JSON.parse(b64DecodeUnicode(body.content)), sha: body.sha};
 }
 async function ghPutFile(path, obj, sha, message){
-  const res = await fetch(GH_API + path, {
+  const res = await fetch(RELAY_URL + '/api/file?path=' + encodeURIComponent(path), {
     method:'PUT', headers: Object.assign({'Content-Type':'application/json'}, ghHeaders()),
-    body: JSON.stringify({message, content: b64EncodeUnicode(JSON.stringify(obj)), sha: sha||undefined, branch: GH_BRANCH})
+    body: JSON.stringify({message, content: b64EncodeUnicode(JSON.stringify(obj)), sha: sha||undefined})
   });
   if(res.ok) return {ok:true};
+  if(res.status===401) return {ok:false, conflict:false, error:'unauthorized — check your Sync Key'};
   if(res.status===409 || res.status===422) return {ok:false, conflict:true};
   const body = await res.json().catch(()=>({}));
   return {ok:false, conflict:false, error: (body.message||('HTTP '+res.status))};
