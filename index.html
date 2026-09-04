@@ -1035,22 +1035,51 @@ const KEY_MAP = {
 let storageAvailable = true;
 let lastSaveError = '';
 
+// ---- Small on-screen toast so a failed shared save is never silent, no matter which
+// screen/button triggered it. Shows only on failure (or on recovering from one). ----
+let _wasSaveFailing = false;
+function showSyncToast(msg, isError){
+  let el = document.getElementById('syncToast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'syncToast';
+    el.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.18);max-width:340px;transition:opacity .3s;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = isError ? '#FEE2E2' : '#DCFCE7';
+  el.style.color = isError ? '#991B1B' : '#166534';
+  el.style.border = '1px solid ' + (isError ? '#FCA5A5' : '#86EFAC');
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.opacity = '0'; }, isError ? 7000 : 2500);
+}
+function friendlySaveError(){
+  if(lastSaveError === 'no-key') return 'Not saved to the shared site — no Sync Key set on this device (Admin → Access).';
+  if(/unauthorized/i.test(lastSaveError)) return 'Not saved to the shared site — Sync Key is wrong or out of date (Admin → Access).';
+  return 'Not saved to the shared site' + (lastSaveError ? ' (' + lastSaveError + ')' : '') + ' — try again.';
+}
+
 async function saveShared(storageKey, value){
   const map = KEY_MAP[storageKey];
   if(!map) return false;
-  if(!ghToken()){ storageAvailable = false; lastSaveError = 'no-key'; return false; }
+  if(!ghToken()){ storageAvailable = false; lastSaveError = 'no-key'; _wasSaveFailing = true; showSyncToast(friendlySaveError(), true); return false; }
   return withFileLock(map.file, async ()=>{
     try{
       for(let attempt=0; attempt<4; attempt++){
         const {json, sha} = await ghGetForWrite('data/'+map.file);
         const merged = Object.assign({}, json||{}, {[map.field]: value});
         const put = await ghPutFile('data/'+map.file, merged, sha, `Update ${map.field} from dashboard`);
-        if(put.ok){ storageAvailable = true; lastSaveError=''; return true; }
+        if(put.ok){
+          storageAvailable = true; lastSaveError='';
+          if(_wasSaveFailing){ showSyncToast('Saved — back in sync.', false); _wasSaveFailing = false; }
+          return true;
+        }
         if(put.conflict && attempt<3){ await sleep(400*(attempt+1)); continue; }
-        storageAvailable = false; lastSaveError = put.error || 'save failed'; return false;
+        storageAvailable = false; lastSaveError = put.error || 'save failed'; _wasSaveFailing = true; showSyncToast(friendlySaveError(), true); return false;
       }
-      storageAvailable = false; return false;
-    }catch(e){ storageAvailable = false; lastSaveError = e.message; return false; }
+      storageAvailable = false; _wasSaveFailing = true; showSyncToast(friendlySaveError(), true); return false;
+    }catch(e){ storageAvailable = false; lastSaveError = e.message; _wasSaveFailing = true; showSyncToast(friendlySaveError(), true); return false; }
   });
 }
 
