@@ -1,0 +1,1879 @@
+<title>LPH Performance Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy:#082971;
+    --navy-deep:#061d52;
+    --orange:#F3770C;
+    --orange-soft:#FFF1E4;
+    --bg:#F5F6FA;
+    --card:#FFFFFF;
+    --border:#E4E7F0;
+    --text:#182246;
+    --text-mute:#6B7290;
+    --green:#1E9E5A;
+    --red:#D63B3B;
+    --demand:#2B4EE6;
+    --spp:#F3770C;
+    --cod:#1E9E5A;
+    --install:#8A4FE0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  a{color:inherit;}
+  .app{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{width:300px;flex-shrink:0;background:var(--orange);color:#fff;display:flex;flex-direction:column;}
+  .brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.25);}
+  .brand-logo-img{width:100%;display:block;background:#fff;border-radius:10px;padding:8px 10px;margin-bottom:12px;}
+  .brand-title{font-size:21px;font-weight:800;color:var(--navy);letter-spacing:.01em;}
+  .nav-group{padding:16px 12px 6px;}
+  .nav-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);padding:0 10px 8px;font-weight:700;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;color:#fff;margin-bottom:2px;border-left:3px solid transparent;transition:background .12s;}
+  .nav-item:hover{background:rgba(255,255,255,.14);}
+  .nav-item.active{background:#fff;border-left:3px solid var(--navy);color:var(--navy);}
+  .nav-num{font-size:10.5px;color:rgba(255,255,255,.7);font-weight:700;width:16px;flex-shrink:0;}
+  .nav-item.active .nav-num{color:var(--navy);}
+  .sidebar-foot{margin-top:auto;padding:16px 20px;font-size:10.5px;color:rgba(255,255,255,.75);border-top:1px solid rgba(255,255,255,.25);}
+
+  /* Main */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .topbar{background:#fff;border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;position:sticky;top:0;z-index:5;}
+  .page-title{font-size:20px;font-weight:800;color:var(--navy);}
+  .page-sub{font-size:12.5px;color:var(--text-mute);margin-top:2px;}
+
+  .range-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .preset-btn{border:1px solid var(--border);background:#fff;color:var(--text);font-size:12px;font-weight:600;padding:7px 12px;border-radius:7px;cursor:pointer;transition:all .12s;}
+  .preset-btn:hover{border-color:var(--orange);}
+  .preset-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .date-inputs{display:flex;align-items:center;gap:6px;margin-left:4px;}
+  .date-inputs input{border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:12.5px;font-family:inherit;color:var(--text);}
+  .date-sep{color:var(--text-mute);font-size:12px;}
+
+  .content{padding:22px 28px 60px;}
+
+  /* KPI cards */
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
+  .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .kpi-label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-mute);margin-bottom:8px;}
+  .kpi-value{font-size:24px;font-weight:800;color:var(--navy);}
+  .kpi-sub{font-size:11.5px;color:var(--text-mute);margin-top:4px;}
+
+  /* Dept cards on overview */
+  .section-title{font-size:15px;font-weight:800;color:var(--navy);margin:20px 0 12px;}
+  .dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+  .dept-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:transform .12s,box-shadow .12s;border-top:4px solid var(--dept-color,var(--orange));}
+  .dept-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(8,41,113,.1);}
+  .dept-card-name{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:2px;}
+  .dept-card-rev{font-size:22px;font-weight:800;margin:10px 0 4px;}
+  .dept-card-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-mute);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .dept-card-cta{margin-top:14px;font-size:12px;font-weight:700;color:var(--orange);}
+
+  /* charts */
+  .chart-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;margin-bottom:20px;align-items:stretch;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;}
+  .panel-title{font-size:13.5px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+  .chart-box{position:relative;height:260px;}
+  .legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;justify-content:center;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-mute);font-weight:600;}
+  .legend-dot{width:9px;height:9px;border-radius:3px;}
+
+  /* install mode bar */
+  .toggle-bar{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:18px;flex-wrap:wrap;}
+  .toggle-label{font-size:13px;font-weight:700;color:var(--navy);}
+  .toggle-note{font-size:11.5px;color:var(--text-mute);}
+  .toggle-amt{font-size:12.5px;font-weight:700;color:var(--install);margin-left:auto;}
+  .segmented{display:flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;flex-shrink:0;}
+  .segmented button{padding:8px 14px;border:none;border-left:1px solid var(--border);background:#fff;font-size:12px;font-weight:700;color:var(--text-mute);cursor:pointer;}
+  .segmented button:first-child{border-left:none;}
+  .segmented button.active{background:var(--navy);color:#fff;}
+  .segmented button:disabled{color:#C3C8DC;cursor:not-allowed;}
+
+  /* drill-down bar */
+  .drill-bar{display:flex;align-items:center;gap:10px;background:var(--orange-soft);border:1px solid var(--orange);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:12.5px;color:#8a4a05;}
+  .reset-pill{font-size:11.5px;font-weight:800;color:#fff;background:var(--orange);cursor:pointer;padding:5px 12px;border-radius:20px;margin-left:auto;}
+  .reset-pill:hover{background:#d9690a;}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-mute);padding:10px 12px;border-bottom:2px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;}
+  th:hover{color:var(--navy);}
+  th.sorted{color:var(--orange);}
+  td{padding:11px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tr:hover td{background:#FAFBFE;}
+  .rank{font-weight:800;color:var(--text-mute);width:26px;}
+  .rank.top1{color:var(--orange);}
+  .tech-name{font-weight:700;color:var(--navy);cursor:pointer;}
+  .tech-name:hover{text-decoration:underline;color:var(--orange);}
+  tr.tech-row.selected td{background:var(--orange-soft);}
+  .badge{display:inline-block;background:var(--orange-soft);color:var(--orange);font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;margin-left:6px;}
+  .money{font-weight:700;}
+  .empty-note{background:var(--orange-soft);border:1px dashed var(--orange);border-radius:10px;padding:14px 16px;font-size:12.5px;color:#8a4a05;margin-bottom:18px;}
+
+  /* upload page */
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .upload-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;}
+  .upload-card h3{margin:0 0 6px;font-size:14.5px;color:var(--navy);}
+  .upload-card p{margin:0 0 14px;font-size:12px;color:var(--text-mute);line-height:1.5;}
+  .file-drop{border:2px dashed var(--border);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:border-color .12s;}
+  .file-drop:hover{border-color:var(--orange);}
+  .file-drop input{display:none;}
+  .file-drop-label{font-size:12.5px;font-weight:700;color:var(--navy);}
+  select.dept-select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12.5px;margin-bottom:12px;}
+  .upload-result{margin-top:12px;font-size:12px;padding:10px 12px;border-radius:8px;}
+  .upload-result.ok{background:#EAFBF1;color:#146C3C;}
+  .upload-result.err{background:#FDECEC;color:#A32323;}
+  .download-row{margin-top:20px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .btn-primary{background:var(--navy);color:#fff;border:none;padding:11px 18px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-primary:hover{background:var(--navy-deep);}
+
+  @media(max-width:900px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;overflow-x:auto;}
+    .brand{display:none;}
+    .nav-group{display:flex;padding:10px;gap:6px;}
+    .nav-label{display:none;}
+    .chart-grid{grid-template-columns:1fr;}
+    .upload-grid{grid-template-columns:1fr;}
+  }
+  /* ---- Ride-Along / Admin additions ---- */
+  .cards2{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .card2{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;min-width:130px;flex:1;}
+  .card2 .n{font-size:24px;font-weight:800;color:var(--navy);line-height:1;}
+  .card2 .l{font-size:10.5px;color:var(--text-mute);text-transform:uppercase;letter-spacing:.5px;margin-top:5px;}
+  .subtabs{display:flex;gap:4px;margin:14px 0 16px;border-bottom:1px solid var(--border);}
+  .subtab{font-size:13px;font-weight:700;padding:9px 14px;background:none;border:none;border-bottom:3px solid transparent;color:var(--text-mute);cursor:pointer;}
+  .subtab.on{color:var(--navy);border-bottom-color:var(--orange);}
+  .cal-head{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px;}
+  .cal-nav{background:#fff;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--navy);}
+  .cal-month-label{font-weight:800;color:var(--navy);font-size:15px;min-width:150px;text-align:center;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal-dow{font-size:10px;font-weight:700;color:var(--text-mute);text-align:center;text-transform:uppercase;padding-bottom:4px;}
+  .cal-cell{min-height:64px;border:1px solid var(--border);border-radius:7px;padding:4px;font-size:11px;}
+  .cal-cell.empty{border:none;}
+  .cal-cell.today{border-color:var(--orange);border-width:2px;}
+  .cal-date{font-size:10.5px;color:var(--text-mute);font-weight:700;margin-bottom:3px;}
+  .cal-entry{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .day-label{font-weight:800;color:var(--navy);font-size:13px;min-width:120px;text-align:center;}
+  .rating-pill{display:inline-block;font-weight:700;font-size:11px;padding:3px 9px;border-radius:99px;}
+  .rate-Excellent{background:#EAFBF1;color:var(--green);}
+  .rate-Good{background:#E8EEFC;color:#1D4ED8;}
+  .rate-Needs-Improvement{background:var(--orange-soft);color:var(--orange);}
+  .rate-Coaching-Required{background:#FBE9E8;color:var(--red);}
+  .rate-Pending{background:#F0F1F5;color:var(--text-mute);}
+  .badge2{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:5px;}
+  .badge2-ok{background:#EAFBF1;color:var(--green);}
+  .badge2-err{background:#FBE9E8;color:var(--red);}
+  .badge2-warn{background:var(--orange-soft);color:var(--orange);}
+  .avatar{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:#fff;font-size:10.5px;font-weight:800;margin-right:6px;vertical-align:middle;}
+  .avatar.lg{width:44px;height:44px;font-size:16px;}
+  .tech-btn{background:none;border:none;cursor:pointer;padding:0;font-size:13px;color:var(--navy);font-weight:700;text-align:left;}
+  .tech-btn:hover{text-decoration:underline;}
+  .overlay{position:fixed;inset:0;background:rgba(8,41,113,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-card{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:86vh;overflow-y:auto;}
+  .modal-head{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);}
+  .modal-head .name{font-weight:800;color:var(--navy);font-size:16px;}
+  .modal-head .title{font-size:12px;color:var(--text-mute);margin-top:2px;}
+  .modal-close{margin-left:auto;background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-mute);}
+  .modal-body{padding:18px 24px 24px;}
+  .modal-section{margin-bottom:20px;}
+  .modal-section-title{font-size:12.5px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+  .eval-step{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+  .eval-step-title{font-weight:800;color:var(--navy);font-size:13.5px;margin-bottom:10px;}
+  .eval-group-title{font-size:11px;font-weight:800;color:var(--text-mute);text-transform:uppercase;letter-spacing:.4px;margin:10px 0 6px;}
+  .eval-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .eval-item:last-child{border-bottom:none;}
+  .eval-item-label{font-size:12.5px;color:var(--text);flex:1;}
+  .eval-boxes{display:flex;gap:4px;flex-shrink:0;}
+  .eval-box{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:11px;font-weight:700;color:var(--text-mute);cursor:pointer;}
+  .eval-box.checked{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .field2{margin-bottom:12px;}
+  .field2 label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-mute);font-weight:700;margin-bottom:4px;}
+  .field2 input,.field2 select,.field2 textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13px;}
+  .field2 textarea{min-height:60px;resize:vertical;}
+  .row2{display:flex;gap:10px;}
+  .row2 .field2{flex:1;}
+</style>
+<div class="app">
+
+  <div class="sidebar">
+    <div class="brand">
+      <img class="brand-logo-img" src="data:image/png;base64,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" alt="Lancaster Plumbing, Heating, Cooling, Drain Cleaning, Electrical">
+      <div class="brand-title">Performance</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Company</div>
+      <div class="nav-item" data-view="overview"><span class="nav-num">00</span> Overview</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Departments</div>
+      <div class="nav-item" data-view="Plumbing"><span class="nav-num">01</span> Plumbing</div>
+      <div class="nav-item" data-view="Sewer"><span class="nav-num">02</span> Sewer</div>
+      <div class="nav-item" data-view="HVAC"><span class="nav-num">03</span> HVAC</div>
+      <div class="nav-item" data-view="Electrical"><span class="nav-num">04</span> Electrical</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Coaching</div>
+      <div class="nav-item" data-view="ridealongs"><span class="nav-num">05</span> Ride-Alongs</div>
+      <div class="nav-item" data-view="admin"><span class="nav-num">06</span> Admin</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Tools</div>
+      <div class="nav-item active" data-view="upload"><span class="nav-num">07</span> Upload Data</div>
+    </div>
+    <div class="sidebar-foot" id="sidebarFoot">Data through 2026-08-17<div style="margin-top:4px;color:#FFD9C2;font-weight:700;">● Local copy — not shared</div></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Upload Data</div>
+        <div class="page-sub" id="pageSub">Add new reports or update existing days</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button class="preset-btn" id="refreshBtn" onclick="refreshShared()">⟳ Refresh</button>
+        <div class="range-bar" id="rangeBar" style="display: none;">
+          <button class="preset-btn active" data-preset="ytd">Year to Date</button>
+          <button class="preset-btn" data-preset="mtd">This Month</button>
+          <button class="preset-btn" data-preset="30">Last 30 Days</button>
+          <button class="preset-btn" data-preset="7">Last 7 Days</button>
+          <button class="preset-btn" data-preset="yesterday">Yesterday</button>
+          <div class="date-inputs">
+            <input type="date" id="fromDate" max="2026-08-17" min="2026-01-02">
+            <span class="date-sep">–</span>
+            <input type="date" id="toDate" max="2026-08-17" min="2026-01-02">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+  <div class="upload-card" style="max-width:640px;">
+    <h3>Daily Job Detail Report</h3>
+    <p>The only file you need. The ServiceTitan "Daily Job Detail" export (.xlsx) populates C&amp;T (Demand/SPP/COD) and Install revenue together, for every department, in one upload. Note: Tasks and Service Agreements aren't in this report, so those show as — for any day loaded this way. A date already in the dashboard gets replaced; a new date gets added. </p>
+    <label class="file-drop">
+      <input type="file" id="jobDetailFile" accept=".xlsx">
+      <div class="file-drop-label">Click to choose a Job Detail .xlsx file</div>
+    </label>
+    <div class="upload-result" id="jobDetailResult" style="display:none;"></div>
+  </div>
+  <div class="download-row">
+    <div>
+      <div style="font-weight:800;color:var(--navy);font-size:14px;">Backup (optional)</div>
+      <div style="font-size:12px;color:var(--text-mute);margin-top:2px;">Live saving isn't reachable right now (you're likely viewing a downloaded copy, not the published link) — download a snapshot to keep today's work.</div>
+    </div>
+    <button class="btn-primary" id="downloadBtn">Download Snapshot (.html)</button>
+  </div></div>
+    <div id="modalRoot"></div>
+  </div>
+</div>
+
+<script>
+const DATA = {"td_fields":["dept","tech","date","src","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"td":[],"dd_fields":["dept","date","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"dd":[],"install_fields":["dept","tech","date","install_rev"],"install":[],"rideAlongs":[],"evaluations":[],"attendance":[],"teamRoster":[],"superAdmins":[{"name":"Matt Baker","password":"RavensR#1"}]};
+const NAME_MAP = {"Electrical|tyson|k": "Tyson Kline", "Electrical|ryan|k": "Ryan Kurtz", "Electrical|brian|m": "Brian McNamara", "Electrical|cole|p": "Cole Portner", "Electrical|ryan|s": "Ryan Santiago", "Electrical|ryan|w": "Ryan Walten", "HVAC|garrick|b": "Garrick Budrow", "HVAC|robert|f": "Robert Fenton", "HVAC|andrew|g": "Andrew Gambler", "HVAC|shane|h": "Shane Hetrich", "HVAC|cesar|r": "Cesar Rodriguez", "HVAC|cayden|w": "Cayden Warner", "HVAC|uriah|w": "Uriah Warner", "HVAC|brian|w": "Brian Wasche", "HVAC|jeff|w": "Jeff Watson", "HVAC|eric|v": "Eric Vazquez", "HVAC|traevon|h": "Traevon Hinton", "HVAC|scott|h": "Scott Huber", "HVAC|brian|m": "Brian McGlynn", "Plumbing|layne|b": "Layne Beard", "Plumbing|derrick|b": "Derrick Bender", "Plumbing|chris|d": "Chris DeCicco", "Plumbing|john|d": "John Dwyer", "Plumbing|jason|g": "Jason Gantt", "Plumbing|nick|e": "Nick Elam", "Plumbing|tylor|h": "Tylor Hughes", "Plumbing|austin|j": "Austin Johnson", "Plumbing|mason|k": "Mason Kephart", "Plumbing|robert|r": "Robert Reynolds", "Plumbing|mike|d": "Mike DeCicco", "Plumbing|ethan|j": "Ethan Jones", "Plumbing|kevin|j": "Kevin Jones", "Plumbing|reese|g": "Reese Gassert", "Sewer|ethan|j": "Ethan Jones", "Sewer|mike|d": "Mike DeCicco", "Sewer|layne|b": "Layne Beard", "Sewer|derrick|b": "Derrick Bender", "Sewer|chris|d": "Chris DeCicco", "Sewer|john|d": "John Dwyer", "Sewer|jason|g": "Jason Gantt", "Sewer|nick|e": "Nick Elam", "Sewer|tylor|h": "Tylor Hughes", "Sewer|austin|j": "Austin Johnson", "Sewer|mason|k": "Mason Kephart", "Sewer|kevin|j": "Kevin Jones", "Sewer|robert|r": "Robert Reynolds", "Sewer|reese|g": "Reese Gassert"};
+
+const DEPT_COLOR = {Plumbing:'#2B4EE6', Sewer:'#1E9E5A', HVAC:'#F3770C', Electrical:'#8A4FE0'};
+const DEPTS = ['Plumbing','Sewer','HVAC','Electrical'];
+let LATEST_DATE = '2026-09-02';
+let EARLIEST_DATE = '2026-01-01';
+
+let currentView = 'overview';
+let range = {from:'2026-01-01', to:LATEST_DATE};
+let sortState = {col:'rev', dir:'desc'};
+let chartRefs = [];
+let installMode = 'ct'; // 'ct' | 'install' | 'combined'
+let selectedTech = null;
+
+// dd: dept,date,rev,calls,money_calls,tasks,hours_paid,on_job,sold,
+//     demand_rev,demand_calls,demand_money,demand_tasks, spp_rev,spp_calls,spp_money,spp_tasks,
+//     cod_rev,cod_calls,cod_money,cod_tasks, warranty,callbacks,service_agreements,spp_missed
+const DD = {dept:0,date:1,rev:2,calls:3,money_calls:4,tasks:5,hours_paid:6,on_job:7,sold:8,
+  demand_rev:9,demand_calls:10,demand_money:11,demand_tasks:12,
+  spp_rev:13,spp_calls:14,spp_money:15,spp_tasks:16,
+  cod_rev:17,cod_calls:18,cod_money:19,cod_tasks:20,
+  warranty:21,callbacks:22,service_agreements:23,spp_missed:24};
+// td: dept,tech,date,src, ...same metric fields as dd...
+const TD = {dept:0,tech:1,date:2,src:3,rev:4,calls:5,money_calls:6,tasks:7,hours_paid:8,on_job:9,sold:10,
+  demand_rev:11,demand_calls:12,demand_money:13,demand_tasks:14,
+  spp_rev:15,spp_calls:16,spp_money:17,spp_tasks:18,
+  cod_rev:19,cod_calls:20,cod_money:21,cod_tasks:22,
+  warranty:23,callbacks:24,service_agreements:25,spp_missed:26};
+// install: dept, tech, date, rev
+const INST = {dept:0,tech:1,date:2,rev:3};
+
+const METRIC_FIELDS = ['rev','calls','money_calls','tasks','hours_paid','on_job','sold',
+  'demand_rev','demand_calls','demand_money','demand_tasks',
+  'spp_rev','spp_calls','spp_money','spp_tasks',
+  'cod_rev','cod_calls','cod_money','cod_tasks',
+  'warranty','callbacks','service_agreements','spp_missed'];
+
+const centerTextPlugin = {
+  id:'centerText',
+  afterDraw(chart){
+    if(!chart.centerText) return;
+    const {ctx, chartArea:{width,height,top,left}} = chart;
+    ctx.save();
+    ctx.font='800 21px -apple-system,sans-serif';
+    ctx.fillStyle='#182246';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(chart.centerText, left+width/2, top+height/2);
+    ctx.restore();
+  }
+};
+Chart.register(centerTextPlugin);
+
+function fmtMoney(n){
+  if(Math.abs(n)>=1000000) return '$'+(n/1000000).toFixed(2)+'M';
+  return '$'+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtMoneyFull(n){ return '$'+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtPct(n){ return (n*100).toFixed(2)+'%'; }
+function inRange(d){ return d>=range.from && d<=range.to; }
+function round2(n){ return Math.round((n||0)*100)/100; }
+
+function filteredDD(dept){ return DATA.dd.filter(r => (!dept || r[0]===dept) && inRange(r[1])); }
+function filteredTD(dept){ return DATA.td.filter(r => (!dept || r[0]===dept) && inRange(r[2])); }
+
+function installDeptsPresent(){ return new Set(DATA.install.map(r=>r[INST.dept])); }
+function filteredInstall(dept){
+  return DATA.install.filter(r => r[INST.dept]===dept && inRange(r[INST.date]));
+}
+function sumField(rows, idx){ return rows.reduce((a,r)=>a+(r[idx]||0),0); }
+function installTotalFor(dept, tech){
+  return filteredInstall(dept).filter(r=> !tech || r[INST.tech]===tech).reduce((a,r)=>a+(r[INST.rev]||0),0);
+}
+
+function emptyMetrics(){ const o={}; METRIC_FIELDS.forEach(f=>o[f]=0); return o; }
+
+// Unified per-day series for a dept (or a single tech within it).
+function dailySeries(dept, tech){
+  const map = {};
+  if(tech){
+    filteredTD(dept).filter(r=>r[TD.tech]===tech).forEach(r=>{
+      const d = r[TD.date];
+      if(!map[d]) map[d] = emptyMetrics();
+      METRIC_FIELDS.forEach(f=> map[d][f] += (r[TD[f]]||0));
+    });
+  } else {
+    filteredDD(dept).forEach(r=>{
+      const d = r[DD.date];
+      if(!map[d]) map[d] = emptyMetrics();
+      METRIC_FIELDS.forEach(f=> map[d][f] += (r[DD[f]]||0));
+    });
+  }
+  return map;
+}
+function installSeries(dept, tech){
+  const map = {};
+  filteredInstall(dept).filter(r=> !tech || r[INST.tech]===tech).forEach(r=>{ map[r[INST.date]] = (map[r[INST.date]]||0) + r[INST.rev]; });
+  return map;
+}
+// Totals for a dept (or dept+tech), under a given install mode: 'ct' | 'install' | 'combined'.
+function computeTotals(dept, tech, mode){
+  const ds = dailySeries(dept, tech), is = installSeries(dept, tech);
+  const t = emptyMetrics();
+  Object.values(ds).forEach(v=> METRIC_FIELDS.forEach(f=> t[f]+=v[f]));
+  let install = 0; Object.values(is).forEach(v=> install+=v);
+  t.baseRev = t.rev;
+  t.install = install;
+  if(mode==='install') t.rev = install;
+  else if(mode==='combined') t.rev = t.baseRev + install;
+  t.hasOperational = mode!=='install';
+  return t;
+}
+function computeCompanyTotals(mode){
+  const ds = dailySeries(null, null);
+  const t = emptyMetrics();
+  Object.values(ds).forEach(v=> METRIC_FIELDS.forEach(f=> t[f]+=v[f]));
+  let install = 0;
+  installDeptsPresent().forEach(dept=>{ install += installTotalFor(dept, null); });
+  t.baseRev = t.rev;
+  t.install = install;
+  if(mode==='install') t.rev = install;
+  else if(mode==='combined') t.rev = t.baseRev + install;
+  t.hasOperational = mode!=='install';
+  return t;
+}
+
+function destroyCharts(){ chartRefs.forEach(c=>c.destroy()); chartRefs=[]; }
+
+function updateLatestDate(){
+  let max = null, min = null;
+  DATA.dd.forEach(r=>{
+    const active = r[DD.rev] || r[DD.hours_paid] || r[DD.calls];
+    if(!active) return;
+    if(max===null || r[1]>max) max=r[1];
+    if(min===null || r[1]<min) min=r[1];
+  });
+  if(max) LATEST_DATE = max;
+  if(min) EARLIEST_DATE = min;
+  document.getElementById('sidebarFoot').innerHTML = 'Data through ' + LATEST_DATE +
+    `<div style="margin-top:4px;color:${storageAvailable?'#fff':'#FFD9C2'};font-weight:700;">${storageAvailable ? '&#9679; Live \u2014 saving for everyone' : '&#9679; Local copy \u2014 not shared'}</div>`;
+  document.getElementById('fromDate').max = LATEST_DATE;
+  document.getElementById('toDate').max = LATEST_DATE;
+  document.getElementById('fromDate').min = EARLIEST_DATE;
+  document.getElementById('toDate').min = EARLIEST_DATE;
+}
+
+function renderKPIRowFromTotals(t){
+  const conv = t.calls>0 ? t.money_calls/t.calls : 0;
+  const avgSale = t.money_calls>0 ? t.rev/t.money_calls : 0;
+  const eff = t.hours_paid>0 ? t.sold/t.hours_paid : 0;
+  const na = !t.hasOperational;
+  return `
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-label">Completed Revenue</div><div class="kpi-value">${fmtMoney(t.rev)}</div><div class="kpi-sub">${fmtMoneyFull(t.rev)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Calls</div><div class="kpi-value">${na?'&mdash;':t.calls.toLocaleString()}</div><div class="kpi-sub">${na?'not tracked for install jobs':t.money_calls.toLocaleString()+' converted'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Conversion Rate</div><div class="kpi-value">${na?'&mdash;':fmtPct(conv)}</div><div class="kpi-sub">money calls / total calls</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Sale</div><div class="kpi-value">${na?'&mdash;':fmtMoney(avgSale)}</div><div class="kpi-sub">per converted call</div></div>
+    <div class="kpi-card"><div class="kpi-label">Sold Hour Efficiency</div><div class="kpi-value">${na?'&mdash;':fmtPct(eff)}</div><div class="kpi-sub">${na?'not tracked for install jobs':'sold hrs / hours paid'}</div></div>
+  </div>`;
+}
+function renderKPIRow(dept, tech, mode){ return renderKPIRowFromTotals(computeTotals(dept, tech, mode)); }
+
+function renderOverview(){
+  destroyCharts();
+  const hasInstallAnywhere = installDeptsPresent().size > 0;
+  const companyTotals = computeCompanyTotals(installMode);
+
+  let html = `<div class="toggle-bar">
+    <div class="segmented" id="overviewSegmented">
+      <button data-mode="ct" class="${installMode==='ct'?'active':''}">C&amp;T</button>
+      <button data-mode="install" class="${installMode==='install'?'active':''}" ${hasInstallAnywhere?'':'disabled'}>Install</button>
+      <button data-mode="combined" class="${installMode==='combined'?'active':''}" ${hasInstallAnywhere?'':'disabled'}>Combined</button>
+    </div>
+    <div>
+      <div class="toggle-label">Revenue Source</div>
+      <div class="toggle-note">${hasInstallAnywhere ? 'C&amp;T (Demand/SPP/COD) and Install are two separate pools, kept apart on purpose &mdash; pick which to view, or Combined for both, company-wide.' : 'No install revenue uploaded for any department yet.'}</div>
+    </div>
+    <div class="toggle-amt">${companyTotals.install>0 ? fmtMoneyFull(companyTotals.install)+' in install revenue company-wide this range' : ''}</div>
+  </div>`;
+
+  html += renderKPIRowFromTotals(companyTotals);
+
+  html += `<div class="section-title">By Department</div><div class="dept-grid">`;
+  DEPTS.forEach(dept=>{
+    const t = computeTotals(dept, null, installMode);
+    const conv = t.calls>0? t.money_calls/t.calls:0;
+    html += `
+    <div class="dept-card" style="--dept-color:${DEPT_COLOR[dept]}" data-goto="${dept}">
+      <div class="dept-card-name">${dept}</div>
+      <div class="dept-card-rev" style="color:${DEPT_COLOR[dept]}">${fmtMoney(t.rev)}</div>
+      <div class="dept-card-row"><span>${t.calls.toLocaleString()} calls</span><span>${fmtPct(conv)} conv.</span></div>
+      <div class="dept-card-cta">View department &rarr;</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="section-title">Revenue by Department Over Time</div>
+  <div class="panel"><div class="chart-box"><canvas id="trendChart"></canvas></div></div>`;
+
+  document.getElementById('content').innerHTML = html;
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.addEventListener('click', ()=> switchView(el.dataset.goto));
+  });
+  document.querySelectorAll('#overviewSegmented button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ if(btn.disabled) return; installMode = btn.dataset.mode; renderOverview(); });
+  });
+
+  const dates = [...new Set(filteredDD(null).map(r=>r[DD.date]))].sort();
+  const datasets = DEPTS.map(dept=>{
+    const byDate = {};
+    filteredDD(dept).forEach(r=> byDate[r[DD.date]] = (byDate[r[DD.date]]||0)+r[DD.rev]);
+    if(installMode==='install'){
+      const instByDate = {};
+      filteredInstall(dept).forEach(r=>{ instByDate[r[INST.date]] = (instByDate[r[INST.date]]||0) + r[INST.rev]; });
+      Object.keys(byDate).forEach(d=> byDate[d]=0);
+      Object.assign(byDate, instByDate);
+    } else if(installMode==='combined'){
+      filteredInstall(dept).forEach(r=> byDate[r[INST.date]] = (byDate[r[INST.date]]||0) + r[INST.rev]);
+    }
+    return {
+      label:dept, data: dates.map(d=>byDate[d]||0),
+      borderColor:DEPT_COLOR[dept], backgroundColor:DEPT_COLOR[dept]+'22',
+      tension:.3, pointRadius:0, borderWidth:2, fill:false
+    };
+  });
+  const c = new Chart(document.getElementById('trendChart'), {type:'line', data:{labels:dates, datasets}, options:{
+    responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'bottom', labels:{boxWidth:9,font:{size:11}}}},
+    scales:{ y:{ticks:{callback:v=>fmtMoney(v)}}, x:{ticks:{maxTicksLimit:10}} }
+  }});
+  chartRefs.push(c);
+}
+
+function catRow(label, color, rev, calls, money, tasks, na){
+  const conv = calls>0 ? money/calls : 0;
+  const avg = money>0 ? rev/money : 0;
+  return `<tr>
+    <td><span class="legend-dot" style="background:${color};display:inline-block;margin-right:7px;"></span>${label}</td>
+    <td class="money">${fmtMoneyFull(rev)}</td>
+    <td>${na?'&mdash;':calls}</td>
+    <td>${na?'&mdash;':money}</td>
+    <td>${na?'&mdash;':fmtPct(conv)}</td>
+    <td>${na?'&mdash;':fmtMoney(avg)}</td>
+    <td>${na?'&mdash;':tasks}</td>
+  </tr>`;
+}
+
+function renderPerformanceSummary(dept, tech){
+  const t = computeTotals(dept, tech, 'ct');
+  const src = filteredTD(dept).filter(r=>r[TD.tech]===tech);
+  const hasCTSource = src.some(r=>r[TD.src]==='ct');
+  const eff = t.hours_paid>0 ? t.sold/t.hours_paid : 0;
+
+  const extraNote = hasCTSource ? '' : `<div class="empty-note" style="margin-top:12px;">Tasks, Service Agreements, and SPP Missed Opportunities aren't tracked in the ServiceTitan Job Detail report &mdash; shown as &mdash; for days sourced from an upload rather than a C&amp;T file.</div>`;
+
+  return `
+  <div class="panel" style="margin-bottom:20px;">
+    <div class="panel-title">Individual Performance Summary &mdash; ${tech}</div>
+    <table>
+      <thead><tr><th>Category</th><th>Revenue</th><th>Calls</th><th>Money Calls</th><th>Conv. Rate</th><th>Avg Sale</th><th>Tasks</th></tr></thead>
+      <tbody>
+        ${catRow('Demand','#2B4EE6', t.demand_rev, t.demand_calls, t.demand_money, t.demand_tasks, !hasCTSource)}
+        ${catRow('SPP','#F3770C', t.spp_rev, t.spp_calls, t.spp_money, t.spp_tasks, !hasCTSource)}
+        ${catRow('COD','#1E9E5A', t.cod_rev, t.cod_calls, t.cod_money, t.cod_tasks, !hasCTSource)}
+      </tbody>
+    </table>
+    <div class="kpi-row" style="margin-top:16px;margin-bottom:0;">
+      <div class="kpi-card"><div class="kpi-label">Hours Paid</div><div class="kpi-value">${t.hours_paid.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">On-Job Hours</div><div class="kpi-value">${t.on_job.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Sold Hours</div><div class="kpi-value">${t.sold.toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Sold Hour Efficiency</div><div class="kpi-value">${fmtPct(eff)}</div><div class="kpi-sub">sold / paid</div></div>
+      <div class="kpi-card"><div class="kpi-label">Warranty Calls</div><div class="kpi-value">${hasCTSource?t.warranty:'&mdash;'}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Call Backs</div><div class="kpi-value">${hasCTSource?t.callbacks:'&mdash;'}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Service Agreements</div><div class="kpi-value">${hasCTSource?t.service_agreements:'&mdash;'}</div></div>
+      <div class="kpi-card"><div class="kpi-label">SPP Missed Opp.</div><div class="kpi-value">${hasCTSource?t.spp_missed:(t.spp_missed||'&mdash;')}</div></div>
+    </div>
+    ${extraNote}
+  </div>`;
+}
+
+function renderDept(dept){
+  const hasInstallSource = installDeptsPresent().has(dept);
+  const installAvail = installTotalFor(dept, selectedTech);
+
+  let html = '';
+
+  if(selectedTech){
+    html += `<div class="drill-bar">Showing <b>${selectedTech}</b> only<span class="reset-pill" id="resetTech">Reset &mdash; show whole department</span></div>`;
+  }
+
+  html += `<div class="toggle-bar">
+    <div class="segmented" id="installSegmented">
+      <button data-mode="ct" class="${installMode==='ct'?'active':''}">C&amp;T</button>
+      <button data-mode="install" class="${installMode==='install'?'active':''}" ${hasInstallSource?'':'disabled'}>Install</button>
+      <button data-mode="combined" class="${installMode==='combined'?'active':''}" ${hasInstallSource?'':'disabled'}>Combined</button>
+    </div>
+    <div>
+      <div class="toggle-label">Revenue Source</div>
+      <div class="toggle-note">${hasInstallSource ? 'C&amp;T (Demand/SPP/COD) and Install are two separate pools, both fed by the same ServiceTitan Job Detail report &mdash; pick which to view, or Combined for both.' : 'No install revenue found for '+dept+' yet &mdash; upload a Job Detail report that includes install jobs, or an Install Operations tracker.'}</div>
+    </div>
+    <div class="toggle-amt">${installAvail>0 ? fmtMoneyFull(installAvail)+' in install revenue this range' : ''}</div>
+  </div>`;
+
+  html += renderKPIRow(dept, selectedTech, installMode);
+
+  if(selectedTech) html += renderPerformanceSummary(dept, selectedTech);
+
+  html += `<div class="chart-grid">
+    <div class="panel"><div class="panel-title">Revenue Trend</div><div class="chart-box"><canvas id="deptTrend"></canvas></div></div>
+    <div class="panel"><div class="panel-title">Revenue Mix</div><div class="chart-box"><canvas id="deptMix"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--demand)"></span>Demand</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--spp)"></span>SPP</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--cod)"></span>COD</div>
+        ${installMode!=='ct'?'<div class="legend-item"><span class="legend-dot" style="background:var(--install)"></span>Install</div>':''}
+      </div>
+    </div>
+    <div class="panel"><div class="panel-title">Conversion Rate</div><div class="chart-box"><canvas id="deptConv"></canvas></div></div>
+  </div>`;
+
+  html += `<div class="section-title">Tech Leaderboard</div>
+  <div class="panel"><table id="leaderTable">
+    <thead><tr>
+      <th></th>
+      <th>Tech</th>
+      <th data-sort="rev">Revenue</th>
+      <th data-sort="calls">Calls</th>
+      <th data-sort="conv">Conv. Rate</th>
+      <th data-sort="hours_paid">Hours Paid</th>
+      <th data-sort="on_job">On-Job Hrs</th>
+      <th data-sort="sold">Sold Hrs</th>
+      <th data-sort="warranty">Warranty</th>
+      <th data-sort="callbacks">Call Backs</th>
+    </tr></thead>
+    <tbody id="leaderBody"></tbody>
+  </table></div>`;
+
+  document.getElementById('content').innerHTML = html;
+
+  const resetEl = document.getElementById('resetTech');
+  if(resetEl) resetEl.addEventListener('click', ()=>{ selectedTech = null; renderDept(dept); });
+
+  document.querySelectorAll('#installSegmented button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ if(btn.disabled) return; installMode = btn.dataset.mode; renderDept(dept); });
+  });
+
+  const ds = dailySeries(dept, selectedTech);
+  const is = installMode!=='ct' ? installSeries(dept, selectedTech) : {};
+  const dates = [...new Set([...Object.keys(ds), ...Object.keys(is)])].sort();
+  const revByDate = {};
+  dates.forEach(d=>{
+    const base = ds[d] ? ds[d].rev : 0;
+    const inst = is[d] || 0;
+    revByDate[d] = installMode==='install' ? inst : (installMode==='combined' ? base+inst : base);
+  });
+  const c1 = new Chart(document.getElementById('deptTrend'), {type:'bar', data:{labels:dates, datasets:[{label:'Revenue', data:dates.map(d=>revByDate[d]||0), backgroundColor:DEPT_COLOR[dept]}]}, options:{
+    maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>fmtMoney(v)}}, x:{ticks:{maxTicksLimit:8}}}
+  }});
+  chartRefs.push(c1);
+
+  const totals = computeTotals(dept, selectedTech, installMode);
+  const mixLabels = ['Demand','SPP','COD']; const mixData=[totals.demand_rev,totals.spp_rev,totals.cod_rev]; const mixColors=['#2B4EE6','#F3770C','#1E9E5A'];
+  if(installMode!=='ct'){ mixLabels.push('Install'); mixData.push(totals.install); mixColors.push('#8A4FE0'); }
+  const c2 = new Chart(document.getElementById('deptMix'), {type:'doughnut', data:{labels:mixLabels, datasets:[{data:mixData, backgroundColor:mixColors, borderWidth:0}]}, options:{
+    maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmtMoneyFull(ctx.raw)}}}, cutout:'62%'
+  }});
+  chartRefs.push(c2);
+
+  const conv = totals.hasOperational && totals.calls>0 ? totals.money_calls/totals.calls : null;
+  const c3 = new Chart(document.getElementById('deptConv'), {type:'doughnut', data:{labels:['Converted','Not Converted'],
+    datasets:[{data: conv===null?[1]:[totals.money_calls, totals.calls-totals.money_calls], backgroundColor: conv===null?['#E4E7F0']:['#082971','#E4E7F0'], borderWidth:0}]},
+    options:{maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{enabled:conv!==null}}, cutout:'70%'}});
+  c3.centerText = conv===null ? 'N/A' : fmtPct(conv);
+  c3.update();
+  chartRefs.push(c3);
+
+  renderLeaderboard(dept);
+}
+
+function renderLeaderboard(dept){
+  const rows = filteredTD(dept);
+  const techNames = new Set(rows.map(r=>r[TD.tech]));
+  if(installMode!=='ct') filteredInstall(dept).forEach(r=> techNames.add(r[INST.tech]));
+
+  let list = [...techNames].map(tech=>{
+    const t = computeTotals(dept, tech, installMode);
+    return {tech, rev:t.rev, calls:t.calls, conv: t.calls>0? t.money_calls/t.calls : 0,
+      hours_paid:t.hours_paid, on_job:t.on_job, sold:t.sold, warranty:t.warranty, callbacks:t.callbacks, na: !t.hasOperational};
+  });
+
+  list.sort((a,b)=>{
+    const v = sortState.dir==='desc' ? b[sortState.col]-a[sortState.col] : a[sortState.col]-b[sortState.col];
+    return v;
+  });
+
+  const body = list.map((t,i)=> `
+    <tr class="tech-row ${t.tech===selectedTech?'selected':''}">
+      <td class="rank ${i===0?'top1':''}">${i+1}</td>
+      <td class="tech-name" data-tech="${t.tech}">${t.tech}${i===0?'<span class="badge">TOP</span>':''}</td>
+      <td class="money">${fmtMoneyFull(t.rev)}</td>
+      <td>${t.na?'&mdash;':Math.round(t.calls).toLocaleString()}</td>
+      <td>${t.na?'&mdash;':fmtPct(t.conv)}</td>
+      <td>${t.na?'&mdash;':t.hours_paid.toFixed(2)}</td>
+      <td>${t.na?'&mdash;':t.on_job.toFixed(2)}</td>
+      <td>${t.na?'&mdash;':t.sold.toFixed(2)}</td>
+      <td>${t.na?'&mdash;':t.warranty}</td>
+      <td>${t.na?'&mdash;':t.callbacks}</td>
+    </tr>`).join('');
+  document.getElementById('leaderBody').innerHTML = body || '<tr><td colspan="10" style="color:var(--text-mute);padding:20px;">No activity in this range.</td></tr>';
+
+  document.querySelectorAll('.tech-name[data-tech]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      selectedTech = (selectedTech===el.dataset.tech) ? null : el.dataset.tech;
+      renderDept(dept);
+    });
+  });
+
+  document.querySelectorAll('#leaderTable th[data-sort]').forEach(th=>{
+    th.classList.toggle('sorted', th.dataset.sort===sortState.col);
+    th.onclick = ()=>{
+      if(sortState.col===th.dataset.sort){ sortState.dir = sortState.dir==='desc'?'asc':'desc'; }
+      else { sortState = {col:th.dataset.sort, dir:'desc'}; }
+      renderLeaderboard(dept);
+    };
+  });
+}
+
+/* ---------- Upload / parsing ---------- */
+
+function classifyBU(bu){
+  if(!bu) return {dept:null, cat:null};
+  const b = String(bu).toLowerCase();
+  let dept = null;
+  if(b.includes('sewer')) dept='Sewer';
+  else if(b.includes('plumbing')) dept='Plumbing';
+  else if(b.includes('hvac')) dept='HVAC';
+  else if(b.includes('elec')) dept='Electrical';
+  let cat = null;
+  if(b.includes('cod')) cat='COD';
+  else if(b.includes('system check') || b.includes('sys ck')) cat='SystemCheck';
+  else if(b.includes('demand')) cat='Demand';
+  else if(b.includes('install sales')) cat='InstallSales';
+  else if(b.includes('installs')) cat='Installs';
+  else if(b.includes('service')) cat='Service';
+  // Sewer has no "Sewer Demand" business unit at all -- "Sewer Service" fills that role
+  // (routine service calls), confirmed by validating against 8 months of C&T data.
+  if(dept==='Sewer' && cat==='Service') cat='Demand';
+  return {dept, cat};
+}
+function resolveTech(dept, rawName){
+  if(!rawName) return rawName;
+  const parts = String(rawName).replace('.','').trim().split(/\s+/);
+  if(parts.length<2) return rawName;
+  const key = dept+'|'+parts[0].toLowerCase()+'|'+parts[1][0].toLowerCase();
+  return NAME_MAP[key] || rawName;
+}
+function toISODate(val){
+  if(val instanceof Date && !isNaN(val)) return val.toISOString().slice(0,10);
+  return null;
+}
+
+function rowFromMetrics(dept, tech, date, src, m){
+  const row = [dept, tech, date, src];
+  METRIC_FIELDS.forEach(f=> row.push(round2(m[f]||0)));
+  return row;
+}
+function ddRowFromMetrics(dept, date, m){
+  const row = [dept, date];
+  METRIC_FIELDS.forEach(f=> row.push(round2(m[f]||0)));
+  return row;
+}
+
+function mergeTechDay(list){
+  const idx = {};
+  DATA.td.forEach((r,i)=>{ idx[r[TD.dept]+'|'+r[TD.tech]+'|'+r[TD.date]] = i; });
+  list.forEach(nr=>{
+    const key = nr.dept+'|'+nr.tech+'|'+nr.date;
+    const row = rowFromMetrics(nr.dept, nr.tech, nr.date, nr.src, nr);
+    if(idx[key]!==undefined) DATA.td[idx[key]] = row; else { DATA.td.push(row); idx[key]=DATA.td.length-1; }
+  });
+}
+function mergeDeptDay(list){
+  const idx = {};
+  DATA.dd.forEach((r,i)=>{ idx[r[DD.dept]+'|'+r[DD.date]] = i; });
+  list.forEach(nr=>{
+    const key = nr.dept+'|'+nr.date;
+    const row = ddRowFromMetrics(nr.dept, nr.date, nr);
+    if(idx[key]!==undefined) DATA.dd[idx[key]] = row; else { DATA.dd.push(row); idx[key]=DATA.dd.length-1; }
+  });
+}
+function mergeInstall(list){
+  // list items: [dept, tech, date, rev]
+  const idx = {};
+  DATA.install.forEach((r,i)=>{ idx[r[INST.dept]+'|'+r[INST.tech]+'|'+r[INST.date]] = i; });
+  list.forEach(nr=>{
+    const key = nr[INST.dept]+'|'+nr[INST.tech]+'|'+nr[INST.date];
+    if(idx[key]!==undefined) DATA.install[idx[key]] = nr; else { DATA.install.push(nr); idx[key]=DATA.install.length-1; }
+  });
+}
+
+function parseJobDetailRows(rows){
+  const techDay = {}, deptDay = {}, installDay = {};
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r || r.length===0) continue;
+    const bu=r[5], status=r[6], opp=r[7], compDateRaw=r[10], warrantyFlag=r[14], recallFlag=r[15], convertedFlag=r[16], primaryTech=r[18],
+          soldHrs=Number(r[19])||0, paidTime=Number(r[20])||0, hoursWorked=Number(r[21])||0, revenue=Number(r[28])||0;
+    if(!bu || !primaryTech) continue;
+    const compDate = toISODate(compDateRaw);
+    if(!compDate) continue;
+    const {dept, cat} = classifyBU(bu);
+    if(!dept || !cat) continue;
+    const tech = resolveTech(dept, primaryTech);
+    const isCompleted = (status==='Completed');
+    const isMoney = isCompleted && revenue>0;
+    const isWarranty = warrantyFlag===true || warrantyFlag==='TRUE';
+    const isRecall = recallFlag===true || recallFlag==='TRUE';
+    const isConverted = convertedFlag===true || convertedFlag==='TRUE';
+    const isOpportunity = opp===true || opp==='TRUE';
+
+    if(cat==='Installs' || cat==='InstallSales' || cat==='Service'){
+      // Captured directly as Install revenue -- same report, no separate upload needed going forward.
+      const ikey = dept+'|'+tech+'|'+compDate;
+      installDay[ikey] = (installDay[ikey]||0) + revenue;
+      continue;
+    }
+
+    const tdKey = dept+'|'+tech+'|'+compDate;
+    if(!techDay[tdKey]) techDay[tdKey] = {dept,tech,date:compDate,src:'jd',...emptyMetrics()};
+    const t = techDay[tdKey];
+    t.hours_paid = Math.max(t.hours_paid, paidTime);
+    t.on_job = Math.max(t.on_job, hoursWorked);
+    if(isWarranty) t.warranty += 1;
+    if(isRecall) t.callbacks += 1;
+    // SPP Missed Opportunities: an SPP-category visit with a sales opportunity that didn't convert.
+    if(cat==='SystemCheck' && isOpportunity && !isConverted) t.spp_missed += 1;
+    // Tasks and Service Agreements have no equivalent column in this report -- left at 0/na, flagged in the UI.
+
+    const ddKey = dept+'|'+compDate;
+    if(!deptDay[ddKey]) deptDay[ddKey] = {dept,date:compDate,...emptyMetrics()};
+    const d = deptDay[ddKey];
+    t.rev += revenue; t.sold += soldHrs;
+    if(isCompleted){ t.calls += 1; d.calls += 1; }
+    if(isMoney){ t.money_calls += 1; d.money_calls += 1; }
+    if(cat==='Demand'){ t.demand_rev+=revenue; d.demand_rev+=revenue; if(isCompleted){t.demand_calls+=1;d.demand_calls+=1;} if(isMoney){t.demand_money+=1;d.demand_money+=1;} }
+    if(cat==='SystemCheck'){ t.spp_rev+=revenue; d.spp_rev+=revenue; if(isCompleted){t.spp_calls+=1;d.spp_calls+=1;} if(isMoney){t.spp_money+=1;d.spp_money+=1;} }
+    if(cat==='COD'){ t.cod_rev+=revenue; d.cod_rev+=revenue; if(isCompleted){t.cod_calls+=1;d.cod_calls+=1;} if(isMoney){t.cod_money+=1;d.cod_money+=1;} }
+    d.rev += revenue; d.sold += soldHrs;
+    d.warranty += isWarranty?1:0; d.callbacks += isRecall?1:0;
+    if(cat==='SystemCheck' && isOpportunity && !isConverted) d.spp_missed += 1;
+  }
+  Object.values(techDay).forEach(t=>{
+    const ddKey = t.dept+'|'+t.date;
+    if(!deptDay[ddKey]) deptDay[ddKey] = {dept:t.dept,date:t.date,...emptyMetrics()};
+    deptDay[ddKey].hours_paid += t.hours_paid;
+    deptDay[ddKey].on_job += t.on_job;
+  });
+  const installRows = Object.entries(installDay).map(([k,rev])=>{
+    const [dept,tech,date] = k.split('|');
+    return [dept, tech, date, round2(rev)];
+  });
+  return {techDay: Object.values(techDay), deptDay: Object.values(deptDay), installRows};
+}
+
+function parseInstallOpsRows(rows, forceDept, ccCol, installDateCol, priceCol){
+  const out = {};
+  for(let i=13;i<rows.length;i++){
+    const r = rows[i];
+    if(!r) continue;
+    const installDateRaw = r[installDateCol], tech = r[ccCol], price = Number(r[priceCol]);
+    if(!installDateRaw || !price || !tech) continue;
+    const date = toISODate(installDateRaw);
+    if(!date) continue;
+    const fullTech = resolveTech(forceDept, tech);
+    const key = fullTech+'|'+date;
+    out[key] = (out[key]||0) + price;
+  }
+  return Object.entries(out).map(([k,v])=>{ const [tech,date]=k.split('|'); return [forceDept,tech,date,round2(v)]; });
+}
+
+function readWorkbook(file, cb){
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    try{
+      const wb = XLSX.read(evt.target.result, {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+      cb(null, rows);
+    }catch(err){ cb(err); }
+  };
+  reader.onerror = ()=> cb(new Error('Could not read file.'));
+  reader.readAsArrayBuffer(file);
+}
+
+function showResult(elId, msg, ok){
+  const el = document.getElementById(elId);
+  el.textContent = msg;
+  el.className = 'upload-result ' + (ok?'ok':'err');
+  el.style.display = 'block';
+}
+
+function renderUpload(){
+  const html = `
+  <div class="upload-card" style="max-width:640px;">
+    <h3>Daily Job Detail Report</h3>
+    <p>The only file you need. The ServiceTitan "Daily Job Detail" export (.xlsx) populates C&amp;T (Demand/SPP/COD) and Install revenue together, for every department, in one upload. Note: Tasks and Service Agreements aren't in this report, so those show as &mdash; for any day loaded this way. A date already in the dashboard gets replaced; a new date gets added. ${storageAvailable ? 'This saves for everyone viewing the published link automatically.' : ''}</p>
+    <label class="file-drop">
+      <input type="file" id="jobDetailFile" accept=".xlsx">
+      <div class="file-drop-label">Click to choose a Job Detail .xlsx file</div>
+    </label>
+    <div class="upload-result" id="jobDetailResult" style="display:none;"></div>
+  </div>
+  <div class="download-row">
+    <div>
+      <div style="font-weight:800;color:var(--navy);font-size:14px;">Backup (optional)</div>
+      <div style="font-size:12px;color:var(--text-mute);margin-top:2px;">${storageAvailable ? "Everything here already saves live for everyone on the published link. Grab a snapshot occasionally as a just-in-case backup." : "Live saving isn't reachable right now (you're likely viewing a downloaded copy, not the published link) \u2014 download a snapshot to keep today's work."}</div>
+    </div>
+    <button class="btn-primary" id="downloadBtn">Download Snapshot (.html)</button>
+  </div>`;
+  document.getElementById('content').innerHTML = html;
+
+  document.getElementById('jobDetailFile').addEventListener('change', e=>{
+    const file = e.target.files[0]; if(!file) return;
+    readWorkbook(file, async (err, rows)=>{
+      if(err) return showResult('jobDetailResult', 'Could not read that file: '+err.message, false);
+      const {techDay, deptDay, installRows} = parseJobDetailRows(rows);
+      if(techDay.length===0 && installRows.length===0) return showResult('jobDetailResult', 'No recognizable rows found. Is this a Daily Job Detail export?', false);
+      mergeTechDay(techDay); mergeDeptDay(deptDay); mergeInstall(installRows); updateLatestDate();
+      const saveResults = await Promise.all([
+        saveShared('lph-rat-dd', DATA.dd), saveShared('lph-rat-td', DATA.td), saveShared('lph-rat-install', DATA.install)
+      ]);
+      const saved = saveResults.every(Boolean);
+      const dayCount = new Set([...techDay.map(t=>t.date), ...installRows.map(r=>r[2])]).size;
+      let msg = saved
+        ? `Loaded ${techDay.length} C&T tech-day record(s) and ${installRows.length} install record(s) across ${dayCount} day(s) &mdash; saved for everyone.`
+        : `Loaded ${techDay.length} C&T tech-day record(s) and ${installRows.length} install record(s) locally, but couldn't save to the shared site (${!ghToken() ? 'no Sync Key set on this device — add one in Admin > Access' : 'connection problem — try again'}).`;
+      showResult('jobDetailResult', msg, saved);
+      switchView(currentView);
+    });
+  });
+
+  document.getElementById('downloadBtn').addEventListener('click', downloadUpdatedDashboard);
+}
+
+function downloadUpdatedDashboard(){
+  let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const dataStart = html.indexOf('const DATA = ');
+  const dataEnd = html.indexOf(';\n', dataStart);
+  html = html.slice(0,dataStart) + 'const DATA = ' + JSON.stringify(DATA) + html.slice(dataEnd);
+
+  const dateStart = html.indexOf("let LATEST_DATE = '");
+  const dateEnd = html.indexOf("';", dateStart) + 1;
+  html = html.slice(0,dateStart) + "let LATEST_DATE = '" + LATEST_DATE + "'" + html.slice(dateEnd);
+
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'lph-performance-report.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Nav / range wiring ---------- */
+
+/* ================= RIDE-ALONG / ADMIN MODULE ================= */
+
+const KNOWN_TITLES = {"Cayden Montgomery":"Sewer Install Technician","Kevin Jones":"Plumbing Service Technician","Robert Reynolds":"Plumbing Service Technician","Mike DeCicco":"Sewer Install Technician","Mason Kephart":"Plumbing Service Technician","Tylor Hughes":"Plumbing Service Technician","Reese Gassert":"Sewer Install Technician","Bill Price":"Sewer Install Technician","Josh Rosario":"Sewer Install Technician","Derrick Bender":"Plumbing Service Technician","John Dwyer":"Plumbing Service Technician","Layne Beard":"Plumbing Service Technician","Nick Elam":"Plumbing Service Technician","Andrew Gambler":"HVAC Service Technician","Brian McGlynn":"HVAC Service Technician","Brian Wasche":"HVAC Service Technician","Cayden Warner":"HVAC Service Technician","Cesar Rodriguez":"HVAC Service Technician","Eric Vazquez":"HVAC Service Technician","Garrick Budrow":"HVAC Service Technician","Jeff Watson":"HVAC Service Technician","Robert Fenton":"HVAC Service Technician","Scott Huber":"HVAC Service Technician","Shane Hetrich":"HVAC Service Technician","Traevon Hinton":"HVAC Service Technician","Uriah Warner":"HVAC Service Technician","Brian McNamara":"Electrical Service Technician","Cole Portner":"Electrical Service Technician","Ryan Kurtz":"Electrical Service Technician","Ryan Santiago":"Electrical Service Technician","Ryan Walten":"Electrical Service Technician","Tyson Kline":"Electrical Service Technician"};
+const DEPT_DEFAULT_TITLE = {Plumbing:'Plumbing Technician', Sewer:'Sewer Technician', HVAC:'HVAC Technician', Electrical:'Electrical Technician'};
+// Sewer install crew confirmed from the Install Operations tracker but with no C&T revenue record of their own.
+const KNOWN_INSTALL_CREW = [
+  {name:'Bill Price', department:'Sewer', title:'Sewer Install Technician'},
+  {name:'Josh Rosario', department:'Sewer', title:'Sewer Install Technician'},
+  {name:'Cayden Montgomery', department:'Sewer', title:'Sewer Install Technician'}
+];
+
+function buildDefaultRoster(){
+  const byTech = {};
+  DATA.td.forEach(r=>{
+    const dept=r[TD.dept], tech=r[TD.tech], rev=r[TD.rev]||0;
+    if(!byTech[tech]) byTech[tech] = {};
+    byTech[tech][dept] = (byTech[tech][dept]||0) + rev;
+  });
+  const roster = Object.keys(byTech).sort().map(tech=>{
+    const depts = byTech[tech];
+    const dept = Object.keys(depts).sort((a,b)=>depts[b]-depts[a])[0];
+    const title = KNOWN_TITLES[tech] || DEPT_DEFAULT_TITLE[dept] || '';
+    return { name:tech, title, department:dept, active:true };
+  });
+  KNOWN_INSTALL_CREW.forEach(c=>{ if(!roster.some(t=>t.name===c.name)) roster.push({...c, active:true}); });
+  roster.sort((a,b)=>a.name.localeCompare(b.name));
+  return roster;
+}
+
+// ---- Shared storage: hosted on GitHub Pages. Everyone who opens the site reads the same data;
+// people with a Sync Key (set in Admin > Access) can save changes for everyone. ----
+const GH_OWNER = 'mattsbaker1980-dev';
+const GH_REPO = 'LPH-Performance-Tracker';
+const GH_BRANCH = 'main';
+const GH_API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/`;
+const GH_RAW = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/`;
+
+function ghToken(){ try{ return localStorage.getItem('lph_gh_token') || ''; }catch(e){ return ''; } }
+function ghHeaders(){ const h = {'Accept':'application/vnd.github+json'}; const t = ghToken(); if(t) h['Authorization'] = 'Bearer '+t; return h; }
+function b64EncodeUnicode(str){ return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m,p)=>String.fromCharCode(parseInt(p,16)))); }
+function b64DecodeUnicode(str){ return decodeURIComponent(atob(str.replace(/\n/g,'')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')); }
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+async function ghReadRaw(path){
+  const res = await fetch(GH_RAW + path + '?t=' + Date.now(), {cache:'no-store'});
+  if(res.status===404) return null;
+  if(!res.ok) throw new Error('read failed '+res.status);
+  return await res.json();
+}
+async function ghGetForWrite(path){
+  const res = await fetch(GH_API + path, {headers: ghHeaders(), cache:'no-store'});
+  if(res.status===404) return {json:null, sha:null};
+  if(!res.ok) throw new Error('read failed '+res.status);
+  const body = await res.json();
+  return {json: JSON.parse(b64DecodeUnicode(body.content)), sha: body.sha};
+}
+async function ghPutFile(path, obj, sha, message){
+  const res = await fetch(GH_API + path, {
+    method:'PUT', headers: Object.assign({'Content-Type':'application/json'}, ghHeaders()),
+    body: JSON.stringify({message, content: b64EncodeUnicode(JSON.stringify(obj)), sha: sha||undefined, branch: GH_BRANCH})
+  });
+  if(res.ok) return {ok:true};
+  if(res.status===409 || res.status===422) return {ok:false, conflict:true};
+  const body = await res.json().catch(()=>({}));
+  return {ok:false, conflict:false, error: (body.message||('HTTP '+res.status))};
+}
+
+const FILE_LOCKS = {};
+function withFileLock(file, fn){
+  const prev = FILE_LOCKS[file] || Promise.resolve();
+  const run = prev.catch(()=>{}).then(fn);
+  FILE_LOCKS[file] = run.catch(()=>{});
+  return run;
+}
+
+const KEY_MAP = {
+  'lph-rat-dd': {file:'dd.json', field:'dd'},
+  'lph-rat-td': {file:'td.json', field:'td'},
+  'lph-rat-install': {file:'install.json', field:'install'},
+  'lph-rat-ridealongs': {file:'ridealong.json', field:'rideAlongs'},
+  'lph-rat-evaluations': {file:'ridealong.json', field:'evaluations'},
+  'lph-rat-attendance': {file:'ridealong.json', field:'attendance'},
+  'lph-rat-teamroster': {file:'ridealong.json', field:'teamRoster'},
+  'lph-rat-superadmins': {file:'ridealong.json', field:'superAdmins'}
+};
+
+let storageAvailable = true;
+let lastSaveError = '';
+
+async function saveShared(storageKey, value){
+  const map = KEY_MAP[storageKey];
+  if(!map) return false;
+  if(!ghToken()){ storageAvailable = false; lastSaveError = 'no-key'; return false; }
+  return withFileLock(map.file, async ()=>{
+    try{
+      for(let attempt=0; attempt<4; attempt++){
+        const {json, sha} = await ghGetForWrite('data/'+map.file);
+        const merged = Object.assign({}, json||{}, {[map.field]: value});
+        const put = await ghPutFile('data/'+map.file, merged, sha, `Update ${map.field} from dashboard`);
+        if(put.ok){ storageAvailable = true; lastSaveError=''; return true; }
+        if(put.conflict && attempt<3){ await sleep(400*(attempt+1)); continue; }
+        storageAvailable = false; lastSaveError = put.error || 'save failed'; return false;
+      }
+      storageAvailable = false; return false;
+    }catch(e){ storageAvailable = false; lastSaveError = e.message; return false; }
+  });
+}
+
+async function loadAllShared(){
+  try{
+    const [dd, td, install, ra] = await Promise.all([
+      ghReadRaw('data/dd.json'), ghReadRaw('data/td.json'), ghReadRaw('data/install.json'), ghReadRaw('data/ridealong.json')
+    ]);
+    if(dd && Array.isArray(dd.dd)) DATA.dd = dd.dd;
+    if(td && Array.isArray(td.td)) DATA.td = td.td;
+    if(install && Array.isArray(install.install)) DATA.install = install.install;
+    if(ra){
+      if(Array.isArray(ra.rideAlongs)) DATA.rideAlongs = ra.rideAlongs;
+      if(Array.isArray(ra.evaluations)) DATA.evaluations = ra.evaluations;
+      if(Array.isArray(ra.attendance)) DATA.attendance = ra.attendance;
+      if(Array.isArray(ra.teamRoster)) DATA.teamRoster = ra.teamRoster;
+      if(Array.isArray(ra.superAdmins) && ra.superAdmins.length) DATA.superAdmins = ra.superAdmins;
+    }
+    storageAvailable = true;
+  }catch(e){
+    storageAvailable = false;
+  }
+  if(!DATA.superAdmins || !DATA.superAdmins.length) DATA.superAdmins = [{name:'Matt Baker', password:'RavensR#1'}];
+  DATA.teamRoster.forEach(r=>{ if(!r.title) r.title = KNOWN_TITLES[r.name] || DEPT_DEFAULT_TITLE[r.department] || ''; });
+}
+async function refreshShared(){
+  const btn = document.getElementById('refreshBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '\u27f3 Refreshing\u2026'; }
+  await loadAllShared();
+  updateLatestDate();
+  switchView(currentView);
+  if(btn){ btn.disabled = false; btn.textContent = '\u27f3 Refresh'; }
+}
+
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth()+1;
+let attendYear = calYear, attendMonth = calMonth;
+let rlFilterTech = '', rlDeptFilter = 'All';
+let raSort = {key:'daysSince', dir:'desc'};
+let adminUnlocked = false, adminPasswordError = false, currentAdminName = null;
+let adminSubtab = 'scorecards', adminDeptFilter = 'All';
+let evalDraft = null, scorecardFilterYear = new Date(LATEST_DATE).getFullYear(), scorecardFilterTech = '';
+let editingTechName = null;
+
+const DOW_NAMES2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const RA_COLOR_PALETTE = ['#F3770C','#CA8A04','#2563EB','#16A34A','#DB2777','#7C3AED','#0891B2','#64748B'];
+const TECH_COLOR_PALETTE2 = ['#082971','#1E9E5A','#B5680A','#DB2777','#6D28D9','#334155','#B3261E','#0E7C6B'];
+
+const EVAL_TEMPLATE = [
+  { step:'Step 1 | Prepare', items:[
+    'Completed a 5-5-20 Perfect Morning and journaled it',
+    'Physically prepared for the service call (correct tools, supplies and materials necessary)',
+    'Mentally prepared for the service call (What is my state? How am I responsible?)'
+  ]},
+  { step:'Step 2 | Greet', groups:[
+    { name:'Empathy', items:[
+      'Checked to see if the truck was parked OK',
+      'Asked permission to enter',
+      'Used shoe covers',
+      'Established a personal connection with the customer',
+      "Showed concern for the customer's feelings and interests"
+    ]},
+    { name:'Expertise', items:[
+      'Demonstrated expertise by asking good questions',
+      'Confirmed customer intent to fix the problem today',
+      'Addressed service partner plan status'
+    ]},
+    { name:'Expectations', items:[
+      'Set a clear agenda using visual aid (Look, Thorough Evaluation, Questions, Options, Approval, Today, OK?)',
+      'Created a 5-star expectation'
+    ]}
+  ]},
+  { step:'Step 3 | Explore', items:[
+    'Addressed the initial situation first',
+    'Asked great questions and listened to understand',
+    'Completed thorough evaluation of the entire system',
+    'Offered Price Transparency',
+    "Captured the customer's words on the Summary of Findings worksheet",
+    'Frequently checked in with the customer ("What questions do you have?")',
+    'Transitioned to the Present step'
+  ]},
+  { step:'Step 4 | Present', items:[
+    'Created great options (Plumbing/Electrical: 4-6 options and HVAC: ABC options)',
+    "Reconnected with the customer (Thank you, We're Awesome, Pricing, Today)",
+    "Link it: Linked options to the customer's words",
+    'Say it: Verbally read warranty and investment; checked in ("What questions do you have?")',
+    'Spin it: Turned options to the customer and asked the customer for their choice today',
+    'Zip it: Remained silent while the customer reviewed the options',
+    'Confidently answered questions, concerns and objections',
+    'Contacted dispatch to give timing update'
+  ]},
+  { step:'Step 5 | Execute', items:[
+    'Completed authorized work and cleaned up area in as good condition or better than before',
+    'Showed customer completed work and addressed any customer questions/concerns',
+    'Performed and discussed value-added services with the customer (i.e. valve tags, labels, etc.)',
+    'Introduced the Service Partner Plan and invited the customer to join',
+    'Collected payment and completed all required documentation',
+    'Documented follow-up or future service opportunities and left copies of everything for the customer',
+    'Verified 5-star customer satisfaction and asked for an online review and referrals',
+    'Thanked customer for their business'
+  ]},
+  { step:'Step 6 | Wrap Up', items:[
+    'Completed paperwork',
+    'Notified dispatch of completion'
+  ]}
+];
+
+function techColor(tech){
+  let hash = 0;
+  for(let i=0;i<tech.length;i++) hash = (hash*31 + tech.charCodeAt(i)) % TECH_COLOR_PALETTE2.length;
+  return TECH_COLOR_PALETTE2[Math.abs(hash)];
+}
+function raInitials(name){ return name.split(' ').filter(Boolean).map(p=>p[0]).join('').slice(0,2).toUpperCase(); }
+function avatar(name, size){
+  const cls = size==='lg' ? 'avatar lg' : 'avatar';
+  return `<span class="${cls}" style="background:${techColor(name)}">${raInitials(name)}</span>`;
+}
+function techTitle(tech){ const r = DATA.teamRoster.find(t=>t.name===tech); return r ? r.title : null; }
+function techDept(tech){ const r = DATA.teamRoster.find(t=>t.name===tech); return r ? r.department : null; }
+function isTechActive(tech){ const r = DATA.teamRoster.find(t=>t.name===tech); return r ? !!r.active : true; }
+function activeTechs(){ return DATA.teamRoster.filter(t=>t.active).map(t=>t.name).sort(); }
+function allKnownTechs(){
+  const s = new Set([...DATA.teamRoster.map(t=>t.name), ...DATA.rideAlongs.map(r=>r.tech),
+    ...DATA.evaluations.map(e=>e.tech), ...DATA.attendance.map(a=>a.tech)]);
+  return [...s].sort();
+}
+function adminColorByName(name){
+  const idx = DATA.superAdmins.findIndex(a=>a.name===name);
+  return RA_COLOR_PALETTE[(idx<0?0:idx) % RA_COLOR_PALETTE.length];
+}
+function fmtDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${parseInt(m)}/${parseInt(d)}/${y.slice(2)}`;
+}
+function daysSince(dateStr){
+  if(!dateStr) return null;
+  return Math.round((new Date(LATEST_DATE+'T00:00:00') - new Date(dateStr+'T00:00:00'))/86400000);
+}
+function combinedTechPerf(tech){
+  const dept = techDept(tech);
+  const t = dept ? computeTotals(dept, tech, 'ct') : {rev:0,calls:0,money_calls:0};
+  return { revenue:t.rev, calls:t.calls, convRate: t.calls>0? t.money_calls/t.calls:0, avgSale: t.money_calls>0? t.rev/t.money_calls:0 };
+}
+// Last-14-days vs prior-14-days, for the Conv Rate / Avg Sale trend arrows on Coverage & Performance.
+function twoWeekTrend(tech){
+  const dept = techDept(tech);
+  if(!dept) return {conv:null, avgSale:null};
+  const end = new Date(LATEST_DATE+'T00:00:00');
+  const iso = dt=> dt.toISOString().slice(0,10);
+  const d14 = new Date(end); d14.setDate(end.getDate()-13);
+  const d15 = new Date(end); d15.setDate(end.getDate()-14);
+  const d28 = new Date(end); d28.setDate(end.getDate()-27);
+  const rows = DATA.td.filter(r=> r[TD.dept]===dept && r[TD.tech]===tech);
+  const agg = (fromIso, toIso) => {
+    let rev=0, calls=0, money=0;
+    rows.forEach(r=>{ if(r[TD.date]>=fromIso && r[TD.date]<=toIso){ rev+=r[TD.rev]; calls+=r[TD.calls]; money+=r[TD.money_calls]; } });
+    return { conv: calls>0? money/calls:null, avgSale: money>0? rev/money:null };
+  };
+  const recent = agg(iso(d14), LATEST_DATE);
+  const prior = agg(iso(d28), iso(d15));
+  return {
+    conv: (recent.conv!==null && prior.conv!==null) ? recent.conv-prior.conv : null,
+    avgSale: (recent.avgSale!==null && prior.avgSale!==null) ? recent.avgSale-prior.avgSale : null
+  };
+}
+function trendArrowHtml(diff, isPct){
+  if(diff===null || diff===undefined) return '';
+  const flat = Math.abs(diff) < (isPct? 0.001 : 1);
+  const up = diff>0;
+  const color = flat? 'var(--text-mute)' : (up? 'var(--green)' : 'var(--red)');
+  const arrow = flat? '&#8212;' : (up? '&#9650;' : '&#9660;');
+  const label = isPct ? (diff>=0?'+':'')+(diff*100).toFixed(1)+' pts vs prior 14 days' : (diff>=0?'+':'-')+fmtMoneyFull(Math.abs(diff))+' vs prior 14 days';
+  return ` <span style="color:${color};font-size:10px;" title="${label}">${arrow}</span>`;
+}
+function rideAlongSummary(){
+  return activeTechs().map(tech=>{
+    const entries = DATA.rideAlongs.filter(r=>r.tech===tech).sort((a,b)=>b.date.localeCompare(a.date));
+    const completed = entries.filter(e=> e.rating!=='Pending');
+    const perf = combinedTechPerf(tech);
+    const trend = twoWeekTrend(tech);
+    const ratingCounts = {};
+    entries.forEach(e=>{ ratingCounts[e.rating] = (ratingCounts[e.rating]||0)+1; });
+    return { tech, count: entries.length, lastDate: completed.length?completed[0].date:null,
+      ratingCounts, openFollowups: entries.filter(e=>e.followup==='Yes').length,
+      convRate: perf.convRate, avgSale: perf.avgSale, revenue: perf.revenue, trend };
+  });
+}
+function sortSummary(summary, key, dir){
+  const d = dir==='asc'?1:-1;
+  const arr = [...summary];
+  arr.sort((a,b)=>{
+    let av = key==='daysSince' ? (a.ds===null?Infinity:a.ds) : a[key];
+    let bv = key==='daysSince' ? (b.ds===null?Infinity:b.ds) : b[key];
+    if(typeof av==='string') return av.localeCompare(bv)*d;
+    av = (av===null||av===undefined) ? -Infinity : av;
+    bv = (bv===null||bv===undefined) ? -Infinity : bv;
+    return (av-bv)*d;
+  });
+  return arr;
+}
+function raSummaryRows(summary){
+  return summary.map(s=>{
+    const ratingBits = Object.entries(s.ratingCounts).map(([r,c])=>
+      `<span class="rating-pill rate-${r.replace(/ /g,'-')}" style="margin-right:3px;">${c} ${r}</span>`).join('');
+    return `<tr class="tech-row">
+      <td><button class="tech-btn" onclick="goToEvaluation('${s.tech}')">${avatar(s.tech)} ${s.tech}</button></td>
+      <td>${techTitle(s.tech)||'&mdash;'}</td>
+      <td>${s.count}</td>
+      <td>${s.lastDate ? fmtDate(s.lastDate) : '<span class="badge2 badge2-err">Never</span>'}</td>
+      <td>${s.openFollowups>0 ? `<span class="badge2 badge2-warn">${s.openFollowups}</span>` : '0'}</td>
+      <td style="white-space:normal;">${ratingBits || '&mdash;'}</td>
+      <td>${fmtPct(s.convRate)}${trendArrowHtml(s.trend.conv, true)}</td>
+      <td>${fmtMoneyFull(s.avgSale)}${trendArrowHtml(s.trend.avgSale, false)}</td>
+    </tr>`;
+  }).join('');
+}
+function calShift(delta){ calMonth += delta; if(calMonth<1){calMonth=12;calYear--;} if(calMonth>12){calMonth=1;calYear++;} renderRideAlongsInto(); }
+function attendShift(delta){ attendMonth += delta; if(attendMonth<1){attendMonth=12;attendYear--;} if(attendMonth>12){attendMonth=1;attendYear++;} renderAdminInto(); }
+
+function renderCalendar(){
+  const firstOfMonth = new Date(calYear, calMonth-1, 1);
+  const startDow = firstOfMonth.getDay();
+  const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+  const todayIso = LATEST_DATE;
+  const entriesByDate = {};
+  DATA.rideAlongs.forEach(e=>{ (entriesByDate[e.date]=entriesByDate[e.date]||[]).push(e); });
+  let cells = '';
+  for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entries = entriesByDate[iso] || [];
+    const isFuture = iso > todayIso;
+    cells += `<div class="cal-cell ${iso===todayIso?'today':''}">
+      <div class="cal-date">${d}</div>
+      ${entries.map(e=>{
+        const c = adminColorByName(e.manager);
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px ${isFuture?'dashed':'solid'} ${c}66;" onclick="openRideAlongDetail('${e.id}')" title="${e.tech} w/ ${e.manager||'?'} &mdash; ${e.focus}">${e.tech}${e.manager?` w/ ${raInitials(e.manager)}`:''}</div>`;
+      }).join('')}
+    </div>`;
+  }
+  return `
+    <div class="cal-head">
+      <button class="cal-nav" onclick="calShift(-1)">&larr;</button>
+      <div class="cal-month-label">${new Date(calYear,calMonth-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+      <button class="cal-nav" onclick="calShift(1)">&rarr;</button>
+    </div>
+    <div class="cal-grid">
+      ${DOW_NAMES2.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>
+    <div style="font-size:11.5px;color:var(--text-mute);margin-top:10px;">Color = which manager did it &middot; dashed border = scheduled (future) &middot; solid border = completed &middot; click an entry to open it</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+      ${DATA.superAdmins.map(a=>`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${adminColorByName(a.name)}1A;color:${adminColorByName(a.name)};border:1px solid ${adminColorByName(a.name)}66;">${raInitials(a.name)} &mdash; ${a.name}</span>`).join('')}
+    </div>`;
+}
+
+function renderRideAlongs(){
+  const entries = [...DATA.rideAlongs].filter(r=> !rlFilterTech || r.tech===rlFilterTech).sort((a,b)=>b.date.localeCompare(a.date));
+  const allTechs = allKnownTechs();
+  const activeList = activeTechs();
+  let summary = rideAlongSummary().map(s=>({...s, ds: daysSince(s.lastDate)}));
+  if(rlDeptFilter!=='All') summary = summary.filter(s=> techDept(s.tech)===rlDeptFilter);
+  summary = sortSummary(summary, raSort.key, raSort.dir);
+  const totalRA = DATA.rideAlongs.length;
+  const neverVisited = summary.filter(s=>s.count===0).length;
+  const openFU = summary.reduce((s,r)=>s+r.openFollowups,0);
+
+  return `
+    <div class="cards2">
+      <div class="card2"><div class="n">${totalRA}</div><div class="l">Total Logged</div></div>
+      <div class="card2"><div class="n">${neverVisited}</div><div class="l">Techs Never Visited</div></div>
+      <div class="card2"><div class="n">${openFU}</div><div class="l">Open Follow-ups</div></div>
+    </div>
+
+    <div class="panel"><div class="panel-title">Calendar</div>${renderCalendar()}</div>
+
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:4px;">Schedule / Log a Ride-Along</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:14px;">Fill in what you know now. Rating, follow-up, and notes are for after it happens &mdash; leave the date in the future and you won't need them yet.</div>
+      <div class="row2">
+        <div class="field2"><label>Date</label><input id="ra_date" type="date" value="${LATEST_DATE}" onchange="updateRaFormMode()"></div>
+        <div class="field2"><label>Technician</label><select id="ra_tech">${activeList.map(t=>`<option>${t}</option>`).join('')}</select></div>
+      </div>
+      <div class="row2">
+        <div class="field2"><label>Department</label><select id="ra_dept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+        <div class="field2"><label>Manager doing the ride-along</label><select id="ra_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}">${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
+      </div>
+      <div class="row2">
+        <div class="field2"><label>Focus Area</label><select id="ra_focus"><option>Sales Technique</option><option>Customer Service</option><option>Upselling / SPP</option><option>Safety</option><option>Process / Paperwork</option><option>Other</option></select></div>
+        <div class="field2"></div>
+      </div>
+      <div id="ra_afterFields">
+        <div style="font-size:11.5px;color:var(--text-mute);font-weight:700;margin:2px 0 10px;">After the ride-along:</div>
+        <div class="row2">
+          <div class="field2"><label>Rating</label><select id="ra_rating"><option>Excellent</option><option>Good</option><option>Needs Improvement</option><option>Coaching Required</option></select></div>
+          <div class="field2"><label>Follow-up needed?</label><select id="ra_followup"><option>No</option><option>Yes</option></select></div>
+        </div>
+        <div class="field2"><label>Notes</label><textarea id="ra_notes" placeholder="What did you observe..."></textarea></div>
+      </div>
+      <button class="btn-primary" onclick="saveRideAlong()">Save</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Coverage &amp; Performance</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin:4px 0 12px;">Sorted by longest since last ride-along. Click a name to open their evaluation.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="preset-btn ${rlDeptFilter==='All'?'active':''}" onclick="setRlDeptFilter('All')">All</button>
+        ${DEPTS.map(f=>`<button class="preset-btn ${rlDeptFilter===f?'active':''}" onclick="setRlDeptFilter('${f}')">${f}</button>`).join('')}
+      </div>
+      <table id="raSummaryTable">
+        <thead><tr><th>Tech</th><th>Title</th><th data-sort="count">#RA</th><th data-sort="daysSince">Last Visit</th><th data-sort="openFollowups">Follow-ups</th><th>Ratings</th><th data-sort="convRate">Conv Rate</th><th data-sort="avgSale">Avg Sale</th></tr></thead>
+        <tbody>${summary.length===0 ? `<tr><td colspan="8" style="text-align:center;color:var(--text-mute);padding:20px;">No employees on file yet.</td></tr>` : raSummaryRows(summary)}</tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">History (${entries.length})</div>
+        <select id="rlFilter" style="max-width:220px;"><option value="">All technicians</option>${allTechs.map(t=>`<option ${rlFilterTech===t?'selected':''}>${t}</option>`).join('')}</select>
+      </div>
+      ${entries.length===0 ? `<div style="padding:20px;color:var(--text-mute);">No ride-alongs logged yet.</div>` : `
+      <table>
+        <thead><tr><th>Date</th><th>Tech</th><th>With</th><th>Dept</th><th>Focus</th><th>Rating</th><th>Follow-up</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${entries.map(e=>`<tr>
+          <td>${fmtDate(e.date)}</td>
+          <td><button class="tech-btn" onclick="goToEvaluation('${e.tech}')">${avatar(e.tech)} ${e.tech}</button></td>
+          <td>${e.manager?raInitials(e.manager):'&mdash;'}</td>
+          <td>${e.department}</td>
+          <td>${e.focus}</td>
+          <td><span class="rating-pill rate-${e.rating.replace(/ /g,'-')}">${e.rating}</span></td>
+          <td>${e.followup==='Yes' ? '<span class="badge2 badge2-warn">Yes</span>' : '<span class="badge2 badge2-ok">No</span>'}</td>
+          <td style="white-space:normal;max-width:220px;">${e.notes||''}</td>
+          <td><button class="btn-ghost btn-sm" onclick="deleteRideAlong('${e.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Delete</button></td>
+        </tr>`).join('')}</tbody>
+      </table>`}
+    </div>`;
+}
+function renderRideAlongsInto(){ document.getElementById('content').innerHTML = renderRideAlongs(); wireRideAlongEvents(); }
+function wireRideAlongEvents(){
+  const rl = document.getElementById('rlFilter'); if(rl) rl.onchange = ()=>{ rlFilterTech = rl.value; renderRideAlongsInto(); };
+  document.querySelectorAll('#raSummaryTable th[data-sort]').forEach(th=>{
+    th.style.cursor='pointer';
+    th.onclick = ()=>{ raSort = raSort.key===th.dataset.sort ? {key:th.dataset.sort, dir:raSort.dir==='asc'?'desc':'asc'} : {key:th.dataset.sort, dir:'desc'}; renderRideAlongsInto(); };
+  });
+  const dateEl = document.getElementById('ra_date'); if(dateEl) updateRaFormMode();
+}
+function setRlFilter(v){ rlFilterTech = v; renderRideAlongsInto(); }
+function setRlDeptFilter(v){ rlDeptFilter = v; renderRideAlongsInto(); }
+function updateRaFormMode(){
+  const dateInput = document.getElementById('ra_date'), afterFields = document.getElementById('ra_afterFields');
+  if(!dateInput || !afterFields) return;
+  afterFields.style.display = (dateInput.value > LATEST_DATE) ? 'none' : '';
+}
+async function saveRideAlong(){
+  const date = document.getElementById('ra_date').value;
+  if(!date){ return; }
+  const isFuture = date > LATEST_DATE;
+  DATA.rideAlongs.push({
+    id: 'RA-'+Date.now(), date,
+    tech: document.getElementById('ra_tech').value,
+    department: document.getElementById('ra_dept').value,
+    manager: document.getElementById('ra_manager').value,
+    focus: document.getElementById('ra_focus').value,
+    rating: isFuture ? 'Pending' : document.getElementById('ra_rating').value,
+    followup: isFuture ? 'No' : document.getElementById('ra_followup').value,
+    notes: isFuture ? '' : document.getElementById('ra_notes').value.trim()
+  });
+  await saveShared('lph-rat-ridealongs', DATA.rideAlongs);
+  renderRideAlongsInto();
+}
+async function deleteRideAlong(id){ DATA.rideAlongs = DATA.rideAlongs.filter(r=>r.id!==id); await saveShared('lph-rat-ridealongs', DATA.rideAlongs); renderRideAlongsInto(); closeModal(); }
+function openRideAlongDetail(id){
+  const e = DATA.rideAlongs.find(r=>r.id===id); if(!e) return;
+  const isFuture = e.date > LATEST_DATE;
+  const isPending = !isFuture && e.rating==='Pending';
+  const statusLabel = isFuture ? 'Scheduled' : isPending ? 'Needs details' : 'Completed';
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal-card" style="max-width:440px;">
+        <div class="modal-head">${avatar(e.tech,'lg')}<div><div class="name">${e.tech}</div><div class="title">${fmtDate(e.date)}${e.manager?' &middot; w/ '+e.manager:''} &middot; ${statusLabel}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-body">
+          <div class="modal-section">
+            <div class="cards2" style="margin-bottom:0;">
+              <div class="card2"><div class="n" style="font-size:14px;">${e.department}</div><div class="l">Department</div></div>
+              <div class="card2"><div class="n" style="font-size:14px;">${e.focus}</div><div class="l">Focus</div></div>
+              ${!isPending && !isFuture ? `<div class="card2"><div class="n" style="font-size:14px;">${e.rating}</div><div class="l">Rating</div></div>`:''}
+            </div>
+            ${e.notes?`<div style="font-size:12.5px;color:var(--text-mute);margin-top:10px;">${e.notes}</div>`:''}
+          </div>
+          ${isFuture ? `
+          <div class="modal-section"><div style="font-size:12.5px;color:var(--text-mute);margin-bottom:8px;">This hasn't happened yet. If it falls through, cancel it here.</div>
+            <button class="btn-primary" style="background:var(--red);" onclick="cancelRideAlong('${e.id}')">Cancel this ride-along</button></div>
+          ` : isPending ? `
+          <div class="modal-section"><div style="font-size:12.5px;color:var(--text-mute);margin-bottom:8px;">How'd it go?</div>
+            <div class="row2">
+              <div class="field2"><label>Rating</label><select id="ra_detail_rating"><option>Excellent</option><option>Good</option><option>Needs Improvement</option><option>Coaching Required</option></select></div>
+              <div class="field2"><label>Follow-up needed?</label><select id="ra_detail_followup"><option>No</option><option>Yes</option></select></div>
+            </div>
+            <div class="field2"><label>Notes</label><textarea id="ra_detail_notes"></textarea></div>
+            <button class="btn-primary" onclick="completeRideAlong('${e.id}')">Save details</button>
+            <button class="btn-ghost" onclick="cancelRideAlong('${e.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Didn't happen</button>
+          </div>` : `
+          <div class="modal-section">
+            <button class="btn-primary" onclick="closeModal(); goToEvaluation('${e.tech}')">Open evaluation</button>
+            <button class="btn-ghost" onclick="cancelRideAlong('${e.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Delete entry</button>
+          </div>`}
+        </div>
+      </div>
+    </div>`;
+}
+async function completeRideAlong(id){
+  const e = DATA.rideAlongs.find(r=>r.id===id); if(!e) return;
+  e.rating = document.getElementById('ra_detail_rating').value;
+  e.followup = document.getElementById('ra_detail_followup').value;
+  e.notes = document.getElementById('ra_detail_notes').value.trim();
+  await saveShared('lph-rat-ridealongs', DATA.rideAlongs);
+  closeModal(); renderRideAlongsInto();
+}
+function cancelRideAlong(id){ deleteRideAlong(id); }
+function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
+
+/* ---- Admin ---- */
+function initEvalDraft(){ evalDraft = { tech:'', date: LATEST_DATE, department:'Plumbing', scores:{}, notes:'' }; }
+function goToEvaluation(tech){ initEvalDraft(); evalDraft.tech = tech; evalDraft.department = techDept(tech) || 'Plumbing'; switchView('evaluate'); }
+function backFromEvaluation(){ evalDraft = null; switchView('ridealongs'); }
+function checkAdminPassword(){
+  const val = document.getElementById('admin_pw').value;
+  const match = DATA.superAdmins.find(a=>a.password===val);
+  if(match){ adminUnlocked = true; adminPasswordError = false; currentAdminName = match.name; }
+  else adminPasswordError = true;
+  document.getElementById('content').innerHTML = renderAdmin();
+  wireAdminEvents();
+}
+function renderAdmin(){
+  if(!adminUnlocked){
+    return `<div class="panel" style="max-width:360px;">
+      <div style="font-size:12.5px;color:var(--text-mute);margin-bottom:12px;">This area is password protected</div>
+      <div class="field2"><label>Password</label><input id="admin_pw" type="password" placeholder="Enter password"></div>
+      ${adminPasswordError ? '<div style="color:var(--red);font-size:12px;margin:-6px 0 10px;">Incorrect password.</div>' : ''}
+      <button class="btn-primary" onclick="checkAdminPassword()">Unlock</button>
+    </div>`;
+  }
+  return `
+    <div style="font-size:12.5px;color:var(--text-mute);margin-bottom:12px;">Signed in as ${currentAdminName}</div>
+    <div class="field2" style="max-width:260px;"><label>Department</label>
+      <select id="adminDeptSel"><option value="All">All Departments</option>${DEPTS.map(f=>`<option ${adminDeptFilter===f?'selected':''}>${f}</option>`).join('')}</select>
+    </div>
+    <div class="subtabs">
+      <button class="subtab ${adminSubtab==='scorecards'?'on':''}" data-sub="scorecards">Scorecards</button>
+      <button class="subtab ${adminSubtab==='attendance'?'on':''}" data-sub="attendance">Attendance</button>
+      <button class="subtab ${adminSubtab==='team'?'on':''}" data-sub="team">Team</button>
+      <button class="subtab ${adminSubtab==='access'?'on':''}" data-sub="access">Access</button>
+    </div>
+    <div id="adminSubContent">${adminSubtab==='scorecards'?renderScorecards():adminSubtab==='attendance'?renderAttendance():adminSubtab==='team'?renderTeamManagement():renderAccessManagement()}</div>`;
+}
+function renderAdminInto(){ document.getElementById('content').innerHTML = renderAdmin(); wireAdminEvents(); }
+function wireAdminEvents(){
+  const pw = document.getElementById('admin_pw'); if(pw) pw.onkeydown = e=>{ if(e.key==='Enter') checkAdminPassword(); };
+  const sel = document.getElementById('adminDeptSel'); if(sel) sel.onchange = ()=>{ adminDeptFilter = sel.value; renderAdminInto(); };
+  document.querySelectorAll('.subtab[data-sub]').forEach(b=> b.onclick = ()=>{ adminSubtab = b.dataset.sub; renderAdminInto(); });
+  wireAdminSubEvents();
+}
+function wireAdminSubEvents(){
+  const yc = document.querySelectorAll('.year-chip'); yc.forEach(b=> b.onclick = ()=>{ scorecardFilterYear = parseInt(b.dataset.year); renderAdminInto(); });
+  const tf = document.getElementById('scorecardTechFilter'); if(tf) tf.onchange = ()=>{ scorecardFilterTech = tf.value; renderAdminInto(); };
+  const saName = document.getElementById('sa_name');
+  const saBtn = document.getElementById('addSuperAdminBtn'); if(saBtn) saBtn.onclick = addSuperAdmin;
+  const saveTokenBtn = document.getElementById('saveTokenBtn'); if(saveTokenBtn) saveTokenBtn.onclick = ()=>{
+    const v = document.getElementById('gh_token_input').value.trim();
+    if(v){ try{ localStorage.setItem('lph_gh_token', v); }catch(e){} renderAdminInto(); }
+  };
+  const clearTokenBtn = document.getElementById('clearTokenBtn'); if(clearTokenBtn) clearTokenBtn.onclick = ()=>{ try{ localStorage.removeItem('lph_gh_token'); }catch(e){} renderAdminInto(); };
+  document.querySelectorAll('.remove-sa').forEach(b=> b.onclick = ()=> removeSuperAdmin(parseInt(b.dataset.idx)));
+  const addTeamBtn = document.getElementById('addTeamBtn'); if(addTeamBtn) addTeamBtn.onclick = addTeamMember;
+  document.querySelectorAll('.edit-tech').forEach(b=> b.onclick = ()=>{ editingTechName = b.dataset.name; renderAdminInto(); });
+  document.querySelectorAll('.cancel-edit-tech').forEach(b=> b.onclick = ()=>{ editingTechName = null; renderAdminInto(); });
+  document.querySelectorAll('.save-edit-tech').forEach(b=> b.onclick = ()=> saveEditTech(b.dataset.name));
+  document.querySelectorAll('.toggle-active').forEach(b=> b.onclick = ()=> toggleTechActive(b.dataset.name));
+  const atSave = document.getElementById('attendSaveBtn'); if(atSave) atSave.onclick = saveAttendance;
+  document.querySelectorAll('.del-attend').forEach(b=> b.onclick = ()=> deleteAttendance(b.dataset.id));
+  document.querySelectorAll('.del-eval').forEach(b=> b.onclick = ()=> deleteEvaluation(b.dataset.id));
+  document.querySelectorAll('.attend-shift').forEach(b=> b.onclick = ()=> attendShift(parseInt(b.dataset.d)));
+  document.querySelectorAll('.open-report').forEach(b=> b.onclick = ()=> openReportCard(b.dataset.name));
+}
+function renderAccessManagement(){
+  return `
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Sync Key</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Paste the Sync Key Matt gave you so changes you make here save for everyone. Only needed on devices that will make changes &mdash; everyone else can view the site without one. This is saved only on this device/browser.</div>
+      <div class="row2">
+        <div class="field2"><label>Sync Key</label><input id="gh_token_input" type="password" placeholder="${ghToken() ? 'Key saved on this device ✓' : 'Paste sync key'}"></div>
+      </div>
+      <button class="btn-primary" id="saveTokenBtn">Save Key</button>
+      ${ghToken() ? '<button id="clearTokenBtn" style="margin-left:8px;border:1px solid var(--border);background:#fff;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;">Remove Key From This Device</button>' : ''}
+    </div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Add a Super Admin</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Every Super Admin gets full access to everything here.</div>
+      <div class="row2"><div class="field2"><label>Name</label><input id="sa_name" type="text"></div><div class="field2"><label>Password</label><input id="sa_password" type="text"></div></div>
+      <button class="btn-primary" id="addSuperAdminBtn">Add Super Admin</button>
+    </div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Super Admins</div>
+      <table><thead><tr><th>Name</th><th>Password</th><th></th></tr></thead><tbody>
+        ${DATA.superAdmins.map((a,i)=>`<tr><td>${a.name}${a.name===currentAdminName?' <span class="badge2 badge2-ok">You</span>':''}</td><td>${a.password}</td>
+          <td>${DATA.superAdmins.length>1?`<button class="remove-sa" data-idx="${i}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Remove</button>`:'<span style="font-size:11px;color:var(--text-mute);">Last admin</span>'}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+async function addSuperAdmin(){
+  const name = document.getElementById('sa_name').value.trim(), password = document.getElementById('sa_password').value.trim();
+  if(!name || !password) return;
+  if(DATA.superAdmins.some(a=>a.password===password)) return;
+  DATA.superAdmins.push({name, password});
+  await saveShared('lph-rat-superadmins', DATA.superAdmins);
+  renderAdminInto();
+}
+async function removeSuperAdmin(i){ if(DATA.superAdmins.length<=1) return; DATA.superAdmins.splice(i,1); await saveShared('lph-rat-superadmins', DATA.superAdmins); renderAdminInto(); }
+function renderTeamManagement(){
+  let roster = [...DATA.teamRoster].sort((a,b)=> (b.active-a.active) || a.name.localeCompare(b.name));
+  if(adminDeptFilter!=='All') roster = roster.filter(r=> r.department===adminDeptFilter);
+  return `
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Add Employee</div>
+      <div class="row2"><div class="field2"><label>Name</label><input id="team_name" type="text"></div><div class="field2"><label>Title</label><input id="team_title" type="text"></div></div>
+      <div class="field2"><label>Department</label><select id="team_dept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+      <button class="btn-primary" id="addTeamBtn">Add Employee</button>
+    </div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Team Roster${adminDeptFilter!=='All'?' &mdash; '+adminDeptFilter:''}</div>
+      ${roster.length===0?`<div style="padding:20px;color:var(--text-mute);">No employees. Add one above.</div>`:`
+      <table><thead><tr><th>Name</th><th>Title</th><th>Department</th><th>Status</th><th colspan="2"></th></tr></thead><tbody>
+        ${roster.map(r=> r.name===editingTechName ? teamEditRow(r) : `<tr>
+          <td><button class="tech-btn open-report" data-name="${r.name}">${avatar(r.name)} ${r.name}</button></td>
+          <td>${r.title||'&mdash;'}</td><td>${r.department}</td>
+          <td>${r.active?'<span class="badge2 badge2-ok">Active</span>':'<span class="badge2 badge2-err">Inactive</span>'}</td>
+          <td><button class="edit-tech" data-name="${r.name}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Edit</button></td>
+          <td><button class="toggle-active" data-name="${r.name}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">${r.active?'Deactivate':'Reactivate'}</button></td>
+        </tr>`).join('')}
+      </tbody></table>`}
+    </div>`;
+}
+function teamEditRow(r){
+  return `<tr><td>${avatar(r.name)} ${r.name}</td>
+    <td><input id="edit_title" type="text" value="${(r.title||'').replace(/"/g,'&quot;')}" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;"></td>
+    <td><select id="edit_dept" style="padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;">${DEPTS.map(d=>`<option ${r.department===d?'selected':''}>${d}</option>`).join('')}</select></td>
+    <td>${r.active?'<span class="badge2 badge2-ok">Active</span>':'<span class="badge2 badge2-err">Inactive</span>'}</td>
+    <td><button class="save-edit-tech" data-name="${r.name}" style="border:none;background:var(--navy);color:#fff;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;">Save</button></td>
+    <td><button class="cancel-edit-tech" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;">Cancel</button></td></tr>`;
+}
+async function saveEditTech(name){
+  const r = DATA.teamRoster.find(t=>t.name===name); if(!r) return;
+  r.title = document.getElementById('edit_title').value.trim();
+  r.department = document.getElementById('edit_dept').value;
+  editingTechName = null;
+  await saveShared('lph-rat-teamroster', DATA.teamRoster);
+  renderAdminInto();
+}
+async function addTeamMember(){
+  const name = document.getElementById('team_name').value.trim(), title = document.getElementById('team_title').value.trim(), department = document.getElementById('team_dept').value;
+  if(!name || DATA.teamRoster.some(t=>t.name.toLowerCase()===name.toLowerCase())) return;
+  DATA.teamRoster.push({name, title, department, active:true});
+  await saveShared('lph-rat-teamroster', DATA.teamRoster);
+  renderAdminInto();
+}
+async function toggleTechActive(name){ const r = DATA.teamRoster.find(t=>t.name===name); if(!r) return; r.active = !r.active; await saveShared('lph-rat-teamroster', DATA.teamRoster); renderAdminInto(); }
+
+function renderEvalForm(standalone){
+  if(!evalDraft) initEvalDraft();
+  return `
+    <div class="panel">
+      <div class="row2">
+        <div class="field2"><label>Technician</label><select id="eval_tech">${activeTechs().map(t=>`<option ${evalDraft.tech===t?'selected':''}>${t}</option>`).join('')}</select></div>
+        <div class="field2"><label>Date</label><input id="eval_date" type="date" value="${evalDraft.date}"></div>
+      </div>
+      <div class="field2"><label>Department</label><select id="eval_dept">${DEPTS.map(d=>`<option ${evalDraft.department===d?'selected':''}>${d}</option>`).join('')}</select></div>
+      ${EVAL_TEMPLATE.map((step,si)=>renderEvalStep(step,si)).join('')}
+      <div class="field2"><label>Notes</label><textarea id="eval_notes" placeholder="Additional coaching notes..."></textarea></div>
+      <div style="display:flex;align-items:center;gap:16px;margin-top:6px;">
+        <div>Overall score: <span id="evalOverallScore" style="font-weight:800;color:var(--navy);font-size:18px;">&mdash;</span> / 5</div>
+        ${standalone ? `<button class="btn-ghost" onclick="backFromEvaluation()" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:10px 16px;cursor:pointer;">Cancel</button>`:''}
+        <button class="btn-primary" onclick="saveEvaluation()">Submit Evaluation</button>
+      </div>
+    </div>`;
+}
+function renderEvalStep(step, si){
+  const inner = step.items ? step.items.map((label,ii)=>evalItemRow(label, `${si}.${ii}`)).join('')
+    : step.groups.map((g,gi)=>`<div class="eval-group-title">${g.name}</div>${g.items.map((label,ii)=>evalItemRow(label, `${si}.${gi}.${ii}`)).join('')}`).join('');
+  return `<div class="eval-step"><div class="eval-step-title">${step.step} <span style="float:right;font-size:12px;" id="evalStepScore-${si}">&mdash;</span></div>${inner}</div>`;
+}
+function evalItemRow(label, path){
+  return `<div class="eval-item"><div class="eval-item-label">${label}</div><div class="eval-boxes">
+    ${[1,2,3,4,5].map(n=>`<button type="button" class="eval-box" data-path="${path}" data-val="${n}" onclick="setEvalBox('${path}',${n})">${n}</button>`).join('')}
+  </div></div>`;
+}
+function setEvalBox(path, value){
+  evalDraft.scores[path] = value;
+  document.querySelectorAll(`.eval-box[data-path="${path}"]`).forEach(b=> b.classList.toggle('checked', parseInt(b.dataset.val)===value));
+  const overall = evalOverallScore(evalDraft.scores);
+  const scoreEl = document.getElementById('evalOverallScore'); if(scoreEl) scoreEl.textContent = overall? overall.toFixed(1):'&mdash;';
+  const si = path.split('.')[0];
+  const stepEl = document.getElementById('evalStepScore-'+si);
+  if(stepEl){ const s = evalStepScore(evalDraft.scores, parseInt(si)); stepEl.textContent = s? s.toFixed(1):'&mdash;'; }
+}
+function evalStepScore(scores, si){
+  const step = EVAL_TEMPLATE[si]; let vals = [];
+  if(step.items) step.items.forEach((_,ii)=>{ const v = scores[`${si}.${ii}`]; if(v) vals.push(v); });
+  if(step.groups) step.groups.forEach((g,gi)=> g.items.forEach((_,ii)=>{ const v = scores[`${si}.${gi}.${ii}`]; if(v) vals.push(v); }));
+  return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+}
+function evalOverallScore(scores){
+  const vals = Object.values(scores).filter(v=>v);
+  return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+}
+async function saveEvaluation(){
+  evalDraft.tech = document.getElementById('eval_tech').value;
+  evalDraft.date = document.getElementById('eval_date').value;
+  evalDraft.department = document.getElementById('eval_dept').value;
+  evalDraft.notes = document.getElementById('eval_notes').value.trim();
+  const overall = evalOverallScore(evalDraft.scores);
+  if(overall===null) return;
+  const stepScores = EVAL_TEMPLATE.map((_,si)=>evalStepScore(evalDraft.scores,si));
+  DATA.evaluations.push({ id:'EV-'+Date.now(), tech:evalDraft.tech, date:evalDraft.date, department:evalDraft.department,
+    scores:{...evalDraft.scores}, overallScore:overall, stepScores, notes: evalDraft.notes||'' });
+  await saveShared('lph-rat-evaluations', DATA.evaluations);
+  const wasStandalone = (currentView==='evaluate');
+  evalDraft = null;
+  if(wasStandalone) switchView('ridealongs'); else { adminSubtab='scorecards'; renderAdminInto(); }
+}
+function wireEvalEvents(){}
+function renderScorecards(){
+  let allTechs = allKnownTechs();
+  if(adminDeptFilter!=='All') allTechs = allTechs.filter(t=> techDept(t)===adminDeptFilter);
+  const years = [...new Set([new Date(LATEST_DATE).getFullYear(), ...DATA.evaluations.map(e=> new Date(e.date).getFullYear())])].sort((a,b)=>b-a);
+  let evalsYear = DATA.evaluations.filter(e=> new Date(e.date).getFullYear()===scorecardFilterYear);
+  if(adminDeptFilter!=='All') evalsYear = evalsYear.filter(e=> techDept(e.tech)===adminDeptFilter);
+  const evals = evalsYear.filter(e=> !scorecardFilterTech || e.tech===scorecardFilterTech).sort((a,b)=>b.date.localeCompare(a.date));
+  const byTech = {}; evalsYear.forEach(e=>{ (byTech[e.tech]=byTech[e.tech]||[]).push(e); });
+  const callOffsByTech = {};
+  DATA.attendance.filter(a=>a.status==='Absent' && new Date(a.date).getFullYear()===scorecardFilterYear).forEach(a=>{ callOffsByTech[a.tech]=(callOffsByTech[a.tech]||0)+1; });
+  const summary = Object.entries(byTech).map(([tech,list])=>({tech, count:list.length, avg:list.reduce((s,e)=>s+e.overallScore,0)/list.length,
+    last:list.sort((a,b)=>b.date.localeCompare(a.date))[0], callOffs:callOffsByTech[tech]||0})).sort((a,b)=>b.avg-a.avg);
+  return `
+    <div style="display:flex;gap:6px;margin-bottom:14px;">${years.map(y=>`<button class="year-chip preset-btn ${scorecardFilterYear===y?'active':''}" data-year="${y}">${y}</button>`).join('')}</div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Scorecard Summary &mdash; ${scorecardFilterYear}${adminDeptFilter!=='All'?' &mdash; '+adminDeptFilter:''}</div>
+      ${summary.length===0?`<div style="padding:20px;color:var(--text-mute);">No evaluations logged for ${scorecardFilterYear}.</div>`:`
+      <table><thead><tr><th>Tech</th><th>Title</th><th># Evals</th><th>Avg Score</th><th>Call-Offs</th><th>Last Eval</th></tr></thead><tbody>
+        ${summary.map(s=>`<tr><td><button class="tech-btn open-report" data-name="${s.tech}">${avatar(s.tech)} ${s.tech}</button></td><td>${techTitle(s.tech)||'&mdash;'}</td>
+          <td>${s.count}</td><td>${s.avg.toFixed(1)} / 5</td><td>${s.callOffs?`<span class="badge2 badge2-err">${s.callOffs}</span>`:'0'}</td><td>${s.last.date}</td></tr>`).join('')}
+      </tbody></table>`}
+    </div>
+    <div class="panel"><div class="panel-head"><div class="panel-title">Evaluation History &mdash; ${scorecardFilterYear}</div>
+      <select id="scorecardTechFilter" style="max-width:220px;"><option value="">All technicians</option>${allTechs.map(t=>`<option ${scorecardFilterTech===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      ${evals.length===0?`<div style="padding:20px;color:var(--text-mute);">No evaluations to show.</div>`:`
+      <table><thead><tr><th>Date</th><th>Tech</th><th>Dept</th><th>Overall</th><th>Notes</th><th></th></tr></thead><tbody>
+        ${evals.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${e.tech}</td><td>${e.department}</td><td>${e.overallScore.toFixed(1)} / 5</td>
+          <td style="white-space:normal;max-width:220px;">${e.notes||''}</td><td><button class="del-eval" data-id="${e.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Delete</button></td></tr>`).join('')}
+      </tbody></table>`}
+    </div>`;
+}
+async function deleteEvaluation(id){ DATA.evaluations = DATA.evaluations.filter(e=>e.id!==id); await saveShared('lph-rat-evaluations', DATA.evaluations); renderAdminInto(); }
+function renderAttendance(){
+  let allTechs = activeTechs();
+  if(adminDeptFilter!=='All') allTechs = allTechs.filter(t=> techDept(t)===adminDeptFilter);
+  const monthKey = `${attendYear}-${String(attendMonth).padStart(2,'0')}`;
+  let monthEntries = DATA.attendance.filter(a=>a.date.startsWith(monthKey));
+  if(adminDeptFilter!=='All') monthEntries = monthEntries.filter(a=> techDept(a.tech)===adminDeptFilter);
+  const byTech = {}; monthEntries.forEach(a=>{ (byTech[a.tech]=byTech[a.tech]||[]).push(a); });
+  const rows = Object.keys(byTech).sort().map(t=>{ const list = byTech[t];
+    return {tech:t, late:list.filter(a=>a.status==='Late').length, absent:list.filter(a=>a.status==='Absent').length, pto:list.filter(a=>a.status==='PTO').length}; });
+  return `
+    ${allTechs.length===0?`<div class="panel"><div style="padding:20px;color:var(--text-mute);">No active employees${adminDeptFilter!=='All'?' in '+adminDeptFilter:''}.</div></div>`:`
+    <div class="panel"><div class="panel-title" style="margin-bottom:4px;">Log an Exception</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Everyone is assumed present unless logged here.</div>
+      <div class="row2"><div class="field2"><label>Date</label><input id="at_date" type="date" value="${LATEST_DATE}"></div>
+        <div class="field2"><label>Technician</label><select id="at_tech">${allTechs.map(t=>`<option>${t}</option>`).join('')}</select></div></div>
+      <div class="row2"><div class="field2"><label>Status</label><select id="at_status"><option>Absent</option><option>Late</option><option>PTO</option></select></div>
+        <div class="field2"><label>Notes</label><input id="at_notes" type="text" placeholder="optional"></div></div>
+      <button class="btn-primary" id="attendSaveBtn">Save</button>
+    </div>`}
+    <div class="panel"><div class="panel-head"><div class="panel-title">Monthly Exceptions</div>
+      <div style="display:flex;gap:6px;align-items:center;"><button class="cal-nav attend-shift" data-d="-1">&larr;</button><div class="day-label">${new Date(attendYear,attendMonth-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div><button class="cal-nav attend-shift" data-d="1">&rarr;</button></div></div>
+      ${rows.length===0?`<div style="padding:20px;color:var(--text-mute);">No exceptions logged this month.</div>`:`
+      <table><thead><tr><th>Tech</th><th>Late</th><th>Absent</th><th>PTO</th></tr></thead><tbody>
+        ${rows.map(r=>`<tr><td><button class="tech-btn open-report" data-name="${r.tech}">${avatar(r.tech)} ${r.tech}</button></td>
+          <td>${r.late?`<span class="badge2 badge2-warn">${r.late}</span>`:'0'}</td><td>${r.absent?`<span class="badge2 badge2-err">${r.absent}</span>`:'0'}</td><td>${r.pto?`<span class="badge2 badge2-ok">${r.pto}</span>`:'0'}</td></tr>`).join('')}
+      </tbody></table>`}
+    </div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Log &mdash; ${new Date(attendYear,attendMonth-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+      ${monthEntries.length===0?`<div style="padding:20px;color:var(--text-mute);">Nothing logged yet.</div>`:`
+      <table><thead><tr><th>Date</th><th>Tech</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>
+        ${monthEntries.sort((a,b)=>b.date.localeCompare(a.date)).map(a=>`<tr><td>${fmtDate(a.date)}</td><td>${a.tech}</td><td><span class="badge2 badge2-${a.status==='Absent'?'err':a.status==='Late'?'warn':'ok'}">${a.status}</span></td>
+          <td style="white-space:normal;">${a.notes||''}</td><td><button class="del-attend" data-id="${a.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Delete</button></td></tr>`).join('')}
+      </tbody></table>`}
+    </div>`;
+}
+async function saveAttendance(){
+  const date = document.getElementById('at_date').value; if(!date) return;
+  DATA.attendance.push({id:'AT-'+Date.now(), date, tech:document.getElementById('at_tech').value, status:document.getElementById('at_status').value, notes:document.getElementById('at_notes').value.trim()});
+  await saveShared('lph-rat-attendance', DATA.attendance);
+  renderAdminInto();
+}
+async function deleteAttendance(id){ DATA.attendance = DATA.attendance.filter(a=>a.id!==id); await saveShared('lph-rat-attendance', DATA.attendance); renderAdminInto(); }
+
+function openReportCard(tech){
+  const perf = combinedTechPerf(tech);
+  const raEntries = DATA.rideAlongs.filter(r=>r.tech===tech).sort((a,b)=>b.date.localeCompare(a.date));
+  const thisYear = new Date(LATEST_DATE).getFullYear();
+  const evalsAll = DATA.evaluations.filter(e=>e.tech===tech).sort((a,b)=>b.date.localeCompare(a.date));
+  const evals = evalsAll.filter(e=> new Date(e.date).getFullYear()===thisYear);
+  const avgEval = evals.length ? evals.reduce((s,e)=>s+e.overallScore,0)/evals.length : null;
+  const attend = DATA.attendance.filter(a=>a.tech===tech && new Date(a.date).getFullYear()===thisYear);
+  const late = attend.filter(a=>a.status==='Late').length, absent = attend.filter(a=>a.status==='Absent').length, pto = attend.filter(a=>a.status==='PTO').length;
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal-card">
+        <div class="modal-head">${avatar(tech,'lg')}<div><div class="name">${tech}</div><div class="title">${techTitle(tech)||'Technician'}${isTechActive(tech)?'':' &middot; Inactive'}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-body">
+          <div class="modal-section"><div class="modal-section-title">${thisYear} Summary</div>
+            <div class="cards2" style="margin-bottom:0;">
+              <div class="card2"><div class="n">${avgEval?avgEval.toFixed(1):'&mdash;'}</div><div class="l">Avg Eval</div></div>
+              <div class="card2"><div class="n">${evals.length}</div><div class="l">Evaluations</div></div>
+              <div class="card2"><div class="n">${absent}</div><div class="l">Call-Offs</div></div>
+              <div class="card2"><div class="n">${late}</div><div class="l">Late</div></div>
+              <div class="card2"><div class="n">${pto}</div><div class="l">PTO</div></div>
+            </div>
+          </div>
+          <div class="modal-section"><div class="modal-section-title">Performance (selected range)</div>
+            <div class="cards2" style="margin-bottom:0;">
+              <div class="card2"><div class="n">${fmtMoney(perf.revenue)}</div><div class="l">Revenue</div></div>
+              <div class="card2"><div class="n">${perf.calls}</div><div class="l">Calls</div></div>
+              <div class="card2"><div class="n">${fmtPct(perf.convRate)}</div><div class="l">Conv Rate</div></div>
+              <div class="card2"><div class="n">${fmtMoney(perf.avgSale)}</div><div class="l">Avg Sale</div></div>
+            </div>
+          </div>
+          <div class="modal-section"><div class="modal-section-title">Ride-Alongs (${raEntries.length})</div>
+            ${raEntries.length===0?`<div style="font-size:12px;color:var(--text-mute);">None logged yet.</div>`:`
+            <table><thead><tr><th>Date</th><th>Focus</th><th>Rating</th><th>Notes</th></tr></thead><tbody>
+              ${raEntries.slice(0,5).map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${e.focus}</td><td><span class="rating-pill rate-${e.rating.replace(/ /g,'-')}">${e.rating}</span></td><td style="white-space:normal;max-width:200px;">${e.notes||''}</td></tr>`).join('')}
+            </tbody></table>`}
+          </div>
+          <div class="modal-section"><div class="modal-section-title">Evaluation Scorecard &mdash; ${thisYear}</div>
+            ${evals.length===0?`<div style="font-size:12px;color:var(--text-mute);">No evaluations yet for ${thisYear}.</div>`:`
+            <table><thead><tr><th>Date</th><th>Overall</th><th>Notes</th></tr></thead><tbody>
+              ${evals.slice(0,5).map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${e.overallScore.toFixed(1)} / 5</td><td style="white-space:normal;max-width:240px;">${e.notes||''}</td></tr>`).join('')}
+            </tbody></table>`}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+
+function switchView(view){
+  currentView = view;
+  destroyCharts();
+  document.querySelectorAll('.nav-item').forEach(el=> el.classList.toggle('active', el.dataset.view===view));
+  document.getElementById('rangeBar').style.display = (view==='upload'||view==='ridealongs'||view==='admin'||view==='evaluate') ? 'none' : 'flex';
+  if(view==='overview'){
+    document.getElementById('pageTitle').textContent = 'Company Overview';
+    document.getElementById('pageSub').textContent = 'All departments, selected range';
+    renderOverview();
+  } else if(view==='upload'){
+    document.getElementById('pageTitle').textContent = 'Upload Data';
+    document.getElementById('pageSub').textContent = 'Add new reports or update existing days';
+    renderUpload();
+  } else if(view==='ridealongs'){
+    document.getElementById('pageTitle').textContent = 'Ride-Alongs';
+    document.getElementById('pageSub').textContent = 'Schedule and log field time';
+    document.getElementById('content').innerHTML = renderRideAlongs();
+    wireRideAlongEvents();
+  } else if(view==='admin'){
+    adminUnlocked = false; currentAdminName = null;
+    document.getElementById('pageTitle').textContent = 'Admin';
+    document.getElementById('pageSub').textContent = 'Scorecards, attendance, and team';
+    document.getElementById('content').innerHTML = renderAdmin();
+    wireAdminEvents();
+  } else if(view==='evaluate'){
+    document.getElementById('pageTitle').textContent = 'Ride-Along Evaluation';
+    document.getElementById('pageSub').textContent = evalDraft ? evalDraft.tech : '';
+    document.getElementById('content').innerHTML = renderEvalForm(true);
+    wireEvalEvents();
+  } else {
+    document.getElementById('pageTitle').textContent = view;
+    document.getElementById('pageSub').textContent = view + ' department, selected range';
+    renderDept(view);
+  }
+}
+
+function applyRange(){
+  document.getElementById('fromDate').value = range.from;
+  document.getElementById('toDate').value = range.to;
+  switchView(currentView);
+}
+
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.addEventListener('click', ()=>{ selectedTech = null; installMode = 'ct'; switchView(el.dataset.view); });
+});
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = btn.dataset.preset;
+    const end = new Date(LATEST_DATE);
+    let start = new Date(LATEST_DATE);
+    if(p==='yesterday'){ /* start already equals LATEST_DATE */ }
+    else if(p==='7'){ start.setDate(end.getDate()-6); }
+    else if(p==='30'){ start.setDate(end.getDate()-29); }
+    else if(p==='mtd'){ start = new Date(end.getFullYear(), end.getMonth(), 1); }
+    else if(p==='ytd'){ start = new Date(end.getFullYear(), 0, 1); }
+    range = {from:start.toISOString().slice(0,10), to:LATEST_DATE};
+    applyRange();
+  });
+});
+document.getElementById('fromDate').addEventListener('change', e=>{
+  range.from = e.target.value;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  switchView(currentView);
+});
+document.getElementById('toDate').addEventListener('change', e=>{
+  range.to = e.target.value;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  switchView(currentView);
+});
+
+updateLatestDate();
+{
+  const end = new Date(LATEST_DATE);
+  const start = new Date(end.getFullYear(), 0, 1);
+  range = {from:start.toISOString().slice(0,10), to:LATEST_DATE};
+}
+document.getElementById('content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-mute);">Loading shared data&hellip;</div>';
+loadAllShared().then(()=>{
+  updateLatestDate();
+  {
+    const end = new Date(LATEST_DATE);
+    const start = new Date(end.getFullYear(), 0, 1);
+    range = {from:start.toISOString().slice(0,10), to:LATEST_DATE};
+  }
+  applyRange();
+});
+
+</script>
