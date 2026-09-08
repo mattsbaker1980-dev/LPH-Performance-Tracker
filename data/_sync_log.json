@@ -1,1 +1,1 @@
-{"time":"2026-09-08T12:38:56.139Z","run_context":"scheduled","stage":"reconciled_ok","detail":"317 real data rows, 0 excluded. Total Jobs Total Revenue=155285.27 matches grand total row exactly. capturedRevenue(td+install)=155285.27, excludedRevenue=0.00. Parsed: techDay=88 entries, deptDay=18 entries, installRows=22 entries. Date range 2026-09-01 to 2026-09-07."}
+{"time":"2026-09-08T12:39:06.594Z","run_context":"scheduled","stage":"fetched_data_files","detail":"dd.json sha=7aab8d0e rowCount=803, td.json sha=1344b631 rowCount=3972, install.json sha=e733b257 rowCount=240"}
