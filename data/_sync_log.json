@@ -1,6 +1,6 @@
 {
-  "time": "2026-09-08T12:02:20.936Z",
+  "time": "2026-09-08T12:02:33.870Z",
   "run_context": "scheduled",
-  "stage": "started",
-  "detail": "beginning daily LPH sync run"
+  "stage": "email_found",
+  "detail": "Daily Job Report from noreply@onservicetitan.com received 2026-09-08T10:15:02Z"
 }
