@@ -324,6 +324,7 @@ function setView(v){
 
 // ---- Range control ----
 const RANGE_PRESETS = [
+  {key:'w1', label:'1 Week'}, {key:'w2', label:'2 Weeks'},
   {key:'w4', label:'4 Weeks'}, {key:'w8', label:'8 Weeks'}, {key:'w12', label:'12 Weeks'},
   {key:'w26', label:'26 Weeks'}, {key:'all', label:'All Time'}
 ];
@@ -345,7 +346,16 @@ function weekStart(dateStr){
   return d.toISOString().slice(0,10);
 }
 function rangeCutoffWeeks(){
-  return { w4:4, w8:8, w12:12, w26:26, all:Infinity }[state.range];
+  return { w1:1, w2:2, w4:4, w8:8, w12:12, w26:26, all:Infinity }[state.range];
+}
+// Same cutoff as weeksInRange() below, but as an exact ISO day (not snapped to a week
+// start) so day-level charts don't pull in extra days from a partial week.
+function daysInRange(){
+  const cutoff = rangeCutoffWeeks();
+  if(cutoff === Infinity) return null;
+  const now = new Date();
+  const start = new Date(now.getTime() - cutoff*7*24*3600*1000);
+  return start.toISOString().slice(0,10);
 }
 function fmtMoney(n){
   return '$' + Math.round(n||0).toLocaleString('en-US');
@@ -391,6 +401,21 @@ function buildTechWeekly(techName, dept){
     weeks[wk].rev += r[3] || 0;
   });
   return weeks;
+}
+
+// Per-tech daily revenue (same name-only matching as buildTechWeekly, just keyed by
+// the raw completion date instead of its week bucket).
+function buildTechDaily(techName){
+  const days = {};
+  state.tdRows.forEach(r => {
+    if(r[1] !== techName) return;
+    days[r[2]] = (days[r[2]] || 0) + (r[4] || 0);
+  });
+  state.instRows.forEach(r => {
+    if(r[1] !== techName) return;
+    days[r[2]] = (days[r[2]] || 0) + (r[3] || 0);
+  });
+  return days;
 }
 
 function weeksInRange(){
@@ -477,6 +502,8 @@ function renderOverview(){
   });
   html += `</div>`;
 
+  html += `<div class="panel"><div class="panel-title">Daily Revenue by Employee — All Departments</div><div class="chart-box"><canvas id="overviewDailyChart"></canvas></div></div>`;
+
   html += `<div class="section-title">Pay Rank vs. Production Rank — All Departments</div>`;
   html += leaderboardTable(allEmp);
   html += otherRolesPanel(allExcluded);
@@ -484,6 +511,7 @@ function renderOverview(){
   content.innerHTML = html;
   content.querySelectorAll('.dept-card[data-dept]').forEach(el => el.addEventListener('click', () => setView(el.dataset.dept)));
   wireLeaderboard(content);
+  drawDailyByEmployeeChart('overviewDailyChart', 'overviewDaily', allEmp);
 }
 
 function rangeLabel(){
@@ -519,6 +547,7 @@ function renderDept(dept){
   </div>`;
 
   html += `<div class="panel"><div class="panel-title">Weekly Revenue vs. Labor Cost — ${dept}</div><div class="chart-box"><canvas id="deptTrendChart"></canvas></div></div>`;
+  html += `<div class="panel"><div class="panel-title">Daily Revenue by Employee — ${dept}</div><div class="chart-box"><canvas id="deptDailyChart"></canvas></div></div>`;
 
   html += `<div class="section-title">Pay Rank vs. Production Rank — ${dept}</div>`;
   html += leaderboardTable(deptEmp);
@@ -527,6 +556,7 @@ function renderDept(dept){
   content.innerHTML = html;
   wireLeaderboard(content);
   drawDeptTrend(dept, deptEmp);
+  drawDailyByEmployeeChart('deptDailyChart', 'deptDaily', deptEmp);
 }
 
 // ---- Roles set aside from the comparison (admin/support, not like-for-like techs) ----
@@ -576,6 +606,38 @@ function drawDeptTrend(dept, deptEmp){
   });
 }
 
+// ---- Daily revenue by employee (stacked bar) ----
+const TECH_PALETTE = ['#0B5FFF','#F3770C','#1E9E5A','#8B5CF6','#D63B3B','#0EA5B7','#C97A0A','#EC4899','#64748B','#22C55E','#EAB308','#3B82F6','#A855F7','#F43F5E'];
+
+function drawDailyByEmployeeChart(canvasId, chartKey, emps){
+  const ctx = document.getElementById(canvasId);
+  destroyChart(chartKey);
+  if(!ctx) return;
+  const minDay = daysInRange();
+  const perTech = emps.map(emp => ({ emp, daily: buildTechDaily(emp.name) }));
+  const daySet = new Set();
+  perTech.forEach(({daily}) => Object.keys(daily).forEach(d => { if(!minDay || d >= minDay) daySet.add(d); }));
+  const days = Array.from(daySet).sort();
+
+  const datasets = perTech
+    .filter(({daily}) => days.some(d => daily[d]))
+    .map(({emp, daily}, i) => ({
+      label: emp.name,
+      data: days.map(d => Math.round((daily[d]||0)*100)/100),
+      backgroundColor: TECH_PALETTE[i % TECH_PALETTE.length]
+    }));
+
+  state.charts[chartKey] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: days.map(d => fmtDate(d)), datasets },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{boxWidth:10, font:{size:10}} } },
+      scales:{ x:{ stacked:true }, y:{ stacked:true, ticks:{ callback:v => '$'+v.toLocaleString() } } }
+    }
+  });
+}
+
 // ---- Shared leaderboard table + rank logic ----
 function leaderboardTable(emps){
   const summaries = emps.map(techSummary);
@@ -585,7 +647,7 @@ function leaderboardTable(emps){
   const withProd = summaries.filter(s => s.rev > 0).sort((a,b) => b.rev - a.rev);
   const prodRank = {}; withProd.forEach((s,i) => prodRank[s.emp.name] = i+1);
 
-  const rows = [...summaries].sort((a,b) => (payRank[a.emp.name]||999) - (payRank[b.emp.name]||999));
+  const rows = [...summaries].sort((a,b) => (prodRank[a.emp.name]||999) - (prodRank[b.emp.name]||999));
 
   let html = `<div class="panel" style="padding:0;overflow-x:auto;"><table>
     <thead><tr>
