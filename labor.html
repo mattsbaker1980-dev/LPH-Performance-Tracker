@@ -342,17 +342,23 @@ function tenure(iso){
 }
 
 // Build a per-tech weekly series: { week: {rev, hoursPaid} }, plus totals for a given week cutoff.
+//
+// Matched by NAME ONLY, not department: LPH's own Plumbing/Sewer techs routinely cross-work
+// both business units (confirmed against the sync script's own name-map, which maps nearly
+// every Plumbing/Sewer tech under both departments), so ServiceTitan's per-job department tag
+// doesn't reliably match an employee's single "home" department from ADP. Filtering by dept
+// silently dropped real revenue for techs who picked up jobs under the other department's BU.
 function buildTechWeekly(techName, dept){
   const weeks = {};
   state.tdRows.forEach(r => {
-    if(r[0] !== dept || r[1] !== techName) return;
+    if(r[1] !== techName) return;
     const wk = weekStart(r[2]);
     if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0};
     weeks[wk].rev += r[4] || 0;
     weeks[wk].hoursPaid += r[8] || 0;
   });
   state.instRows.forEach(r => {
-    if(r[0] !== dept || r[1] !== techName) return;
+    if(r[1] !== techName) return;
     const wk = weekStart(r[2]);
     if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0};
     weeks[wk].rev += r[3] || 0;
