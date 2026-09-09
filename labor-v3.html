@@ -399,6 +399,64 @@ function fmtDate(iso){
   const d = new Date(iso + 'T00:00:00Z');
   return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', timeZone:'UTC'});
 }
+// Weekly-bucket x-axis labels need to read unambiguously as a 7-day SPAN, not a single
+// day — a bare date like "Aug 24, 2026" was being read as that one day's revenue when it
+// was really the whole week starting Aug 24, which is what caused the "these numbers
+// don't match" confusion between the weekly and daily charts.
+function fmtWeekRange(wkStartIso){
+  const start = new Date(wkStartIso + 'T00:00:00Z');
+  const end = new Date(start.getTime() + 6*24*3600*1000);
+  const sameMonth = start.getUTCMonth() === end.getUTCMonth() && start.getUTCFullYear() === end.getUTCFullYear();
+  const startStr = start.toLocaleDateString('en-US', {month:'short', day:'numeric', timeZone:'UTC'});
+  const endStr = end.toLocaleDateString('en-US', sameMonth ? {day:'numeric', timeZone:'UTC'} : {month:'short', day:'numeric', timeZone:'UTC'});
+  return `Week of ${startStr}–${endStr}`;
+}
+// ---- Federal holidays (observed dates), computed so this stays correct in any year ----
+function nthWeekdayOfMonth(year, month, weekday, n){
+  const d = new Date(Date.UTC(year, month, 1));
+  let count = 0;
+  while(true){
+    if(d.getUTCDay() === weekday){ count++; if(count===n) return d.toISOString().slice(0,10); }
+    d.setUTCDate(d.getUTCDate()+1);
+  }
+}
+function lastWeekdayOfMonth(year, month, weekday){
+  const d = new Date(Date.UTC(year, month+1, 0));
+  while(d.getUTCDay() !== weekday) d.setUTCDate(d.getUTCDate()-1);
+  return d.toISOString().slice(0,10);
+}
+function observedHolidayDate(iso){
+  const d = new Date(iso + 'T00:00:00Z');
+  const dow = d.getUTCDay();
+  if(dow === 6) d.setUTCDate(d.getUTCDate()-1); // Saturday -> observed Friday
+  else if(dow === 0) d.setUTCDate(d.getUTCDate()+1); // Sunday -> observed Monday
+  return d.toISOString().slice(0,10);
+}
+function federalHolidaysForYear(year){
+  return [
+    observedHolidayDate(`${year}-01-01`),   // New Year's Day
+    nthWeekdayOfMonth(year, 0, 1, 3),        // MLK Day
+    nthWeekdayOfMonth(year, 1, 1, 3),        // Washington's Birthday
+    lastWeekdayOfMonth(year, 4, 1),          // Memorial Day
+    observedHolidayDate(`${year}-06-19`),   // Juneteenth
+    observedHolidayDate(`${year}-07-04`),   // Independence Day
+    nthWeekdayOfMonth(year, 8, 1, 1),        // Labor Day
+    nthWeekdayOfMonth(year, 9, 1, 2),        // Columbus Day
+    observedHolidayDate(`${year}-11-11`),   // Veterans Day
+    nthWeekdayOfMonth(year, 10, 4, 4),       // Thanksgiving
+    observedHolidayDate(`${year}-12-25`),   // Christmas
+  ];
+}
+function isFederalHoliday(iso){
+  const year = parseInt(iso.slice(0,4), 10);
+  if(!state._holidayCache) state._holidayCache = {};
+  if(!state._holidayCache[year]) state._holidayCache[year] = new Set(federalHolidaysForYear(year));
+  return state._holidayCache[year].has(iso);
+}
+function isWeekend(iso){
+  const dow = new Date(iso + 'T00:00:00Z').getUTCDay();
+  return dow === 0 || dow === 6;
+}
 function tenure(iso){
   if(!iso) return '—';
   const start = new Date(iso + 'T00:00:00Z'); const now = new Date();
@@ -667,7 +725,7 @@ function drawDeptTrend(dept, deptEmp){
   state.charts['deptTrend'] = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: weeks.map(w => fmtDate(w)),
+      labels: weeks.map(w => fmtWeekRange(w)),
       datasets: [
         { label:'Revenue', data: revSeries, borderColor: DEPT_COLOR[dept], backgroundColor: DEPT_COLOR[dept]+'22', fill:true, tension:.25 },
         { label:'Labor Cost', data: laborSeries, borderColor: '#D63B3B', backgroundColor: 'transparent', borderDash:[5,4], tension:.25 }
@@ -696,7 +754,20 @@ function dailyTotalsPanelHtml(canvasId, sliderId, labelId, title){
   </div>`;
 }
 
-function initDailyTotalsWidget(canvasId, sliderId, labelId, emps, chartKey){
+// Daily revenue targets per department (from the ServiceTitan "Daily Win Goal" for each
+// department's Service line — Install-line goals aren't included, matching how Install
+// techs are already carved out as not apples-to-apples with route/service work elsewhere
+// in this dashboard). Update here if the goals change.
+const DAILY_GOALS = { Plumbing: 15650, Sewer: 595, HVAC: 4692, Electrical: 5934 };
+function goalForEmps(emps){
+  const depts = new Set(emps.map(e => e.department));
+  let total = 0;
+  depts.forEach(d => { total += DAILY_GOALS[d] || 0; });
+  return total;
+}
+
+function initDailyTotalsWidget(canvasId, sliderId, labelId, emps, chartKey, opts){
+  const showGoal = !opts || opts.showGoal !== false;
   const slider = document.getElementById(sliderId);
   const { min, max } = getGlobalDayRange();
   if(!min || !max || !slider) return;
@@ -710,6 +781,7 @@ function initDailyTotalsWidget(canvasId, sliderId, labelId, emps, chartKey){
   slider.value = sliderMax; // default: most recent window
 
   const map = buildTotalDailySeries(emps);
+  const goal = showGoal ? goalForEmps(emps) : 0;
 
   const draw = () => {
     const startIdx = Math.min(parseInt(slider.value, 10) || 0, sliderMax);
@@ -719,22 +791,33 @@ function initDailyTotalsWidget(canvasId, sliderId, labelId, emps, chartKey){
     const label = document.getElementById(labelId);
     if(label) label.textContent = windowDays.length ? `${fmtDate(windowDays[0])} – ${fmtDate(windowDays[windowDays.length-1])}` : '';
 
+    const tickColor = (ctx) => {
+      const iso = windowDays[ctx.index];
+      if(!iso) return '#182246';
+      return (isWeekend(iso) || isFederalHoliday(iso)) ? '#D63B3B' : '#182246';
+    };
+
+    const datasets = [
+      { label:'Revenue', data:revSeries, backgroundColor:'#0B5FFF', order:2 },
+      { label:'Labor Cost', data:laborSeries, backgroundColor:'#D63B3B', order:2 }
+    ];
+    if(showGoal && goal > 0){
+      datasets.push({ label:'Daily Goal', data: windowDays.map(()=>goal), type:'line', borderColor:'#F3770C', borderWidth:2, borderDash:[6,4], pointRadius:0, fill:false, order:1 });
+    }
+
     destroyChart(chartKey);
     const ctx = document.getElementById(canvasId);
     if(!ctx) return;
     state.charts[chartKey] = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels: windowDays.map(d => fmtDate(d)),
-        datasets: [
-          { label:'Revenue', data:revSeries, backgroundColor:'#0B5FFF' },
-          { label:'Labor Cost', data:laborSeries, backgroundColor:'#D63B3B' }
-        ]
-      },
+      data: { labels: windowDays.map(d => fmtDate(d)), datasets },
       options: {
         responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{ position:'bottom', labels:{boxWidth:10, font:{size:11}} } },
-        scales:{ y:{ ticks:{ callback:v => '$'+v.toLocaleString() } } }
+        scales:{
+          x:{ ticks:{ color: tickColor } },
+          y:{ ticks:{ callback:v => '$'+v.toLocaleString() } }
+        }
       }
     });
   };
@@ -825,29 +908,10 @@ function openTechModal(name, dept){
       isExcluded(emp.name) ? `<div class="placeholder-note">${(state.roles.excluded[emp.name]||{}).reason || 'Not part of the pay-vs-production comparison.'}</div>` :
       (!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : '')}
     ${emp.note ? `<div class="placeholder-note">${emp.note}</div>` : ''}
-    <div class="panel-title" style="margin-top:16px;">Weekly Revenue vs. Labor Cost</div>
-    <div class="chart-box" style="height:320px;"><canvas id="techChart"></canvas></div>
+    <div style="margin-top:16px;">${dailyTotalsPanelHtml('techDailyChart', 'techDailySlider', 'techDailyLabel', 'Revenue vs. Labor Cost — Daily')}</div>
   `;
   document.getElementById('modalOverlay').hidden = false;
-
-  const minWeek = weeksInRange();
-  const maxWeek = weeksInRangeEnd();
-  const weeks = Object.keys(s.weekly).sort().filter(wk => (!minWeek || wk >= minWeek) && (!maxWeek || wk <= maxWeek));
-  const revSeries = weeks.map(wk => s.weekly[wk].rev);
-  const laborSeries = weeks.map(wk => (s.weekly[wk].hoursPaid||0) * (emp.rate||0));
-
-  destroyChart('tech');
-  state.charts['tech'] = new Chart(document.getElementById('techChart'), {
-    type:'bar',
-    data:{
-      labels: weeks.map(w => fmtDate(w)),
-      datasets:[
-        {label:'Revenue', data:revSeries, backgroundColor: DEPT_COLOR[emp.department]},
-        {label:'Labor Cost', data:laborSeries, backgroundColor:'#D63B3B99'}
-      ]
-    },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:10,font:{size:11}}}}, scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()}}} }
-  });
+  initDailyTotalsWidget('techDailyChart', 'techDailySlider', 'techDailyLabel', [emp], 'techDaily', { showGoal:false });
 }
 
 boot();
