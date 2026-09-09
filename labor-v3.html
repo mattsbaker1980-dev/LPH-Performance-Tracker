@@ -12,6 +12,7 @@
     --green:#1E9E5A; --red:#D63B3B; --amber:#C97A0A;
   }
   *{box-sizing:border-box;}
+  [hidden]{display:none!important;}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
   a{color:inherit;}
   .app{display:flex;min-height:100vh;}
@@ -297,6 +298,7 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 document.getElementById('modalClose').addEventListener('click', () => { document.getElementById('modalOverlay').hidden = true; });
 document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') e.target.hidden = true; });
+document.addEventListener('keydown', e => { if(e.key==='Escape') document.getElementById('modalOverlay').hidden = true; });
 
 // ---- Nav ----
 function buildDeptNav(){
