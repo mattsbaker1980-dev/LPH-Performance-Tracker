@@ -41,6 +41,14 @@
   .preset-btn{border:1px solid var(--border);background:#fff;color:var(--text);font-size:12px;font-weight:600;padding:7px 12px;border-radius:7px;cursor:pointer;}
   .preset-btn:hover{border-color:var(--orange);}
   .preset-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .custom-range-row{display:flex;align-items:center;gap:8px;flex-basis:100%;margin-top:8px;font-size:12px;color:var(--text-mute);}
+  .custom-range-row label{display:flex;align-items:center;gap:5px;}
+  .custom-range-row input[type=date]{padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;color:var(--text);}
+  .custom-range-row .btn-apply{border:1px solid var(--navy);background:var(--navy);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;}
+  .custom-range-row .btn-apply:hover{background:var(--navy-deep);}
+
+  .daily-totals-wrap input[type=range]{width:100%;margin-top:12px;accent-color:var(--navy);}
+  .daily-totals-range{text-align:center;font-size:12px;font-weight:600;color:var(--text-mute);margin-top:8px;}
   .content{padding:22px 28px 60px;}
 
   .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
@@ -98,7 +106,7 @@
   .gate-err{color:var(--red);font-size:12px;margin-top:10px;min-height:16px;}
 
   .overlay{position:fixed;inset:0;background:rgba(8,41,113,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
-  .modal-card{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:86vh;overflow-y:auto;}
+  .modal-card{background:#fff;border-radius:14px;max-width:1080px;width:96%;max-height:90vh;overflow-y:auto;}
   .modal-head{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);}
   .modal-head .name{font-weight:800;color:var(--navy);font-size:17px;}
   .modal-head .title{font-size:12px;color:var(--text-mute);margin-top:2px;}
@@ -330,11 +338,31 @@ const RANGE_PRESETS = [
 ];
 function renderRangeBar(){
   const bar = document.getElementById('rangeBar');
+  const customLabel = (state.range==='custom' && state.customStart && state.customEnd)
+    ? `${fmtDate(state.customStart)} – ${fmtDate(state.customEnd)}` : 'Custom Range';
   bar.innerHTML = RANGE_PRESETS.map(p =>
     `<button class="preset-btn ${state.range===p.key?'active':''}" data-range="${p.key}">${p.label}</button>`
-  ).join('');
+  ).join('') +
+    `<button class="preset-btn ${state.range==='custom'?'active':''}" id="customRangeBtn">${customLabel}</button>` +
+    `<div class="custom-range-row" id="customRangeRow" hidden>
+      <label>From <input type="date" id="customStartInput" value="${state.customStart||''}"></label>
+      <label>To <input type="date" id="customEndInput" value="${state.customEnd||''}"></label>
+      <button class="btn-apply" id="customRangeApply">Apply</button>
+    </div>`;
   bar.querySelectorAll('[data-range]').forEach(btn => {
     btn.addEventListener('click', () => { state.range = btn.dataset.range; render(); });
+  });
+  const row = document.getElementById('customRangeRow');
+  document.getElementById('customRangeBtn').addEventListener('click', () => { row.hidden = !row.hidden; });
+  if(state.range === 'custom') row.hidden = false;
+  document.getElementById('customRangeApply').addEventListener('click', () => {
+    const s = document.getElementById('customStartInput').value;
+    const e = document.getElementById('customEndInput').value;
+    if(!s || !e || s > e) return;
+    state.range = 'custom';
+    state.customStart = s;
+    state.customEnd = e;
+    render();
   });
 }
 
@@ -348,14 +376,17 @@ function weekStart(dateStr){
 function rangeCutoffWeeks(){
   return { w1:1, w2:2, w4:4, w8:8, w12:12, w26:26, all:Infinity }[state.range];
 }
-// Same cutoff as weeksInRange() below, but as an exact ISO day (not snapped to a week
-// start) so day-level charts don't pull in extra days from a partial week.
-function daysInRange(){
+// Resolves the active timeline selection (a preset or a custom from/to pick) to inclusive
+// calendar-day bounds. end:null means "through the most recent data" (presets are open-ended).
+function getRangeBounds(){
+  if(state.range === 'custom' && state.customStart && state.customEnd){
+    return { start: state.customStart, end: state.customEnd };
+  }
   const cutoff = rangeCutoffWeeks();
-  if(cutoff === Infinity) return null;
+  if(cutoff === Infinity) return { start: null, end: null };
   const now = new Date();
   const start = new Date(now.getTime() - cutoff*7*24*3600*1000);
-  return start.toISOString().slice(0,10);
+  return { start: start.toISOString().slice(0,10), end: null };
 }
 function fmtMoney(n){
   return '$' + Math.round(n||0).toLocaleString('en-US');
@@ -403,34 +434,74 @@ function buildTechWeekly(techName, dept){
   return weeks;
 }
 
-// Per-tech daily revenue (same name-only matching as buildTechWeekly, just keyed by
-// the raw completion date instead of its week bucket).
+// Per-tech daily series: { date: {rev, hoursPaid} } (same name-only matching as
+// buildTechWeekly, just keyed by the raw completion date instead of its week bucket).
 function buildTechDaily(techName){
   const days = {};
   state.tdRows.forEach(r => {
     if(r[1] !== techName) return;
-    days[r[2]] = (days[r[2]] || 0) + (r[4] || 0);
+    if(!days[r[2]]) days[r[2]] = {rev:0, hoursPaid:0};
+    days[r[2]].rev += r[4] || 0;
+    days[r[2]].hoursPaid += r[8] || 0;
   });
   state.instRows.forEach(r => {
     if(r[1] !== techName) return;
-    days[r[2]] = (days[r[2]] || 0) + (r[3] || 0);
+    if(!days[r[2]]) days[r[2]] = {rev:0, hoursPaid:0};
+    days[r[2]].rev += r[3] || 0;
   });
   return days;
 }
 
+// Sums buildTechDaily across a set of employees into { date: {rev, laborCost} }.
+function buildTotalDailySeries(emps){
+  const map = {};
+  emps.forEach(emp => {
+    const daily = buildTechDaily(emp.name);
+    Object.keys(daily).forEach(d => {
+      if(!map[d]) map[d] = {rev:0, laborCost:0};
+      map[d].rev += daily[d].rev;
+      map[d].laborCost += daily[d].hoursPaid * (emp.rate||0);
+    });
+  });
+  return map;
+}
+
+// Earliest/latest calendar day present anywhere in the production data, cached on state.
+function getGlobalDayRange(){
+  if(state._dayRange) return state._dayRange;
+  let min = null, max = null;
+  const consider = d => { if(!d) return; if(!min || d < min) min = d; if(!max || d > max) max = d; };
+  state.tdRows.forEach(r => consider(r[2]));
+  state.instRows.forEach(r => consider(r[2]));
+  state._dayRange = { min, max };
+  return state._dayRange;
+}
+function isoDaysBetween(minIso, maxIso){
+  const days = [];
+  let d = new Date(minIso + 'T00:00:00Z');
+  const end = new Date(maxIso + 'T00:00:00Z');
+  while(d <= end){
+    days.push(d.toISOString().slice(0,10));
+    d.setUTCDate(d.getUTCDate()+1);
+  }
+  return days;
+}
+
 function weeksInRange(){
-  const cutoff = rangeCutoffWeeks();
-  if(cutoff === Infinity) return null; // no filter
-  const now = new Date();
-  const start = new Date(now.getTime() - cutoff*7*24*3600*1000);
-  return weekStart(start.toISOString().slice(0,10));
+  const { start } = getRangeBounds();
+  return start ? weekStart(start) : null; // no filter
+}
+function weeksInRangeEnd(){
+  const { end } = getRangeBounds();
+  return end ? weekStart(end) : null; // null = through the most recent data
 }
 
 function techSummary(emp){
   const weekly = buildTechWeekly(emp.name, emp.department);
   const minWeek = weeksInRange();
+  const maxWeek = weeksInRangeEnd();
   let rev = 0, hoursPaid = 0, weeksWithData = 0;
-  const series = Object.keys(weekly).sort().filter(wk => !minWeek || wk >= minWeek);
+  const series = Object.keys(weekly).sort().filter(wk => (!minWeek || wk >= minWeek) && (!maxWeek || wk <= maxWeek));
   series.forEach(wk => {
     rev += weekly[wk].rev;
     hoursPaid += weekly[wk].hoursPaid;
@@ -502,7 +573,7 @@ function renderOverview(){
   });
   html += `</div>`;
 
-  html += `<div class="panel"><div class="panel-title">Daily Revenue by Employee — All Departments</div><div class="chart-box"><canvas id="overviewDailyChart"></canvas></div></div>`;
+  html += dailyTotalsPanelHtml('overviewDailyChart', 'overviewDailySlider', 'overviewDailyLabel', 'Total Revenue vs. Labor Cost — Daily (All Departments)');
 
   html += `<div class="section-title">Pay Rank vs. Production Rank — All Departments</div>`;
   html += leaderboardTable(allEmp);
@@ -511,10 +582,13 @@ function renderOverview(){
   content.innerHTML = html;
   content.querySelectorAll('.dept-card[data-dept]').forEach(el => el.addEventListener('click', () => setView(el.dataset.dept)));
   wireLeaderboard(content);
-  drawDailyByEmployeeChart('overviewDailyChart', 'overviewDaily', allEmp);
+  initDailyTotalsWidget('overviewDailyChart', 'overviewDailySlider', 'overviewDailyLabel', allEmp, 'overviewDaily');
 }
 
 function rangeLabel(){
+  if(state.range === 'custom' && state.customStart && state.customEnd){
+    return `${fmtDate(state.customStart)} – ${fmtDate(state.customEnd)}`;
+  }
   const p = RANGE_PRESETS.find(p => p.key === state.range);
   return p ? p.label : '';
 }
@@ -547,7 +621,7 @@ function renderDept(dept){
   </div>`;
 
   html += `<div class="panel"><div class="panel-title">Weekly Revenue vs. Labor Cost — ${dept}</div><div class="chart-box"><canvas id="deptTrendChart"></canvas></div></div>`;
-  html += `<div class="panel"><div class="panel-title">Daily Revenue by Employee — ${dept}</div><div class="chart-box"><canvas id="deptDailyChart"></canvas></div></div>`;
+  html += dailyTotalsPanelHtml('deptDailyChart', 'deptDailySlider', 'deptDailyLabel', `Total Revenue vs. Labor Cost — Daily (${dept})`);
 
   html += `<div class="section-title">Pay Rank vs. Production Rank — ${dept}</div>`;
   html += leaderboardTable(deptEmp);
@@ -556,7 +630,7 @@ function renderDept(dept){
   content.innerHTML = html;
   wireLeaderboard(content);
   drawDeptTrend(dept, deptEmp);
-  drawDailyByEmployeeChart('deptDailyChart', 'deptDaily', deptEmp);
+  initDailyTotalsWidget('deptDailyChart', 'deptDailySlider', 'deptDailyLabel', deptEmp, 'deptDaily');
 }
 
 // ---- Roles set aside from the comparison (admin/support, not like-for-like techs) ----
@@ -578,9 +652,10 @@ function otherRolesPanel(excludedEmps){
 
 function drawDeptTrend(dept, deptEmp){
   const minWeek = weeksInRange();
+  const maxWeek = weeksInRangeEnd();
   const weeksSet = new Set();
   const perTech = deptEmp.map(emp => ({emp, weekly: buildTechWeekly(emp.name, emp.department)}));
-  perTech.forEach(({weekly}) => Object.keys(weekly).forEach(wk => { if(!minWeek || wk >= minWeek) weeksSet.add(wk); }));
+  perTech.forEach(({weekly}) => Object.keys(weekly).forEach(wk => { if((!minWeek || wk >= minWeek) && (!maxWeek || wk <= maxWeek)) weeksSet.add(wk); }));
   const weeks = Array.from(weeksSet).sort();
 
   const revSeries = weeks.map(wk => perTech.reduce((s,{weekly})=> s + ((weekly[wk]&&weekly[wk].rev)||0), 0));
@@ -606,36 +681,65 @@ function drawDeptTrend(dept, deptEmp){
   });
 }
 
-// ---- Daily revenue by employee (stacked bar) ----
-const TECH_PALETTE = ['#0B5FFF','#F3770C','#1E9E5A','#8B5CF6','#D63B3B','#0EA5B7','#C97A0A','#EC4899','#64748B','#22C55E','#EAB308','#3B82F6','#A855F7','#F43F5E'];
+// ---- Total revenue vs. labor cost, by day, with a scroll-back slider ----
+// Independent of the top timeline selector on purpose: this panel always spans the
+// entire production history so you can slide back to the very first day of data,
+// defaulting to the most recent 2-week window.
+const DAILY_WINDOW = 14;
 
-function drawDailyByEmployeeChart(canvasId, chartKey, emps){
-  const ctx = document.getElementById(canvasId);
-  destroyChart(chartKey);
-  if(!ctx) return;
-  const minDay = daysInRange();
-  const perTech = emps.map(emp => ({ emp, daily: buildTechDaily(emp.name) }));
-  const daySet = new Set();
-  perTech.forEach(({daily}) => Object.keys(daily).forEach(d => { if(!minDay || d >= minDay) daySet.add(d); }));
-  const days = Array.from(daySet).sort();
+function dailyTotalsPanelHtml(canvasId, sliderId, labelId, title){
+  return `<div class="panel daily-totals-wrap">
+    <div class="panel-title">${title}</div>
+    <div class="chart-box"><canvas id="${canvasId}"></canvas></div>
+    <input type="range" id="${sliderId}">
+    <div class="daily-totals-range" id="${labelId}"></div>
+  </div>`;
+}
 
-  const datasets = perTech
-    .filter(({daily}) => days.some(d => daily[d]))
-    .map(({emp, daily}, i) => ({
-      label: emp.name,
-      data: days.map(d => Math.round((daily[d]||0)*100)/100),
-      backgroundColor: TECH_PALETTE[i % TECH_PALETTE.length]
-    }));
+function initDailyTotalsWidget(canvasId, sliderId, labelId, emps, chartKey){
+  const slider = document.getElementById(sliderId);
+  const { min, max } = getGlobalDayRange();
+  if(!min || !max || !slider) return;
 
-  state.charts[chartKey] = new Chart(ctx, {
-    type: 'bar',
-    data: { labels: days.map(d => fmtDate(d)), datasets },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom', labels:{boxWidth:10, font:{size:10}} } },
-      scales:{ x:{ stacked:true }, y:{ stacked:true, ticks:{ callback:v => '$'+v.toLocaleString() } } }
-    }
-  });
+  const allDays = isoDaysBetween(min, max);
+  const totalDays = allDays.length;
+  const sliderMax = Math.max(0, totalDays - DAILY_WINDOW);
+  slider.min = 0;
+  slider.max = sliderMax;
+  slider.step = 1;
+  slider.value = sliderMax; // default: most recent window
+
+  const map = buildTotalDailySeries(emps);
+
+  const draw = () => {
+    const startIdx = Math.min(parseInt(slider.value, 10) || 0, sliderMax);
+    const windowDays = allDays.slice(startIdx, startIdx + DAILY_WINDOW);
+    const revSeries = windowDays.map(d => Math.round((map[d]?.rev||0)*100)/100);
+    const laborSeries = windowDays.map(d => Math.round((map[d]?.laborCost||0)*100)/100);
+    const label = document.getElementById(labelId);
+    if(label) label.textContent = windowDays.length ? `${fmtDate(windowDays[0])} – ${fmtDate(windowDays[windowDays.length-1])}` : '';
+
+    destroyChart(chartKey);
+    const ctx = document.getElementById(canvasId);
+    if(!ctx) return;
+    state.charts[chartKey] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: windowDays.map(d => fmtDate(d)),
+        datasets: [
+          { label:'Revenue', data:revSeries, backgroundColor:'#0B5FFF' },
+          { label:'Labor Cost', data:laborSeries, backgroundColor:'#D63B3B' }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:'bottom', labels:{boxWidth:10, font:{size:11}} } },
+        scales:{ y:{ ticks:{ callback:v => '$'+v.toLocaleString() } } }
+      }
+    });
+  };
+  slider.oninput = draw;
+  draw();
 }
 
 // ---- Shared leaderboard table + rank logic ----
@@ -722,12 +826,13 @@ function openTechModal(name, dept){
       (!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : '')}
     ${emp.note ? `<div class="placeholder-note">${emp.note}</div>` : ''}
     <div class="panel-title" style="margin-top:16px;">Weekly Revenue vs. Labor Cost</div>
-    <div class="chart-box" style="height:220px;"><canvas id="techChart"></canvas></div>
+    <div class="chart-box" style="height:320px;"><canvas id="techChart"></canvas></div>
   `;
   document.getElementById('modalOverlay').hidden = false;
 
   const minWeek = weeksInRange();
-  const weeks = Object.keys(s.weekly).sort().filter(wk => !minWeek || wk >= minWeek);
+  const maxWeek = weeksInRangeEnd();
+  const weeks = Object.keys(s.weekly).sort().filter(wk => (!minWeek || wk >= minWeek) && (!maxWeek || wk <= maxWeek));
   const revSeries = weeks.map(wk => s.weekly[wk].rev);
   const laborSeries = weeks.map(wk => (s.weekly[wk].hoursPaid||0) * (emp.rate||0));
 
