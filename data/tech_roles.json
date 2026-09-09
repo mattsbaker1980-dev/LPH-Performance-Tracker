@@ -1,0 +1,13 @@
+{
+  "excluded": [
+    {"name": "Kevin Jones", "badge": "Admin", "reason": "Assistant department manager — handles technical issues and support rather than working as a like-for-like route/production tech, so he isn't part of the pay-vs-production comparison."},
+    {"name": "Reese Gassert", "badge": "Support", "reason": "Shop mechanic and digging support — not in a revenue-generating tech role, so he isn't part of the pay-vs-production comparison."}
+  ],
+  "apprentices": [
+    {"name": "Cayden Montgomery", "reason": "Apprentice — little or no billable production is expected at this stage."}
+  ],
+  "installOnly": [
+    {"name": "William Price", "reason": "Primarily install-side work, not standard service calls — larger lump-sum jobs and hours aren't tracked the same way as route techs, so pay-vs-production isn't apples-to-apples with the rest of the list."},
+    {"name": "Joshua Rosario", "reason": "Primarily install-side work — same caveat as William Price."}
+  ]
+}
