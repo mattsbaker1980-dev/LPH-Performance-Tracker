@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LPH Labor Productivity</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#082971; --navy-deep:#061d52; --orange:#F3770C; --orange-soft:#FFF1E4;
+    --bg:#F5F6FA; --card:#FFFFFF; --border:#E4E7F0; --text:#182246; --text-mute:#6B7290;
+    --green:#1E9E5A; --red:#D63B3B; --amber:#C97A0A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  a{color:inherit;}
+  .app{display:flex;min-height:100vh;}
+
+  .sidebar{width:260px;flex-shrink:0;background:var(--navy);color:#fff;display:flex;flex-direction:column;}
+  .brand{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,.22);}
+  .brand-title{font-size:18px;font-weight:800;letter-spacing:.01em;}
+  .brand-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:3px;}
+  .nav-group{padding:16px 12px 6px;}
+  .nav-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);padding:0 10px 8px;font-weight:700;}
+  .nav-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;color:#fff;margin-bottom:2px;border-left:3px solid transparent;transition:background .12s;}
+  .nav-item:hover{background:rgba(255,255,255,.12);}
+  .nav-item.active{background:#fff;border-left:3px solid var(--orange);color:var(--navy);}
+  .nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .nav-item .nav-empty{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;}
+  .nav-item.active .nav-empty{color:var(--text-mute);}
+  .sidebar-foot{margin-top:auto;padding:16px 20px;font-size:10.5px;color:rgba(255,255,255,.65);border-top:1px solid rgba(255,255,255,.22);}
+  .sidebar-foot button{margin-top:8px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;}
+  .sidebar-foot button:hover{background:rgba(255,255,255,.22);}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .topbar{background:#fff;border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;position:sticky;top:0;z-index:5;}
+  .page-title{font-size:20px;font-weight:800;color:var(--navy);}
+  .page-sub{font-size:12.5px;color:var(--text-mute);margin-top:2px;}
+  .range-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .preset-btn{border:1px solid var(--border);background:#fff;color:var(--text);font-size:12px;font-weight:600;padding:7px 12px;border-radius:7px;cursor:pointer;}
+  .preset-btn:hover{border-color:var(--orange);}
+  .preset-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .content{padding:22px 28px 60px;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+  .kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .kpi-label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-mute);margin-bottom:8px;}
+  .kpi-value{font-size:24px;font-weight:800;color:var(--navy);}
+  .kpi-sub{font-size:11.5px;color:var(--text-mute);margin-top:4px;}
+
+  .section-title{font-size:15px;font-weight:800;color:var(--navy);margin:22px 0 12px;}
+  .dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:10px;}
+  .dept-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:transform .12s,box-shadow .12s;border-top:4px solid var(--dept-color,var(--orange));}
+  .dept-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(8,41,113,.1);}
+  .dept-card.empty{cursor:default;opacity:.7;}
+  .dept-card.empty:hover{transform:none;box-shadow:none;}
+  .dept-card-name{font-size:16px;font-weight:800;color:var(--navy);}
+  .dept-card-count{font-size:22px;font-weight:800;margin:10px 0 4px;}
+  .dept-card-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-mute);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .placeholder-note{background:var(--orange-soft);border:1px dashed var(--orange);border-radius:10px;padding:12px 14px;font-size:12px;color:#8a4a05;margin-top:10px;}
+
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:20px;}
+  .panel-title{font-size:13.5px;font-weight:800;color:var(--navy);margin-bottom:14px;}
+  .chart-box{position:relative;height:280px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-mute);padding:10px 12px;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+  th:hover{color:var(--navy);}
+  td{padding:11px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tr:hover td{background:#FAFBFE;}
+  .tech-name{font-weight:700;color:var(--navy);cursor:pointer;}
+  .tech-name:hover{text-decoration:underline;color:var(--orange);}
+  .rank-pill{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:6px;font-weight:800;font-size:11.5px;background:var(--bg);color:var(--text-mute);padding:0 6px;}
+  .rank-pill.top{background:var(--orange-soft);color:var(--orange);}
+  .badge{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:99px;}
+  .badge-green{background:#EAFBF1;color:var(--green);}
+  .badge-amber{background:#FFF4E0;color:var(--amber);}
+  .badge-red{background:#FBE9E8;color:var(--red);}
+  .badge-gray{background:#F0F1F5;color:var(--text-mute);}
+  .badge-blue{background:#E8EEFC;color:#1D4ED8;}
+  .badge-purple{background:#F1E9FE;color:#7C3AED;}
+  .other-roles{margin-top:8px;}
+  .other-roles-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);font-size:12.5px;flex-wrap:wrap;}
+  .other-roles-row:last-child{border-bottom:none;}
+  .other-roles-row .n{font-weight:700;color:var(--navy);min-width:150px;}
+  .other-roles-row .r{color:var(--text-mute);flex:1;min-width:200px;}
+  .money{font-weight:700;}
+  .muted{color:var(--text-mute);}
+
+  .gate-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+  .gate-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:36px 32px;width:340px;box-shadow:0 8px 30px rgba(8,41,113,.08);}
+  .gate-card h1{font-size:18px;color:var(--navy);margin:0 0 4px;}
+  .gate-card p{font-size:12.5px;color:var(--text-mute);margin:0 0 20px;line-height:1.5;}
+  .gate-card input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:12px;}
+  .gate-card button{width:100%;background:var(--navy);color:#fff;border:none;padding:11px;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;}
+  .gate-card button:hover{background:var(--navy-deep);}
+  .gate-err{color:var(--red);font-size:12px;margin-top:10px;min-height:16px;}
+
+  .overlay{position:fixed;inset:0;background:rgba(8,41,113,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-card{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:86vh;overflow-y:auto;}
+  .modal-head{display:flex;align-items:center;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);}
+  .modal-head .name{font-weight:800;color:var(--navy);font-size:17px;}
+  .modal-head .title{font-size:12px;color:var(--text-mute);margin-top:2px;}
+  .modal-close{margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-mute);}
+  .modal-body{padding:18px 24px 24px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+  .stat-box{background:var(--bg);border-radius:10px;padding:12px;}
+  .stat-box .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-mute);margin-bottom:4px;}
+  .stat-box .v{font-size:16px;font-weight:800;color:var(--navy);}
+
+  @media (max-width:900px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;overflow-x:auto;}
+    .brand{display:none;}
+    .nav-group{display:flex;padding:10px;gap:6px;}
+    .nav-label{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div id="gateWrap" class="gate-wrap" hidden>
+  <div class="gate-card">
+    <h1>LPH Labor Productivity</h1>
+    <p>Enter your access key to view pay vs. production data for your departments.</p>
+    <input type="text" id="keyInput" name="accessField_x7q" placeholder="Access key" autocomplete="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')" ontouchstart="this.removeAttribute('readonly')">
+    <button id="keySubmit">Unlock</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
+<div id="app" class="app" hidden>
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-title">LPH Labor Productivity</div>
+      <div class="brand-sub" id="userLine">&nbsp;</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Views</div>
+      <div class="nav-item active" data-view="overview" id="navOverview">Overview</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Departments</div>
+      <div id="deptNav"></div>
+    </div>
+    <div class="sidebar-foot">
+      Pay/hire data is private to your access key.<br>Production data mirrors the main LPH dashboard.
+      <div><button id="logoutBtn">Switch access key</button></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Overview</div>
+        <div class="page-sub" id="pageSub">Highest-paid vs. highest-earning, at a glance</div>
+      </div>
+      <div class="range-bar" id="rangeBar"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div id="modalOverlay" class="overlay" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <div class="name" id="modalName"></div>
+        <div class="title" id="modalMeta"></div>
+      </div>
+      <button class="modal-close" id="modalClose">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// LPH Labor Productivity — correlates employee pay (hourly rate, hire date)
+// against production (revenue) to test: does highest-paid = highest-earning?
+//
+// Pay/hire-date data comes from a private repo, reached only through the
+// Cloudflare Worker's /api/labor-data endpoint, gated by X-Labor-Key and
+// filtered server-side to the departments that key is allowed to see.
+// Production/revenue data (td.json, install.json) is the same public data
+// the main LPH Performance Tracker already uses — no gating needed there.
+// ============================================================================
+
+const GH_OWNER = 'mattsbaker1980-dev';
+const GH_REPO = 'LPH-Performance-Tracker';
+const GH_BRANCH = 'main';
+const GH_RAW = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/`;
+const RELAY_URL = 'https://young-sound-f090.mattsbaker1980.workers.dev';
+const ALL_DEPTS = ['Plumbing','Sewer','HVAC','Electrical'];
+const DEPT_COLOR = { Plumbing:'#2B4EE6', Sewer:'#8A4FE0', HVAC:'#F3770C', Electrical:'#1E9E5A' };
+
+function laborKey(){ try{ return localStorage.getItem('lph_labor_key') || ''; }catch(e){ return ''; } }
+function setLaborKey(k){ try{ localStorage.setItem('lph_labor_key', k); }catch(e){} }
+function clearLaborKey(){ try{ localStorage.removeItem('lph_labor_key'); }catch(e){} }
+
+const state = {
+  user: null,            // {name, departments}
+  employees: [],         // [{name, department, rate, hireDate, ...}]
+  tdRows: [],            // raw td.json rows
+  instRows: [],          // raw install.json rows
+  roles: { excluded: {}, apprentices: {}, installOnly: {} }, // name -> {reason[, badge]}, see loadAll()
+  range: 'w12',          // w4 | w8 | w12 | w26 | all
+  view: 'overview',      // overview | Plumbing | Sewer | HVAC | Electrical
+  charts: {}
+};
+function isExcluded(name){ return !!state.roles.excluded[name]; }
+function isApprentice(name){ return !!state.roles.apprentices[name]; }
+function isInstallOnly(name){ return !!state.roles.installOnly[name]; }
+// Split a list of employees into the comparable set (real pay-vs-production candidates)
+// and the excluded set (admin/support roles that shouldn't be ranked against production techs).
+function splitComparable(emps){
+  const comparable = emps.filter(e => !isExcluded(e.name));
+  const excluded = emps.filter(e => isExcluded(e.name));
+  return { comparable, excluded };
+}
+
+// ---- Data loading ----
+async function fetchLaborData(key){
+  const res = await fetch(RELAY_URL + '/api/labor-data', { headers: { 'X-Labor-Key': key } });
+  if(res.status === 401) throw new Error('unauthorized');
+  if(!res.ok) throw new Error('load failed (' + res.status + ')');
+  return res.json();
+}
+async function fetchPublicJson(path){
+  const res = await fetch(GH_RAW + path + '?t=' + Date.now(), { cache:'no-store' });
+  if(!res.ok) throw new Error('failed to load ' + path);
+  return res.json();
+}
+
+async function boot(){
+  const key = laborKey();
+  if(!key){ showGate(); return; }
+  try{
+    await loadAll(key);
+    showApp();
+  }catch(e){
+    clearLaborKey();
+    showGate(e.message === 'unauthorized' ? 'That key was not recognized. Try again.' : 'Something went wrong loading data — try your key again.');
+  }
+}
+
+async function loadAll(key){
+  const [labor, tdFile, instFile, rolesFile] = await Promise.all([
+    fetchLaborData(key),
+    fetchPublicJson('data/td.json'),
+    fetchPublicJson('data/install.json'),
+    fetchPublicJson('data/tech_roles.json').catch(() => ({excluded:[], apprentices:[], installOnly:[]}))
+  ]);
+  state.user = { name: labor.name, departments: labor.departments || [] };
+  state.employees = labor.employees || [];
+  state.tdRows = tdFile.td || [];
+  state.instRows = instFile.install || [];
+  const toMap = (arr) => Object.fromEntries((arr||[]).map(x => [x.name, x]));
+  state.roles = {
+    excluded: toMap(rolesFile.excluded),
+    apprentices: toMap(rolesFile.apprentices),
+    installOnly: toMap(rolesFile.installOnly)
+  };
+}
+
+function showGate(err){
+  document.getElementById('gateWrap').hidden = false;
+  document.getElementById('app').hidden = true;
+  document.getElementById('gateErr').textContent = err || '';
+  document.getElementById('keyInput').focus();
+}
+function showApp(){
+  document.getElementById('gateWrap').hidden = true;
+  document.getElementById('app').hidden = false;
+  document.getElementById('userLine').textContent = 'Signed in as ' + state.user.name;
+  buildDeptNav();
+  render();
+}
+
+document.getElementById('keySubmit').addEventListener('click', trySubmitKey);
+document.getElementById('keyInput').addEventListener('keydown', e => { if(e.key==='Enter') trySubmitKey(); });
+async function trySubmitKey(){
+  const val = document.getElementById('keyInput').value.trim();
+  if(!val) return;
+  document.getElementById('gateErr').textContent = 'Checking…';
+  try{
+    await loadAll(val);
+    setLaborKey(val);
+    showApp();
+  }catch(e){
+    document.getElementById('gateErr').textContent = e.message === 'unauthorized' ? 'That key was not recognized.' : 'Could not load data — try again.';
+  }
+}
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  clearLaborKey();
+  location.reload();
+});
+document.getElementById('modalClose').addEventListener('click', () => { document.getElementById('modalOverlay').hidden = true; });
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') e.target.hidden = true; });
+
+// ---- Nav ----
+function buildDeptNav(){
+  const wrap = document.getElementById('deptNav');
+  wrap.innerHTML = '';
+  ALL_DEPTS.filter(d => state.user.departments.includes(d)).forEach(dept => {
+    const has = state.employees.some(e => e.department === dept);
+    const item = document.createElement('div');
+    item.className = 'nav-item';
+    item.dataset.view = dept;
+    item.innerHTML = `<span style="display:flex;align-items:center;gap:8px;"><span class="nav-dot" style="background:${DEPT_COLOR[dept]}"></span>${dept}</span>` +
+      (has ? '' : '<span class="nav-empty">No data</span>');
+    item.addEventListener('click', () => setView(dept));
+    wrap.appendChild(item);
+  });
+}
+document.getElementById('navOverview').addEventListener('click', () => setView('overview'));
+function setView(v){
+  state.view = v;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === v));
+  render();
+}
+
+// ---- Range control ----
+const RANGE_PRESETS = [
+  {key:'w4', label:'4 Weeks'}, {key:'w8', label:'8 Weeks'}, {key:'w12', label:'12 Weeks'},
+  {key:'w26', label:'26 Weeks'}, {key:'all', label:'All Time'}
+];
+function renderRangeBar(){
+  const bar = document.getElementById('rangeBar');
+  bar.innerHTML = RANGE_PRESETS.map(p =>
+    `<button class="preset-btn ${state.range===p.key?'active':''}" data-range="${p.key}">${p.label}</button>`
+  ).join('');
+  bar.querySelectorAll('[data-range]').forEach(btn => {
+    btn.addEventListener('click', () => { state.range = btn.dataset.range; render(); });
+  });
+}
+
+// ---- Aggregation helpers ----
+function weekStart(dateStr){
+  const d = new Date(dateStr + 'T00:00:00Z');
+  const day = (d.getUTCDay() + 6) % 7; // Mon=0
+  d.setUTCDate(d.getUTCDate() - day);
+  return d.toISOString().slice(0,10);
+}
+function rangeCutoffWeeks(){
+  return { w4:4, w8:8, w12:12, w26:26, all:Infinity }[state.range];
+}
+function fmtMoney(n){
+  return '$' + Math.round(n||0).toLocaleString('en-US');
+}
+function fmtMoney2(n){
+  return '$' + (n||0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', timeZone:'UTC'});
+}
+function tenure(iso){
+  if(!iso) return '—';
+  const start = new Date(iso + 'T00:00:00Z'); const now = new Date();
+  let months = (now.getFullYear()-start.getFullYear())*12 + (now.getMonth()-start.getMonth());
+  if(months < 0) months = 0;
+  const yrs = Math.floor(months/12), mos = months%12;
+  if(yrs===0) return mos + ' mo';
+  return yrs + 'y ' + mos + 'mo';
+}
+
+// Build a per-tech weekly series: { week: {rev, hoursPaid} }, plus totals for a given week cutoff.
+//
+// Matched by NAME ONLY, not department: LPH's own Plumbing/Sewer techs routinely cross-work
+// both business units (confirmed against the sync script's own name-map, which maps nearly
+// every Plumbing/Sewer tech under both departments), so ServiceTitan's per-job department tag
+// doesn't reliably match an employee's single "home" department from ADP. Filtering by dept
+// silently dropped real revenue for techs who picked up jobs under the other department's BU.
+function buildTechWeekly(techName, dept){
+  const weeks = {};
+  state.tdRows.forEach(r => {
+    if(r[1] !== techName) return;
+    const wk = weekStart(r[2]);
+    if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0};
+    weeks[wk].rev += r[4] || 0;
+    weeks[wk].hoursPaid += r[8] || 0;
+  });
+  state.instRows.forEach(r => {
+    if(r[1] !== techName) return;
+    const wk = weekStart(r[2]);
+    if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0};
+    weeks[wk].rev += r[3] || 0;
+  });
+  return weeks;
+}
+
+function weeksInRange(){
+  const cutoff = rangeCutoffWeeks();
+  if(cutoff === Infinity) return null; // no filter
+  const now = new Date();
+  const start = new Date(now.getTime() - cutoff*7*24*3600*1000);
+  return weekStart(start.toISOString().slice(0,10));
+}
+
+function techSummary(emp){
+  const weekly = buildTechWeekly(emp.name, emp.department);
+  const minWeek = weeksInRange();
+  let rev = 0, hoursPaid = 0, weeksWithData = 0;
+  const series = Object.keys(weekly).sort().filter(wk => !minWeek || wk >= minWeek);
+  series.forEach(wk => {
+    rev += weekly[wk].rev;
+    hoursPaid += weekly[wk].hoursPaid;
+    if(weekly[wk].rev || weekly[wk].hoursPaid) weeksWithData++;
+  });
+  const laborCost = hoursPaid * (emp.rate || 0);
+  const hasHours = hoursPaid > 0;
+  const index = hasHours ? (rev / laborCost) : null; // revenue generated per $1 of paid labor
+  return { emp, rev, hoursPaid, laborCost, index, hasHours, weeksWithData, weekly };
+}
+
+// ---- Render dispatch ----
+function render(){
+  renderRangeBar();
+  if(state.view === 'overview') renderOverview();
+  else renderDept(state.view);
+}
+
+function destroyChart(id){
+  if(state.charts[id]){ state.charts[id].destroy(); delete state.charts[id]; }
+}
+
+// ---- Overview ----
+function renderOverview(){
+  document.getElementById('pageTitle').textContent = 'Overview';
+  document.getElementById('pageSub').textContent = 'Highest-paid vs. highest-earning, at a glance';
+  const content = document.getElementById('content');
+
+  const visibleDepts = ALL_DEPTS.filter(d => state.user.departments.includes(d));
+  const allEmpRaw = state.employees.filter(e => visibleDepts.includes(e.department));
+  const { comparable: allEmp, excluded: allExcluded } = splitComparable(allEmpRaw);
+  const summaries = allEmp.map(techSummary);
+
+  const totalRev = summaries.reduce((s,x)=>s+x.rev,0);
+  const totalLabor = summaries.reduce((s,x)=>s+x.laborCost,0);
+  const avgRate = allEmp.length ? allEmp.reduce((s,e)=>s+(e.rate||0),0)/allEmp.length : 0;
+  const blendedIndex = totalLabor > 0 ? totalRev/totalLabor : null;
+
+  let html = '';
+  html += `<div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-label">Techs in Comparison</div><div class="kpi-value">${allEmp.length}</div><div class="kpi-sub">Across ${visibleDepts.length} department${visibleDepts.length!==1?'s':''}${allExcluded.length?' · '+allExcluded.length+' other role'+(allExcluded.length!==1?'s':'')+' set aside':''}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Revenue, Selected Range</div><div class="kpi-value">${fmtMoney(totalRev)}</div><div class="kpi-sub">${rangeLabel()}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg. Hourly Rate</div><div class="kpi-value">${fmtMoney2(avgRate)}</div><div class="kpi-sub">Across techs in comparison</div></div>
+    <div class="kpi-card"><div class="kpi-label">Blended Revenue / Labor $</div><div class="kpi-value">${blendedIndex!==null ? blendedIndex.toFixed(2)+'x' : '—'}</div><div class="kpi-sub">Revenue generated per $1 paid</div></div>
+  </div>`;
+
+  html += `<div class="section-title">Departments</div><div class="dept-grid">`;
+  ALL_DEPTS.forEach(dept => {
+    if(!state.user.departments.includes(dept)) return;
+    const deptEmp = allEmp.filter(e => e.department === dept);
+    const color = DEPT_COLOR[dept];
+    if(deptEmp.length === 0){
+      html += `<div class="dept-card empty" style="--dept-color:${color}">
+        <div class="dept-card-name">${dept}</div>
+        <div class="placeholder-note">No pay data has been entered for this department yet. Once employee rate/hire-date screenshots come in, this view fills in automatically.</div>
+      </div>`;
+      return;
+    }
+    const sums = deptEmp.map(techSummary);
+    const rev = sums.reduce((s,x)=>s+x.rev,0);
+    const laborCost = sums.reduce((s,x)=>s+x.laborCost,0);
+    const idx = laborCost>0 ? rev/laborCost : null;
+    html += `<div class="dept-card" style="--dept-color:${color}" data-dept="${dept}">
+      <div class="dept-card-name">${dept}</div>
+      <div class="dept-card-count">${deptEmp.length} <span style="font-size:12px;font-weight:600;color:var(--text-mute)">techs</span></div>
+      <div class="dept-card-row"><span>Revenue (range)</span><span class="money">${fmtMoney(rev)}</span></div>
+      <div class="dept-card-row"><span>Rev / Labor $</span><span>${idx!==null ? idx.toFixed(2)+'x' : '—'}</span></div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="section-title">Pay Rank vs. Production Rank — All Departments</div>`;
+  html += leaderboardTable(allEmp);
+  html += otherRolesPanel(allExcluded);
+
+  content.innerHTML = html;
+  content.querySelectorAll('.dept-card[data-dept]').forEach(el => el.addEventListener('click', () => setView(el.dataset.dept)));
+  wireLeaderboard(content);
+}
+
+function rangeLabel(){
+  const p = RANGE_PRESETS.find(p => p.key === state.range);
+  return p ? p.label : '';
+}
+
+// ---- Department view ----
+function renderDept(dept){
+  document.getElementById('pageTitle').textContent = dept;
+  document.getElementById('pageSub').textContent = 'Pay vs. production for ' + dept;
+  const content = document.getElementById('content');
+  const deptEmpRaw = state.employees.filter(e => e.department === dept);
+
+  if(deptEmpRaw.length === 0){
+    content.innerHTML = `<div class="placeholder-note" style="font-size:13px;padding:20px;">
+      No pay data has been entered for ${dept} yet. Send over employee rate/hire-date screenshots (same format as before) and this page will populate automatically — no rebuild needed.
+    </div>`;
+    return;
+  }
+
+  const { comparable: deptEmp, excluded: deptExcluded } = splitComparable(deptEmpRaw);
+  const summaries = deptEmp.map(techSummary);
+  const rev = summaries.reduce((s,x)=>s+x.rev,0);
+  const laborCost = summaries.reduce((s,x)=>s+x.laborCost,0);
+  const idx = laborCost>0 ? rev/laborCost : null;
+
+  let html = `<div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-label">Techs in Comparison</div><div class="kpi-value">${deptEmp.length}</div>${deptExcluded.length?`<div class="kpi-sub">${deptExcluded.length} other role${deptExcluded.length!==1?'s':''} set aside</div>`:''}</div>
+    <div class="kpi-card"><div class="kpi-label">Revenue, Selected Range</div><div class="kpi-value">${fmtMoney(rev)}</div><div class="kpi-sub">${rangeLabel()}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Labor Cost, Selected Range</div><div class="kpi-value">${fmtMoney(laborCost)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Revenue / Labor $</div><div class="kpi-value">${idx!==null ? idx.toFixed(2)+'x' : '—'}</div></div>
+  </div>`;
+
+  html += `<div class="panel"><div class="panel-title">Weekly Revenue vs. Labor Cost — ${dept}</div><div class="chart-box"><canvas id="deptTrendChart"></canvas></div></div>`;
+
+  html += `<div class="section-title">Pay Rank vs. Production Rank — ${dept}</div>`;
+  html += leaderboardTable(deptEmp);
+  html += otherRolesPanel(deptExcluded);
+
+  content.innerHTML = html;
+  wireLeaderboard(content);
+  drawDeptTrend(dept, deptEmp);
+}
+
+// ---- Roles set aside from the comparison (admin/support, not like-for-like techs) ----
+function otherRolesPanel(excludedEmps){
+  if(!excludedEmps.length) return '';
+  let html = `<div class="panel"><div class="panel-title">Other Roles — Not Part of This Comparison</div><div class="other-roles">`;
+  excludedEmps.forEach(emp => {
+    const info = state.roles.excluded[emp.name] || {};
+    html += `<div class="other-roles-row">
+      <span class="n">${emp.name}</span>
+      <span class="badge badge-gray">${info.badge || 'Other'}</span>
+      <span class="r">${info.reason || ''}</span>
+      <span class="muted">${fmtMoney2(emp.rate)}/hr · Hired ${fmtDate(emp.hireDate)}</span>
+    </div>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+function drawDeptTrend(dept, deptEmp){
+  const minWeek = weeksInRange();
+  const weeksSet = new Set();
+  const perTech = deptEmp.map(emp => ({emp, weekly: buildTechWeekly(emp.name, emp.department)}));
+  perTech.forEach(({weekly}) => Object.keys(weekly).forEach(wk => { if(!minWeek || wk >= minWeek) weeksSet.add(wk); }));
+  const weeks = Array.from(weeksSet).sort();
+
+  const revSeries = weeks.map(wk => perTech.reduce((s,{weekly})=> s + ((weekly[wk]&&weekly[wk].rev)||0), 0));
+  const laborSeries = weeks.map(wk => perTech.reduce((s,{emp,weekly})=> s + ((weekly[wk]&&weekly[wk].hoursPaid)||0) * (emp.rate||0), 0));
+
+  destroyChart('deptTrend');
+  const ctx = document.getElementById('deptTrendChart');
+  if(!ctx) return;
+  state.charts['deptTrend'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: weeks.map(w => fmtDate(w)),
+      datasets: [
+        { label:'Revenue', data: revSeries, borderColor: DEPT_COLOR[dept], backgroundColor: DEPT_COLOR[dept]+'22', fill:true, tension:.25 },
+        { label:'Labor Cost', data: laborSeries, borderColor: '#D63B3B', backgroundColor: 'transparent', borderDash:[5,4], tension:.25 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{boxWidth:10,font:{size:11}} } },
+      scales:{ y:{ ticks:{ callback:v => '$'+v.toLocaleString() } } }
+    }
+  });
+}
+
+// ---- Shared leaderboard table + rank logic ----
+function leaderboardTable(emps){
+  const summaries = emps.map(techSummary);
+  const byRate = [...summaries].sort((a,b) => (b.emp.rate||0) - (a.emp.rate||0));
+  const payRank = {}; byRate.forEach((s,i) => payRank[s.emp.name] = i+1);
+
+  const withProd = summaries.filter(s => s.rev > 0).sort((a,b) => b.rev - a.rev);
+  const prodRank = {}; withProd.forEach((s,i) => prodRank[s.emp.name] = i+1);
+
+  const rows = [...summaries].sort((a,b) => (payRank[a.emp.name]||999) - (payRank[b.emp.name]||999));
+
+  let html = `<div class="panel" style="padding:0;overflow-x:auto;"><table>
+    <thead><tr>
+      <th>Pay Rank</th><th>Technician</th><th>Dept</th><th>Rate</th><th>Hired</th><th>Tenure</th>
+      <th>Prod. Rank</th><th>Revenue (range)</th><th>Rev / Labor $</th><th>Status</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(s => {
+    const emp = s.emp;
+    const pr = payRank[emp.name];
+    const prod = prodRank[emp.name];
+    let status;
+    if(isApprentice(emp.name)){
+      status = `<span class="badge badge-blue">Apprentice</span>`;
+    } else if(isInstallOnly(emp.name)){
+      status = `<span class="badge badge-purple">Install Tech</span>`;
+    } else if(!emp.matchesProductionData || s.rev === 0){
+      status = `<span class="badge badge-gray">No production data</span>`;
+    } else if(!s.hasHours){
+      status = `<span class="badge badge-gray">No hours logged</span>`;
+    } else {
+      const diff = prod - pr;
+      if(diff <= 0) status = `<span class="badge badge-green">Meeting / exceeding</span>`;
+      else if(diff <= 2) status = `<span class="badge badge-amber">Slightly below</span>`;
+      else status = `<span class="badge badge-red">Underperforming</span>`;
+    }
+    html += `<tr>
+      <td><span class="rank-pill ${pr===1?'top':''}">#${pr}</span></td>
+      <td class="tech-name" data-tech="${encodeURIComponent(emp.name)}" data-dept="${emp.department}">${emp.name}</td>
+      <td>${emp.department}</td>
+      <td class="money">${fmtMoney2(emp.rate)}/hr</td>
+      <td>${fmtDate(emp.hireDate)}</td>
+      <td class="muted">${tenure(emp.hireDate)}</td>
+      <td>${prod ? `<span class="rank-pill ${prod===1?'top':''}">#${prod}</span>` : '<span class="muted">—</span>'}</td>
+      <td class="money">${fmtMoney(s.rev)}</td>
+      <td>${s.index!==null ? s.index.toFixed(2)+'x' : '<span class="muted">—</span>'}</td>
+      <td>${status}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function wireLeaderboard(root){
+  root.querySelectorAll('.tech-name[data-tech]').forEach(el => {
+    el.addEventListener('click', () => openTechModal(decodeURIComponent(el.dataset.tech), el.dataset.dept));
+  });
+  root.querySelectorAll('th').forEach(th => { /* headers are labels only for now */ });
+}
+
+// ---- Tech modal ----
+function openTechModal(name, dept){
+  const emp = state.employees.find(e => e.name === name && e.department === dept);
+  if(!emp) return;
+  const s = techSummary(emp);
+  document.getElementById('modalName').textContent = emp.name;
+  document.getElementById('modalMeta').textContent = `${emp.department} · ${emp.title || ''}`;
+
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-box"><div class="l">Hourly Rate</div><div class="v">${fmtMoney2(emp.rate)}</div></div>
+      <div class="stat-box"><div class="l">Hired</div><div class="v">${fmtDate(emp.hireDate)}</div></div>
+      <div class="stat-box"><div class="l">Tenure</div><div class="v">${tenure(emp.hireDate)}</div></div>
+      <div class="stat-box"><div class="l">Revenue (${rangeLabel()})</div><div class="v">${fmtMoney(s.rev)}</div></div>
+      <div class="stat-box"><div class="l">Labor Cost (${rangeLabel()})</div><div class="v">${fmtMoney(s.laborCost)}</div></div>
+      <div class="stat-box"><div class="l">Revenue / Labor $</div><div class="v">${s.index!==null ? s.index.toFixed(2)+'x' : '—'}</div></div>
+    </div>
+    ${isApprentice(emp.name) ? `<div class="placeholder-note">${(state.roles.apprentices[emp.name]||{}).reason || 'Apprentice — little or no billable production is expected at this stage, so low revenue here isn\'t a data issue.'}</div>` :
+      isInstallOnly(emp.name) ? `<div class="placeholder-note">${(state.roles.installOnly[emp.name]||{}).reason || 'Primarily install-side work — not directly comparable to route/service techs.'}</div>` :
+      isExcluded(emp.name) ? `<div class="placeholder-note">${(state.roles.excluded[emp.name]||{}).reason || 'Not part of the pay-vs-production comparison.'}</div>` :
+      (!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : '')}
+    ${emp.note ? `<div class="placeholder-note">${emp.note}</div>` : ''}
+    <div class="panel-title" style="margin-top:16px;">Weekly Revenue vs. Labor Cost</div>
+    <div class="chart-box" style="height:220px;"><canvas id="techChart"></canvas></div>
+  `;
+  document.getElementById('modalOverlay').hidden = false;
+
+  const minWeek = weeksInRange();
+  const weeks = Object.keys(s.weekly).sort().filter(wk => !minWeek || wk >= minWeek);
+  const revSeries = weeks.map(wk => s.weekly[wk].rev);
+  const laborSeries = weeks.map(wk => (s.weekly[wk].hoursPaid||0) * (emp.rate||0));
+
+  destroyChart('tech');
+  state.charts['tech'] = new Chart(document.getElementById('techChart'), {
+    type:'bar',
+    data:{
+      labels: weeks.map(w => fmtDate(w)),
+      datasets:[
+        {label:'Revenue', data:revSeries, backgroundColor: DEPT_COLOR[emp.department]},
+        {label:'Labor Cost', data:laborSeries, backgroundColor:'#D63B3B99'}
+      ]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:10,font:{size:11}}}}, scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()}}} }
+  });
+}
+
+boot();
+</script>
+</body>
+</html>
