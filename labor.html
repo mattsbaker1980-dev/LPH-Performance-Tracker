@@ -78,6 +78,12 @@
   .badge-red{background:#FBE9E8;color:var(--red);}
   .badge-gray{background:#F0F1F5;color:var(--text-mute);}
   .badge-blue{background:#E8EEFC;color:#1D4ED8;}
+  .badge-purple{background:#F1E9FE;color:#7C3AED;}
+  .other-roles{margin-top:8px;}
+  .other-roles-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);font-size:12.5px;flex-wrap:wrap;}
+  .other-roles-row:last-child{border-bottom:none;}
+  .other-roles-row .n{font-weight:700;color:var(--navy);min-width:150px;}
+  .other-roles-row .r{color:var(--text-mute);flex:1;min-width:200px;}
   .money{font-weight:700;}
   .muted{color:var(--text-mute);}
 
@@ -197,12 +203,21 @@ const state = {
   employees: [],         // [{name, department, rate, hireDate, ...}]
   tdRows: [],            // raw td.json rows
   instRows: [],          // raw install.json rows
-  apprentices: [],        // names of techs still in training — low/no billable production is expected, not a data problem
+  roles: { excluded: {}, apprentices: {}, installOnly: {} }, // name -> {reason[, badge]}, see loadAll()
   range: 'w12',          // w4 | w8 | w12 | w26 | all
   view: 'overview',      // overview | Plumbing | Sewer | HVAC | Electrical
   charts: {}
 };
-function isApprentice(name){ return state.apprentices.includes(name); }
+function isExcluded(name){ return !!state.roles.excluded[name]; }
+function isApprentice(name){ return !!state.roles.apprentices[name]; }
+function isInstallOnly(name){ return !!state.roles.installOnly[name]; }
+// Split a list of employees into the comparable set (real pay-vs-production candidates)
+// and the excluded set (admin/support roles that shouldn't be ranked against production techs).
+function splitComparable(emps){
+  const comparable = emps.filter(e => !isExcluded(e.name));
+  const excluded = emps.filter(e => isExcluded(e.name));
+  return { comparable, excluded };
+}
 
 // ---- Data loading ----
 async function fetchLaborData(key){
@@ -230,17 +245,22 @@ async function boot(){
 }
 
 async function loadAll(key){
-  const [labor, tdFile, instFile, apprenticesFile] = await Promise.all([
+  const [labor, tdFile, instFile, rolesFile] = await Promise.all([
     fetchLaborData(key),
     fetchPublicJson('data/td.json'),
     fetchPublicJson('data/install.json'),
-    fetchPublicJson('data/apprentices.json').catch(() => ({apprentices:[]}))
+    fetchPublicJson('data/tech_roles.json').catch(() => ({excluded:[], apprentices:[], installOnly:[]}))
   ]);
   state.user = { name: labor.name, departments: labor.departments || [] };
   state.employees = labor.employees || [];
   state.tdRows = tdFile.td || [];
   state.instRows = instFile.install || [];
-  state.apprentices = apprenticesFile.apprentices || [];
+  const toMap = (arr) => Object.fromEntries((arr||[]).map(x => [x.name, x]));
+  state.roles = {
+    excluded: toMap(rolesFile.excluded),
+    apprentices: toMap(rolesFile.apprentices),
+    installOnly: toMap(rolesFile.installOnly)
+  };
 }
 
 function showGate(err){
@@ -413,7 +433,8 @@ function renderOverview(){
   const content = document.getElementById('content');
 
   const visibleDepts = ALL_DEPTS.filter(d => state.user.departments.includes(d));
-  const allEmp = state.employees.filter(e => visibleDepts.includes(e.department));
+  const allEmpRaw = state.employees.filter(e => visibleDepts.includes(e.department));
+  const { comparable: allEmp, excluded: allExcluded } = splitComparable(allEmpRaw);
   const summaries = allEmp.map(techSummary);
 
   const totalRev = summaries.reduce((s,x)=>s+x.rev,0);
@@ -423,9 +444,9 @@ function renderOverview(){
 
   let html = '';
   html += `<div class="kpi-row">
-    <div class="kpi-card"><div class="kpi-label">Techs w/ Pay Data</div><div class="kpi-value">${allEmp.length}</div><div class="kpi-sub">Across ${visibleDepts.length} department${visibleDepts.length!==1?'s':''}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Techs in Comparison</div><div class="kpi-value">${allEmp.length}</div><div class="kpi-sub">Across ${visibleDepts.length} department${visibleDepts.length!==1?'s':''}${allExcluded.length?' · '+allExcluded.length+' other role'+(allExcluded.length!==1?'s':'')+' set aside':''}</div></div>
     <div class="kpi-card"><div class="kpi-label">Revenue, Selected Range</div><div class="kpi-value">${fmtMoney(totalRev)}</div><div class="kpi-sub">${rangeLabel()}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Avg. Hourly Rate</div><div class="kpi-value">${fmtMoney2(avgRate)}</div><div class="kpi-sub">Across techs with pay data</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg. Hourly Rate</div><div class="kpi-value">${fmtMoney2(avgRate)}</div><div class="kpi-sub">Across techs in comparison</div></div>
     <div class="kpi-card"><div class="kpi-label">Blended Revenue / Labor $</div><div class="kpi-value">${blendedIndex!==null ? blendedIndex.toFixed(2)+'x' : '—'}</div><div class="kpi-sub">Revenue generated per $1 paid</div></div>
   </div>`;
 
@@ -455,7 +476,8 @@ function renderOverview(){
   html += `</div>`;
 
   html += `<div class="section-title">Pay Rank vs. Production Rank — All Departments</div>`;
-  html += leaderboardTable(allEmp, summaries);
+  html += leaderboardTable(allEmp);
+  html += otherRolesPanel(allExcluded);
 
   content.innerHTML = html;
   content.querySelectorAll('.dept-card[data-dept]').forEach(el => el.addEventListener('click', () => setView(el.dataset.dept)));
@@ -472,22 +494,23 @@ function renderDept(dept){
   document.getElementById('pageTitle').textContent = dept;
   document.getElementById('pageSub').textContent = 'Pay vs. production for ' + dept;
   const content = document.getElementById('content');
-  const deptEmp = state.employees.filter(e => e.department === dept);
+  const deptEmpRaw = state.employees.filter(e => e.department === dept);
 
-  if(deptEmp.length === 0){
+  if(deptEmpRaw.length === 0){
     content.innerHTML = `<div class="placeholder-note" style="font-size:13px;padding:20px;">
       No pay data has been entered for ${dept} yet. Send over employee rate/hire-date screenshots (same format as before) and this page will populate automatically — no rebuild needed.
     </div>`;
     return;
   }
 
+  const { comparable: deptEmp, excluded: deptExcluded } = splitComparable(deptEmpRaw);
   const summaries = deptEmp.map(techSummary);
   const rev = summaries.reduce((s,x)=>s+x.rev,0);
   const laborCost = summaries.reduce((s,x)=>s+x.laborCost,0);
   const idx = laborCost>0 ? rev/laborCost : null;
 
   let html = `<div class="kpi-row">
-    <div class="kpi-card"><div class="kpi-label">Techs</div><div class="kpi-value">${deptEmp.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Techs in Comparison</div><div class="kpi-value">${deptEmp.length}</div>${deptExcluded.length?`<div class="kpi-sub">${deptExcluded.length} other role${deptExcluded.length!==1?'s':''} set aside</div>`:''}</div>
     <div class="kpi-card"><div class="kpi-label">Revenue, Selected Range</div><div class="kpi-value">${fmtMoney(rev)}</div><div class="kpi-sub">${rangeLabel()}</div></div>
     <div class="kpi-card"><div class="kpi-label">Labor Cost, Selected Range</div><div class="kpi-value">${fmtMoney(laborCost)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Revenue / Labor $</div><div class="kpi-value">${idx!==null ? idx.toFixed(2)+'x' : '—'}</div></div>
@@ -496,11 +519,29 @@ function renderDept(dept){
   html += `<div class="panel"><div class="panel-title">Weekly Revenue vs. Labor Cost — ${dept}</div><div class="chart-box"><canvas id="deptTrendChart"></canvas></div></div>`;
 
   html += `<div class="section-title">Pay Rank vs. Production Rank — ${dept}</div>`;
-  html += leaderboardTable(deptEmp, summaries);
+  html += leaderboardTable(deptEmp);
+  html += otherRolesPanel(deptExcluded);
 
   content.innerHTML = html;
   wireLeaderboard(content);
   drawDeptTrend(dept, deptEmp);
+}
+
+// ---- Roles set aside from the comparison (admin/support, not like-for-like techs) ----
+function otherRolesPanel(excludedEmps){
+  if(!excludedEmps.length) return '';
+  let html = `<div class="panel"><div class="panel-title">Other Roles — Not Part of This Comparison</div><div class="other-roles">`;
+  excludedEmps.forEach(emp => {
+    const info = state.roles.excluded[emp.name] || {};
+    html += `<div class="other-roles-row">
+      <span class="n">${emp.name}</span>
+      <span class="badge badge-gray">${info.badge || 'Other'}</span>
+      <span class="r">${info.reason || ''}</span>
+      <span class="muted">${fmtMoney2(emp.rate)}/hr · Hired ${fmtDate(emp.hireDate)}</span>
+    </div>`;
+  });
+  html += `</div></div>`;
+  return html;
 }
 
 function drawDeptTrend(dept, deptEmp){
@@ -534,7 +575,8 @@ function drawDeptTrend(dept, deptEmp){
 }
 
 // ---- Shared leaderboard table + rank logic ----
-function leaderboardTable(emps, summaries){
+function leaderboardTable(emps){
+  const summaries = emps.map(techSummary);
   const byRate = [...summaries].sort((a,b) => (b.emp.rate||0) - (a.emp.rate||0));
   const payRank = {}; byRate.forEach((s,i) => payRank[s.emp.name] = i+1);
 
@@ -556,6 +598,8 @@ function leaderboardTable(emps, summaries){
     let status;
     if(isApprentice(emp.name)){
       status = `<span class="badge badge-blue">Apprentice</span>`;
+    } else if(isInstallOnly(emp.name)){
+      status = `<span class="badge badge-purple">Install Tech</span>`;
     } else if(!emp.matchesProductionData || s.rev === 0){
       status = `<span class="badge badge-gray">No production data</span>`;
     } else if(!s.hasHours){
@@ -608,7 +652,10 @@ function openTechModal(name, dept){
       <div class="stat-box"><div class="l">Labor Cost (${rangeLabel()})</div><div class="v">${fmtMoney(s.laborCost)}</div></div>
       <div class="stat-box"><div class="l">Revenue / Labor $</div><div class="v">${s.index!==null ? s.index.toFixed(2)+'x' : '—'}</div></div>
     </div>
-    ${isApprentice(emp.name) ? `<div class="placeholder-note">Apprentice — little or no billable production is expected at this stage, so low revenue here isn't a data issue.</div>` : (!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : '')}
+    ${isApprentice(emp.name) ? `<div class="placeholder-note">${(state.roles.apprentices[emp.name]||{}).reason || 'Apprentice — little or no billable production is expected at this stage, so low revenue here isn\'t a data issue.'}</div>` :
+      isInstallOnly(emp.name) ? `<div class="placeholder-note">${(state.roles.installOnly[emp.name]||{}).reason || 'Primarily install-side work — not directly comparable to route/service techs.'}</div>` :
+      isExcluded(emp.name) ? `<div class="placeholder-note">${(state.roles.excluded[emp.name]||{}).reason || 'Not part of the pay-vs-production comparison.'}</div>` :
+      (!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : '')}
     ${emp.note ? `<div class="placeholder-note">${emp.note}</div>` : ''}
     <div class="panel-title" style="margin-top:16px;">Weekly Revenue vs. Labor Cost</div>
     <div class="chart-box" style="height:220px;"><canvas id="techChart"></canvas></div>
