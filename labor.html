@@ -77,6 +77,7 @@
   .badge-amber{background:#FFF4E0;color:var(--amber);}
   .badge-red{background:#FBE9E8;color:var(--red);}
   .badge-gray{background:#F0F1F5;color:var(--text-mute);}
+  .badge-blue{background:#E8EEFC;color:#1D4ED8;}
   .money{font-weight:700;}
   .muted{color:var(--text-mute);}
 
@@ -196,10 +197,12 @@ const state = {
   employees: [],         // [{name, department, rate, hireDate, ...}]
   tdRows: [],            // raw td.json rows
   instRows: [],          // raw install.json rows
+  apprentices: [],        // names of techs still in training — low/no billable production is expected, not a data problem
   range: 'w12',          // w4 | w8 | w12 | w26 | all
   view: 'overview',      // overview | Plumbing | Sewer | HVAC | Electrical
   charts: {}
 };
+function isApprentice(name){ return state.apprentices.includes(name); }
 
 // ---- Data loading ----
 async function fetchLaborData(key){
@@ -227,15 +230,17 @@ async function boot(){
 }
 
 async function loadAll(key){
-  const [labor, tdFile, instFile] = await Promise.all([
+  const [labor, tdFile, instFile, apprenticesFile] = await Promise.all([
     fetchLaborData(key),
     fetchPublicJson('data/td.json'),
-    fetchPublicJson('data/install.json')
+    fetchPublicJson('data/install.json'),
+    fetchPublicJson('data/apprentices.json').catch(() => ({apprentices:[]}))
   ]);
   state.user = { name: labor.name, departments: labor.departments || [] };
   state.employees = labor.employees || [];
   state.tdRows = tdFile.td || [];
   state.instRows = instFile.install || [];
+  state.apprentices = apprenticesFile.apprentices || [];
 }
 
 function showGate(err){
@@ -549,7 +554,9 @@ function leaderboardTable(emps, summaries){
     const pr = payRank[emp.name];
     const prod = prodRank[emp.name];
     let status;
-    if(!emp.matchesProductionData || s.rev === 0){
+    if(isApprentice(emp.name)){
+      status = `<span class="badge badge-blue">Apprentice</span>`;
+    } else if(!emp.matchesProductionData || s.rev === 0){
       status = `<span class="badge badge-gray">No production data</span>`;
     } else if(!s.hasHours){
       status = `<span class="badge badge-gray">No hours logged</span>`;
@@ -601,7 +608,7 @@ function openTechModal(name, dept){
       <div class="stat-box"><div class="l">Labor Cost (${rangeLabel()})</div><div class="v">${fmtMoney(s.laborCost)}</div></div>
       <div class="stat-box"><div class="l">Revenue / Labor $</div><div class="v">${s.index!==null ? s.index.toFixed(2)+'x' : '—'}</div></div>
     </div>
-    ${!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : ''}
+    ${isApprentice(emp.name) ? `<div class="placeholder-note">Apprentice — little or no billable production is expected at this stage, so low revenue here isn't a data issue.</div>` : (!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : '')}
     ${emp.note ? `<div class="placeholder-note">${emp.note}</div>` : ''}
     <div class="panel-title" style="margin-top:16px;">Weekly Revenue vs. Labor Cost</div>
     <div class="chart-box" style="height:220px;"><canvas id="techChart"></canvas></div>
