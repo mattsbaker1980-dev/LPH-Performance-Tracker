@@ -96,6 +96,23 @@
   .money{font-weight:700;}
   .muted{color:var(--text-mute);}
 
+  .manage-emp-wrap{margin-top:20px;}
+  .manage-emp-list{margin:8px 0 14px;}
+  .manage-emp-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);font-size:12.5px;flex-wrap:wrap;}
+  .manage-emp-row:last-child{border-bottom:none;}
+  .manage-emp-row .n{font-weight:700;color:var(--navy);min-width:150px;}
+  .btn-remove-emp{margin-left:auto;border:1px solid var(--red);background:#fff;color:var(--red);font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer;}
+  .btn-remove-emp:hover{background:var(--red);color:#fff;}
+  .btn-remove-emp:disabled{opacity:.6;cursor:default;}
+  .add-emp-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border);padding-top:14px;}
+  .add-emp-row input{padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;font-family:inherit;}
+  .add-emp-row input[type=text]{flex:1;min-width:130px;}
+  .add-emp-row input[type=number]{width:110px;}
+  .btn-add-emp{border:1px solid var(--navy);background:var(--navy);color:#fff;font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:7px;cursor:pointer;}
+  .btn-add-emp:hover{background:var(--navy-deep);}
+  .btn-add-emp:disabled{opacity:.6;cursor:default;}
+  .manage-emp-err{color:var(--red);font-size:12px;margin-top:8px;min-height:14px;}
+
   .gate-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
   .gate-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:36px 32px;width:340px;box-shadow:0 8px 30px rgba(8,41,113,.08);}
   .gate-card h1{font-size:18px;color:var(--navy);margin:0 0 4px;}
@@ -235,6 +252,20 @@ async function fetchLaborData(key){
   if(!res.ok) throw new Error('load failed (' + res.status + ')');
   return res.json();
 }
+// Add or delete an employee. Only works for a key with admin rights (checked
+// server-side, not just hidden client-side) — see the Worker's handleLaborData().
+async function postLaborData(op, payload){
+  const res = await fetch(RELAY_URL + '/api/labor-data', {
+    method: 'POST',
+    headers: { 'X-Labor-Key': laborKey(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ op, ...payload })
+  });
+  const body = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(body.error || ('request failed (' + res.status + ')'));
+  state.user.admin = !!body.admin;
+  state.employees = body.employees || [];
+  return body;
+}
 async function fetchPublicJson(path){
   const res = await fetch(GH_RAW + path + '?t=' + Date.now(), { cache:'no-store' });
   if(!res.ok) throw new Error('failed to load ' + path);
@@ -260,7 +291,7 @@ async function loadAll(key){
     fetchPublicJson('data/install.json'),
     fetchPublicJson('data/tech_roles.json').catch(() => ({excluded:[], apprentices:[], installOnly:[]}))
   ]);
-  state.user = { name: labor.name, departments: labor.departments || [] };
+  state.user = { name: labor.name, departments: labor.departments || [], admin: !!labor.admin };
   state.employees = labor.employees || [];
   state.tdRows = tdFile.td || [];
   state.instRows = instFile.install || [];
@@ -652,9 +683,12 @@ function renderDept(dept){
   const deptEmpRaw = state.employees.filter(e => e.department === dept);
 
   if(deptEmpRaw.length === 0){
-    content.innerHTML = `<div class="placeholder-note" style="font-size:13px;padding:20px;">
+    let html = `<div class="placeholder-note" style="font-size:13px;padding:20px;">
       No pay data has been entered for ${dept} yet. Send over employee rate/hire-date screenshots (same format as before) and this page will populate automatically — no rebuild needed.
     </div>`;
+    html += manageEmployeesPanelHtml(dept, []);
+    content.innerHTML = html;
+    wireManageEmployees(content, dept);
     return;
   }
 
@@ -676,10 +710,78 @@ function renderDept(dept){
   html += `<div class="section-title">Pay Rank vs. Production Rank — ${dept}</div>`;
   html += leaderboardTable(deptEmp);
   html += otherRolesPanel(deptExcluded);
+  html += manageEmployeesPanelHtml(dept, deptEmpRaw);
 
   content.innerHTML = html;
   wireLeaderboard(content);
   initDailyTotalsWidget('deptDailyChart', 'deptDailySlider', 'deptDailyLabel', deptEmp, 'deptDaily');
+  wireManageEmployees(content, dept);
+}
+
+// ---- Add/delete employees (admin keys only — enforced server-side by the Worker) ----
+function manageEmployeesPanelHtml(dept, deptEmpRaw){
+  if(!state.user.admin) return '';
+  const rows = deptEmpRaw.map(e => `<div class="manage-emp-row">
+      <span class="n">${e.name}</span>
+      <span class="muted">${e.title || ''}</span>
+      <span class="money">${fmtMoney2(e.rate)}/hr</span>
+      <span class="muted">Hired ${fmtDate(e.hireDate)}</span>
+      <button class="btn-remove-emp" data-name="${encodeURIComponent(e.name)}">Remove</button>
+    </div>`).join('') || `<div class="muted" style="padding:8px 0;">No employees in ${dept} yet.</div>`;
+
+  return `<div class="panel manage-emp-wrap">
+    <div class="panel-title">Manage Employees — ${dept}</div>
+    <div class="manage-emp-list">${rows}</div>
+    <div class="add-emp-row">
+      <input type="text" id="newEmpName" placeholder="Full name">
+      <input type="text" id="newEmpTitle" placeholder="Title (optional)">
+      <input type="date" id="newEmpHire" title="Hire date">
+      <input type="number" id="newEmpRate" placeholder="Hourly rate" step="0.01" min="0">
+      <button class="btn-add-emp" id="addEmpBtn">Add Employee</button>
+    </div>
+    <div class="manage-emp-err" id="manageEmpErr"></div>
+  </div>`;
+}
+
+function wireManageEmployees(root, dept){
+  const err = root.querySelector('#manageEmpErr');
+  root.querySelectorAll('.btn-remove-emp').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const name = decodeURIComponent(btn.dataset.name);
+      if(!confirm(`Remove ${name} from ${dept}? This deletes their pay record — it can't be undone from here.`)) return;
+      btn.disabled = true; btn.textContent = 'Removing…';
+      try{
+        await postLaborData('delete', { name, department: dept });
+        renderDept(dept);
+      }catch(e){
+        if(err) err.textContent = e.message;
+        btn.disabled = false; btn.textContent = 'Remove';
+      }
+    });
+  });
+  const addBtn = root.querySelector('#addEmpBtn');
+  if(addBtn){
+    addBtn.addEventListener('click', async () => {
+      const name = root.querySelector('#newEmpName').value.trim();
+      const title = root.querySelector('#newEmpTitle').value.trim();
+      const hireDate = root.querySelector('#newEmpHire').value;
+      const rateStr = root.querySelector('#newEmpRate').value;
+      const rate = parseFloat(rateStr);
+      if(err) err.textContent = '';
+      if(!name || !hireDate || !rateStr || isNaN(rate)){
+        if(err) err.textContent = 'Name, hire date, and hourly rate are required.';
+        return;
+      }
+      addBtn.disabled = true; addBtn.textContent = 'Adding…';
+      try{
+        await postLaborData('add', { employee: { name, title, hireDate, rate, department: dept } });
+        renderDept(dept);
+      }catch(e){
+        if(err) err.textContent = e.message;
+        addBtn.disabled = false; addBtn.textContent = 'Add Employee';
+      }
+    });
+  }
 }
 
 // ---- Roles set aside from the comparison (admin/support, not like-for-like techs) ----
