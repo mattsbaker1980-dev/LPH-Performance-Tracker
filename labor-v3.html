@@ -399,18 +399,6 @@ function fmtDate(iso){
   const d = new Date(iso + 'T00:00:00Z');
   return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', timeZone:'UTC'});
 }
-// Weekly-bucket x-axis labels need to read unambiguously as a 7-day SPAN, not a single
-// day — a bare date like "Aug 24, 2026" was being read as that one day's revenue when it
-// was really the whole week starting Aug 24, which is what caused the "these numbers
-// don't match" confusion between the weekly and daily charts.
-function fmtWeekRange(wkStartIso){
-  const start = new Date(wkStartIso + 'T00:00:00Z');
-  const end = new Date(start.getTime() + 6*24*3600*1000);
-  const sameMonth = start.getUTCMonth() === end.getUTCMonth() && start.getUTCFullYear() === end.getUTCFullYear();
-  const startStr = start.toLocaleDateString('en-US', {month:'short', day:'numeric', timeZone:'UTC'});
-  const endStr = end.toLocaleDateString('en-US', sameMonth ? {day:'numeric', timeZone:'UTC'} : {month:'short', day:'numeric', timeZone:'UTC'});
-  return `Week of ${startStr}–${endStr}`;
-}
 // ---- Federal holidays (observed dates), computed so this stays correct in any year ----
 function nthWeekdayOfMonth(year, month, weekday, n){
   const d = new Date(Date.UTC(year, month, 1));
@@ -479,14 +467,16 @@ function buildTechWeekly(techName, dept){
   state.tdRows.forEach(r => {
     if(r[1] !== techName) return;
     const wk = weekStart(r[2]);
-    if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0};
+    if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0, calls:0, moneyCalls:0};
     weeks[wk].rev += r[4] || 0;
     weeks[wk].hoursPaid += r[8] || 0;
+    weeks[wk].calls += r[5] || 0;
+    weeks[wk].moneyCalls += r[6] || 0;
   });
   state.instRows.forEach(r => {
     if(r[1] !== techName) return;
     const wk = weekStart(r[2]);
-    if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0};
+    if(!weeks[wk]) weeks[wk] = {rev:0, hoursPaid:0, calls:0, moneyCalls:0};
     weeks[wk].rev += r[3] || 0;
   });
   return weeks;
@@ -558,17 +548,20 @@ function techSummary(emp){
   const weekly = buildTechWeekly(emp.name, emp.department);
   const minWeek = weeksInRange();
   const maxWeek = weeksInRangeEnd();
-  let rev = 0, hoursPaid = 0, weeksWithData = 0;
+  let rev = 0, hoursPaid = 0, weeksWithData = 0, calls = 0, moneyCalls = 0;
   const series = Object.keys(weekly).sort().filter(wk => (!minWeek || wk >= minWeek) && (!maxWeek || wk <= maxWeek));
   series.forEach(wk => {
     rev += weekly[wk].rev;
     hoursPaid += weekly[wk].hoursPaid;
+    calls += weekly[wk].calls || 0;
+    moneyCalls += weekly[wk].moneyCalls || 0;
     if(weekly[wk].rev || weekly[wk].hoursPaid) weeksWithData++;
   });
   const laborCost = hoursPaid * (emp.rate || 0);
   const hasHours = hoursPaid > 0;
   const index = hasHours ? (rev / laborCost) : null; // revenue generated per $1 of paid labor
-  return { emp, rev, hoursPaid, laborCost, index, hasHours, weeksWithData, weekly };
+  const conversionRate = calls > 0 ? (moneyCalls / calls * 100) : null;
+  return { emp, rev, hoursPaid, laborCost, index, hasHours, weeksWithData, weekly, calls, moneyCalls, conversionRate };
 }
 
 // ---- Render dispatch ----
@@ -678,7 +671,6 @@ function renderDept(dept){
     <div class="kpi-card"><div class="kpi-label">Revenue / Labor $</div><div class="kpi-value">${idx!==null ? idx.toFixed(2)+'x' : '—'}</div></div>
   </div>`;
 
-  html += `<div class="panel"><div class="panel-title">Weekly Revenue vs. Labor Cost — ${dept}</div><div class="chart-box"><canvas id="deptTrendChart"></canvas></div></div>`;
   html += dailyTotalsPanelHtml('deptDailyChart', 'deptDailySlider', 'deptDailyLabel', `Total Revenue vs. Labor Cost — Daily (${dept})`);
 
   html += `<div class="section-title">Pay Rank vs. Production Rank — ${dept}</div>`;
@@ -687,7 +679,6 @@ function renderDept(dept){
 
   content.innerHTML = html;
   wireLeaderboard(content);
-  drawDeptTrend(dept, deptEmp);
   initDailyTotalsWidget('deptDailyChart', 'deptDailySlider', 'deptDailyLabel', deptEmp, 'deptDaily');
 }
 
@@ -706,37 +697,6 @@ function otherRolesPanel(excludedEmps){
   });
   html += `</div></div>`;
   return html;
-}
-
-function drawDeptTrend(dept, deptEmp){
-  const minWeek = weeksInRange();
-  const maxWeek = weeksInRangeEnd();
-  const weeksSet = new Set();
-  const perTech = deptEmp.map(emp => ({emp, weekly: buildTechWeekly(emp.name, emp.department)}));
-  perTech.forEach(({weekly}) => Object.keys(weekly).forEach(wk => { if((!minWeek || wk >= minWeek) && (!maxWeek || wk <= maxWeek)) weeksSet.add(wk); }));
-  const weeks = Array.from(weeksSet).sort();
-
-  const revSeries = weeks.map(wk => perTech.reduce((s,{weekly})=> s + ((weekly[wk]&&weekly[wk].rev)||0), 0));
-  const laborSeries = weeks.map(wk => perTech.reduce((s,{emp,weekly})=> s + ((weekly[wk]&&weekly[wk].hoursPaid)||0) * (emp.rate||0), 0));
-
-  destroyChart('deptTrend');
-  const ctx = document.getElementById('deptTrendChart');
-  if(!ctx) return;
-  state.charts['deptTrend'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: weeks.map(w => fmtWeekRange(w)),
-      datasets: [
-        { label:'Revenue', data: revSeries, borderColor: DEPT_COLOR[dept], backgroundColor: DEPT_COLOR[dept]+'22', fill:true, tension:.25 },
-        { label:'Labor Cost', data: laborSeries, borderColor: '#D63B3B', backgroundColor: 'transparent', borderDash:[5,4], tension:.25 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom', labels:{boxWidth:10,font:{size:11}} } },
-      scales:{ y:{ ticks:{ callback:v => '$'+v.toLocaleString() } } }
-    }
-  });
 }
 
 // ---- Total revenue vs. labor cost, by day, with a scroll-back slider ----
@@ -838,8 +798,8 @@ function leaderboardTable(emps){
 
   let html = `<div class="panel" style="padding:0;overflow-x:auto;"><table>
     <thead><tr>
-      <th>Pay Rank</th><th>Technician</th><th>Dept</th><th>Rate</th><th>Hired</th><th>Tenure</th>
-      <th>Prod. Rank</th><th>Revenue (range)</th><th>Rev / Labor $</th><th>Status</th>
+      <th>Prod. Rank</th><th>Technician</th><th>Dept</th><th>Pay Rank</th><th>Rate</th><th>Hired</th><th>Tenure</th>
+      <th>Revenue (range)</th><th>Rev / Labor $</th><th>Status</th>
     </tr></thead><tbody>`;
 
   rows.forEach(s => {
@@ -862,13 +822,13 @@ function leaderboardTable(emps){
       else status = `<span class="badge badge-red">Underperforming</span>`;
     }
     html += `<tr>
-      <td><span class="rank-pill ${pr===1?'top':''}">#${pr}</span></td>
+      <td>${prod ? `<span class="rank-pill ${prod===1?'top':''}">#${prod}</span>` : '<span class="muted">—</span>'}</td>
       <td class="tech-name" data-tech="${encodeURIComponent(emp.name)}" data-dept="${emp.department}">${emp.name}</td>
       <td>${emp.department}</td>
+      <td><span class="rank-pill ${pr===1?'top':''}">#${pr}</span></td>
       <td class="money">${fmtMoney2(emp.rate)}/hr</td>
       <td>${fmtDate(emp.hireDate)}</td>
       <td class="muted">${tenure(emp.hireDate)}</td>
-      <td>${prod ? `<span class="rank-pill ${prod===1?'top':''}">#${prod}</span>` : '<span class="muted">—</span>'}</td>
       <td class="money">${fmtMoney(s.rev)}</td>
       <td>${s.index!==null ? s.index.toFixed(2)+'x' : '<span class="muted">—</span>'}</td>
       <td>${status}</td>
@@ -902,6 +862,8 @@ function openTechModal(name, dept){
       <div class="stat-box"><div class="l">Revenue (${rangeLabel()})</div><div class="v">${fmtMoney(s.rev)}</div></div>
       <div class="stat-box"><div class="l">Labor Cost (${rangeLabel()})</div><div class="v">${fmtMoney(s.laborCost)}</div></div>
       <div class="stat-box"><div class="l">Revenue / Labor $</div><div class="v">${s.index!==null ? s.index.toFixed(2)+'x' : '—'}</div></div>
+      <div class="stat-box"><div class="l">Conversion Rate (${rangeLabel()})</div><div class="v">${s.conversionRate!==null ? s.conversionRate.toFixed(0)+'%' : '—'}</div></div>
+      <div class="stat-box"><div class="l">Calls (${rangeLabel()})</div><div class="v">${s.calls || 0}${s.calls ? ` <span style="font-size:12px;color:var(--text-mute);font-weight:600;">(${s.moneyCalls} sold)</span>` : ''}</div></div>
     </div>
     ${isApprentice(emp.name) ? `<div class="placeholder-note">${(state.roles.apprentices[emp.name]||{}).reason || 'Apprentice — little or no billable production is expected at this stage, so low revenue here isn\'t a data issue.'}</div>` :
       isInstallOnly(emp.name) ? `<div class="placeholder-note">${(state.roles.installOnly[emp.name]||{}).reason || 'Primarily install-side work — not directly comparable to route/service techs.'}</div>` :
