@@ -170,6 +170,7 @@
       <div id="deptNav"></div>
     </div>
     <div class="sidebar-foot">
+      <div id="dataThroughLine" style="font-weight:700;color:#fff;margin-bottom:6px;">&nbsp;</div>
       Pay/hire data is private to your access key.<br>Production data mirrors the main LPH dashboard.
       <div><button id="logoutBtn">Switch access key</button></div>
     </div>
@@ -313,6 +314,8 @@ function showApp(){
   document.getElementById('gateWrap').hidden = true;
   document.getElementById('app').hidden = false;
   document.getElementById('userLine').textContent = 'Signed in as ' + state.user.name;
+  const { max } = getGlobalDayRange();
+  document.getElementById('dataThroughLine').textContent = max ? ('Data through ' + max) : 'No production data found';
   buildDeptNav();
   render();
 }
@@ -901,7 +904,7 @@ function leaderboardTable(emps){
   let html = `<div class="panel" style="padding:0;overflow-x:auto;"><table>
     <thead><tr>
       <th>Prod. Rank</th><th>Technician</th><th>Dept</th><th>Pay Rank</th><th>Rate</th><th>Hired</th><th>Tenure</th>
-      <th>Revenue (range)</th><th>Rev / Labor $</th><th>Status</th>
+      <th>Conversion Rate</th><th>Revenue (range)</th><th>Rev / Labor $</th><th>Status</th>
     </tr></thead><tbody>`;
 
   rows.forEach(s => {
@@ -931,6 +934,7 @@ function leaderboardTable(emps){
       <td class="money">${fmtMoney2(emp.rate)}/hr</td>
       <td>${fmtDate(emp.hireDate)}</td>
       <td class="muted">${tenure(emp.hireDate)}</td>
+      <td>${s.conversionRate!==null ? s.conversionRate.toFixed(0)+'%' : '<span class="muted">—</span>'}</td>
       <td class="money">${fmtMoney(s.rev)}</td>
       <td>${s.index!==null ? s.index.toFixed(2)+'x' : '<span class="muted">—</span>'}</td>
       <td>${status}</td>
