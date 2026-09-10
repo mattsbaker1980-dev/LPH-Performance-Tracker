@@ -1,6 +1,13 @@
 {
-  "time": "2026-09-10T13:12:11.974Z",
-  "stage": "wrote_install",
-  "detail": "{\"before\":252,\"after\":252,\"updated\":21,\"added\":0}",
-  "run_context": "test-verify"
+  "time": "2026-09-10T13:12:13.298Z",
+  "stage": "done",
+  "detail": "Sync completed successfully",
+  "run_context": "test-verify",
+  "confirmed_max_date": "2026-09-09",
+  "confirmed_row_counts": {
+    "dd": 812,
+    "td": 4024,
+    "install": 252
+  },
+  "report_revenue_reconciled": true
 }
