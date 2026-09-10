@@ -1,6 +1,6 @@
 {
-  "time": "2026-09-10T12:39:10.270Z",
-  "stage": "email_found",
-  "detail": "Found Daily Job Report from noreply@onservicetitan.com received 2026-09-10T10:15:49Z",
+  "time": "2026-09-10T12:39:25.809Z",
+  "stage": "attachment_read_large_fallback",
+  "detail": "Attachment too large for direct read; saved to /root/.claude/projects/-home-claude/d005c766-2c76-55be-82bc-5ae45fe58f3d/tool-results/mcp-Microsoft_365-read_resource-1789043960495.txt, reading in chunks",
   "run_context": "watchdog"
 }
