@@ -1,13 +1,6 @@
 {
-  "time": "2026-09-09T11:23:00.986Z",
-  "run_context": "manual (agent ran sync directly after automated trigger stalled at started stage for 7+ minutes)",
-  "stage": "done",
-  "detail": "Automated 7am trigger (session cse_01D4jChposZNwvwR8ch3HFqp) stalled at stage=started with no further progress. Ran the sync manually instead: dd 803->807, td 3972->3999, install 240->245. Report covered 9/2-9/8, reconciled 190293.57==190293.57.",
-  "confirmed_max_date": "2026-09-08",
-  "confirmed_row_counts": {
-    "dd": 807,
-    "td": 3999,
-    "install": 245
-  },
-  "report_revenue_reconciled": 190293.57
+  "time": "2026-09-10T11:13:39.818Z",
+  "run_context": "scheduled",
+  "stage": "started",
+  "detail": "Beginning daily LPH sync run"
 }
