@@ -941,6 +941,9 @@ function leaderboardTable(emps){
     </tr>`;
   });
   html += `</tbody></table></div>`;
+  html += `<div class="muted" style="font-size:11.5px;margin-top:6px;padding:0 2px;">
+    <strong>Rev / Labor $</strong> = revenue generated per $1 of paid labor cost over the selected range (Revenue ÷ Labor Cost, where Labor Cost = hours paid × hourly rate). A value of "4.00x" means every $1 paid to that technician generated $4 in revenue. Higher is better.
+  </div>`;
   return html;
 }
 
