@@ -6,6 +6,7 @@
 <title>LPH Performance Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   :root{
     --navy:#082971;
@@ -278,7 +279,7 @@
 </div>
 
 <script>
-const DATA = {"td_fields":["dept","tech","date","src","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"td":[],"dd_fields":["dept","date","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"dd":[],"install_fields":["dept","tech","date","install_rev"],"install":[],"rideAlongs":[],"evaluations":[],"attendance":[],"teamRoster":[],"superAdmins":[{"name":"Matt Baker","password":"RavensR#1"}]};
+const DATA = {"td_fields":["dept","tech","date","src","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"td":[],"dd_fields":["dept","date","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"dd":[],"install_fields":["dept","tech","date","install_rev"],"install":[],"rideAlongs":[],"evaluations":[],"attendance":[],"teamRoster":[],"superAdmins":[{"name":"Matt Baker","password":"RavensR#1"}],"emailConfig":{}};
 const NAME_MAP = {"Electrical|tyson|k": "Tyson Kline", "Electrical|ryan|k": "Ryan Kurtz", "Electrical|brian|m": "Brian McNamara", "Electrical|cole|p": "Cole Portner", "Electrical|ryan|s": "Ryan Santiago", "Electrical|ryan|w": "Ryan Walten", "HVAC|garrick|b": "Garrick Budrow", "HVAC|robert|f": "Robert Fenton", "HVAC|andrew|g": "Andrew Gambler", "HVAC|shane|h": "Shane Hetrich", "HVAC|cesar|r": "Cesar Rodriguez", "HVAC|cayden|w": "Cayden Warner", "HVAC|uriah|w": "Uriah Warner", "HVAC|brian|w": "Brian Wasche", "HVAC|jeff|w": "Jeff Watson", "HVAC|eric|v": "Eric Vazquez", "HVAC|traevon|h": "Traevon Hinton", "HVAC|scott|h": "Scott Huber", "HVAC|brian|m": "Brian McGlynn", "Plumbing|layne|b": "Layne Beard", "Plumbing|derrick|b": "Derrick Bender", "Plumbing|chris|d": "Chris DeCicco", "Plumbing|john|d": "John Dwyer", "Plumbing|jason|g": "Jason Gantt", "Plumbing|nick|e": "Nick Elam", "Plumbing|tylor|h": "Tylor Hughes", "Plumbing|austin|j": "Austin Johnson", "Plumbing|mason|k": "Mason Kephart", "Plumbing|robert|r": "Robert Reynolds", "Plumbing|mike|d": "Mike DeCicco", "Plumbing|ethan|j": "Ethan Jones", "Plumbing|kevin|j": "Kevin Jones", "Plumbing|reese|g": "Reese Gassert", "Sewer|ethan|j": "Ethan Jones", "Sewer|mike|d": "Mike DeCicco", "Sewer|layne|b": "Layne Beard", "Sewer|derrick|b": "Derrick Bender", "Sewer|chris|d": "Chris DeCicco", "Sewer|john|d": "John Dwyer", "Sewer|jason|g": "Jason Gantt", "Sewer|nick|e": "Nick Elam", "Sewer|tylor|h": "Tylor Hughes", "Sewer|austin|j": "Austin Johnson", "Sewer|mason|k": "Mason Kephart", "Sewer|kevin|j": "Kevin Jones", "Sewer|robert|r": "Robert Reynolds", "Sewer|reese|g": "Reese Gassert", "Plumbing|bill|p": "William Price", "Sewer|bill|p": "William Price", "Plumbing|josh|r": "Joshua Rosario", "Sewer|josh|r": "Joshua Rosario"};
 
 const DEPT_COLOR = {Plumbing:'#2B4EE6', Sewer:'#1E9E5A', HVAC:'#F3770C', Electrical:'#8A4FE0'};
@@ -1029,7 +1030,8 @@ const KEY_MAP = {
   'lph-rat-evaluations': {file:'ridealong.json', field:'evaluations'},
   'lph-rat-attendance': {file:'ridealong.json', field:'attendance'},
   'lph-rat-teamroster': {file:'ridealong.json', field:'teamRoster'},
-  'lph-rat-superadmins': {file:'ridealong.json', field:'superAdmins'}
+  'lph-rat-superadmins': {file:'ridealong.json', field:'superAdmins'},
+  'lph-rat-emailconfig': {file:'ridealong.json', field:'emailConfig'}
 };
 
 let storageAvailable = true;
@@ -1097,6 +1099,7 @@ async function loadAllShared(){
       if(Array.isArray(ra.attendance)) DATA.attendance = ra.attendance;
       if(Array.isArray(ra.teamRoster)) DATA.teamRoster = ra.teamRoster;
       if(Array.isArray(ra.superAdmins) && ra.superAdmins.length) DATA.superAdmins = ra.superAdmins;
+      if(ra.emailConfig && typeof ra.emailConfig==='object') DATA.emailConfig = ra.emailConfig;
     }
     storageAvailable = true;
   }catch(e){
@@ -1104,6 +1107,7 @@ async function loadAllShared(){
   }
   if(!DATA.superAdmins || !DATA.superAdmins.length) DATA.superAdmins = [{name:'Matt Baker', password:'RavensR#1'}];
   DATA.teamRoster.forEach(r=>{ if(!r.title) r.title = KNOWN_TITLES[r.name] || DEPT_DEFAULT_TITLE[r.department] || ''; });
+  initEmailJs();
 }
 async function refreshShared(){
   const btn = document.getElementById('refreshBtn');
@@ -1551,6 +1555,7 @@ function wireAdminSubEvents(){
     if(v){ try{ localStorage.setItem('lph_gh_token', v); }catch(e){} renderAdminInto(); }
   };
   const clearTokenBtn = document.getElementById('clearTokenBtn'); if(clearTokenBtn) clearTokenBtn.onclick = ()=>{ try{ localStorage.removeItem('lph_gh_token'); }catch(e){} renderAdminInto(); };
+  const saveEmailCfgBtn = document.getElementById('saveEmailCfgBtn'); if(saveEmailCfgBtn) saveEmailCfgBtn.onclick = saveEmailConfig;
   document.querySelectorAll('.remove-sa').forEach(b=> b.onclick = ()=> removeSuperAdmin(parseInt(b.dataset.idx)));
   const addTeamBtn = document.getElementById('addTeamBtn'); if(addTeamBtn) addTeamBtn.onclick = addTeamMember;
   document.querySelectorAll('.edit-tech').forEach(b=> b.onclick = ()=>{ editingTechName = b.dataset.name; renderAdminInto(); });
@@ -1573,6 +1578,14 @@ function renderAccessManagement(){
       <button class="btn-primary" id="saveTokenBtn">Save Key</button>
       ${ghToken() ? '<button id="clearTokenBtn" style="margin-left:8px;border:1px solid var(--border);background:#fff;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;">Remove Key From This Device</button>' : ''}
     </div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Email Notifications</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">When a manager submits a Ride-Along Evaluation, the completed form is emailed to the technician automatically. This uses a free EmailJS account connected to an LPH inbox &mdash; paste the three IDs from your EmailJS dashboard here (Account &rarr; API Keys, and Email Templates). Saved for everyone, not just this device.</div>
+      <div class="row2"><div class="field2"><label>Service ID</label><input id="ej_service" type="text" value="${(DATA.emailConfig.serviceId||'').replace(/"/g,'&quot;')}" placeholder="service_xxxxxxx"></div>
+        <div class="field2"><label>Template ID</label><input id="ej_template" type="text" value="${(DATA.emailConfig.templateId||'').replace(/"/g,'&quot;')}" placeholder="template_xxxxxxx"></div></div>
+      <div class="field2" style="max-width:340px;"><label>Public Key</label><input id="ej_key" type="text" value="${(DATA.emailConfig.publicKey||'').replace(/"/g,'&quot;')}" placeholder="public key"></div>
+      <button class="btn-primary" id="saveEmailCfgBtn">Save Email Settings</button>
+      <span style="margin-left:10px;font-size:12px;color:${(DATA.emailConfig.serviceId&&DATA.emailConfig.templateId&&DATA.emailConfig.publicKey)?'#166534':'#991B1B'};font-weight:600;">${(DATA.emailConfig.serviceId&&DATA.emailConfig.templateId&&DATA.emailConfig.publicKey)?'Configured':'Not configured yet'}</span>
+    </div>
     <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Add a Super Admin</div>
       <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Every Super Admin gets full access to everything here.</div>
       <div class="row2"><div class="field2"><label>Name</label><input id="sa_name" type="text"></div><div class="field2"><label>Password</label><input id="sa_password" type="text"></div></div>
@@ -1594,21 +1607,118 @@ async function addSuperAdmin(){
   renderAdminInto();
 }
 async function removeSuperAdmin(i){ if(DATA.superAdmins.length<=1) return; DATA.superAdmins.splice(i,1); await saveShared('lph-rat-superadmins', DATA.superAdmins); renderAdminInto(); }
+
+// ---- Email notifications (EmailJS): fires the completed Ride-Along Evaluation to the
+// technician's inbox as soon as a manager hits Submit. Config (Service ID / Template ID /
+// Public Key) is entered once in Admin > Access and shared for everyone via ridealong.json. ----
+let emailjsInited = false;
+function initEmailJs(){
+  const cfg = DATA.emailConfig || {};
+  if(cfg.publicKey && typeof emailjs !== 'undefined' && !emailjsInited){
+    try{ emailjs.init({publicKey: cfg.publicKey}); emailjsInited = true; }catch(e){}
+  }
+}
+async function saveEmailConfig(){
+  const serviceId = document.getElementById('ej_service').value.trim();
+  const templateId = document.getElementById('ej_template').value.trim();
+  const publicKey = document.getElementById('ej_key').value.trim();
+  DATA.emailConfig = { serviceId, templateId, publicKey };
+  emailjsInited = false;
+  initEmailJs();
+  await saveShared('lph-rat-emailconfig', DATA.emailConfig);
+  renderAdminInto();
+}
+function evalItemsFlat(){
+  const out = [];
+  EVAL_TEMPLATE.forEach((step, si)=>{
+    if(step.items){
+      step.items.forEach((label, ii)=> out.push({stepName: step.step, group: null, label, path: `${si}.${ii}`}));
+    } else if(step.groups){
+      step.groups.forEach((g, gi)=>{
+        g.items.forEach((label, ii)=> out.push({stepName: step.step, group: g.name, label, path: `${si}.${gi}.${ii}`}));
+      });
+    }
+  });
+  return out;
+}
+function buildEvalEmailHtml(ev){
+  const rows = []; let lastStep = null, lastGroup = null;
+  evalItemsFlat().forEach(it=>{
+    if(it.stepName !== lastStep){
+      rows.push(`<tr><td colspan="2" style="padding:14px 0 4px;font-weight:800;color:#0f2a4a;border-bottom:2px solid #0f2a4a;">${it.stepName}</td></tr>`);
+      lastStep = it.stepName; lastGroup = null;
+    }
+    if(it.group && it.group !== lastGroup){
+      rows.push(`<tr><td colspan="2" style="padding:8px 0 2px 8px;font-weight:700;color:#555;">${it.group}</td></tr>`);
+      lastGroup = it.group;
+    }
+    const val = ev.scores[it.path];
+    rows.push(`<tr><td style="padding:4px 0 4px ${it.group?'16px':'8px'};font-size:13px;color:#222;">${it.label}</td><td style="padding:4px 0;text-align:right;font-weight:700;color:${val?'#0f2a4a':'#999'};width:60px;white-space:nowrap;">${val ? val+' / 5' : '&mdash;'}</td></tr>`);
+  });
+  const stepSummaryRows = EVAL_TEMPLATE.map((step,si)=>{
+    const s = evalStepScore(ev.scores, si);
+    return `<tr><td style="padding:3px 0;font-size:13px;">${step.step}</td><td style="padding:3px 0;text-align:right;font-weight:700;">${s? s.toFixed(1):'&mdash;'}</td></tr>`;
+  }).join('');
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">
+    <div style="background:#0f2a4a;color:#fff;padding:18px 20px;border-radius:8px 8px 0 0;">
+      <div style="font-size:18px;font-weight:800;">Ride-Along Evaluation</div>
+      <div style="font-size:13px;opacity:.85;margin-top:2px;">${ev.department} &middot; ${ev.date}</div>
+    </div>
+    <div style="border:1px solid #e3e6ea;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
+      <div style="font-size:15px;margin-bottom:4px;"><strong>${ev.tech}</strong></div>
+      <div style="font-size:12.5px;color:#666;margin-bottom:16px;">Evaluated by ${ev.manager||'&mdash;'}</div>
+      <div style="margin-bottom:18px;">
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;">Overall Score</div>
+        <div style="font-size:26px;font-weight:800;color:#0f2a4a;">${ev.overallScore!=null?ev.overallScore.toFixed(1):'&mdash;'} <span style="font-size:14px;font-weight:600;color:#888;">/ 5</span></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">
+        <tr><td colspan="2" style="padding:0 0 6px;font-weight:800;color:#0f2a4a;">Step Averages</td></tr>
+        ${stepSummaryRows}
+      </table>
+      <table style="width:100%;border-collapse:collapse;">${rows.join('')}</table>
+      ${ev.notes ? `<div style="margin-top:20px;padding:14px;background:#f6f7f9;border-radius:6px;"><div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:#0f2a4a;">Manager Notes</div><div style="font-size:13px;color:#333;white-space:pre-wrap;">${ev.notes.replace(/</g,'&lt;')}</div></div>` : ''}
+    </div>
+  </div>`;
+}
+async function sendEvaluationEmail(ev){
+  try{
+    const cfg = DATA.emailConfig || {};
+    if(!cfg.serviceId || !cfg.templateId || !cfg.publicKey) return {sent:false, reason:'not-configured'};
+    const roster = DATA.teamRoster.find(t=>t.name===ev.tech);
+    const toEmail = roster && roster.email;
+    if(!toEmail) return {sent:false, reason:'no-email'};
+    if(typeof emailjs === 'undefined' || !emailjs.send) return {sent:false, reason:'lib-missing'};
+    initEmailJs();
+    await emailjs.send(cfg.serviceId, cfg.templateId, {
+      to_email: toEmail,
+      to_name: ev.tech,
+      subject: `Your Ride-Along Evaluation — ${ev.date}`,
+      message_html: buildEvalEmailHtml(ev)
+    });
+    return {sent:true};
+  }catch(e){
+    console.error('Evaluation email failed to send:', e);
+    return {sent:false, reason:'error', error:e};
+  }
+}
 function renderTeamManagement(){
   let roster = [...DATA.teamRoster].sort((a,b)=> (b.active-a.active) || a.name.localeCompare(b.name));
   if(adminDeptFilter!=='All') roster = roster.filter(r=> r.department===adminDeptFilter);
   return `
     <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Add Employee</div>
       <div class="row2"><div class="field2"><label>Name</label><input id="team_name" type="text"></div><div class="field2"><label>Title</label><input id="team_title" type="text"></div></div>
-      <div class="field2"><label>Department</label><select id="team_dept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+      <div class="row2"><div class="field2"><label>Department</label><select id="team_dept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+        <div class="field2"><label>Email</label><input id="team_email" type="email" placeholder="name@lphservice.com"></div></div>
       <button class="btn-primary" id="addTeamBtn">Add Employee</button>
     </div>
     <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Team Roster${adminDeptFilter!=='All'?' &mdash; '+adminDeptFilter:''}</div>
       ${roster.length===0?`<div style="padding:20px;color:var(--text-mute);">No employees. Add one above.</div>`:`
-      <table><thead><tr><th>Name</th><th>Title</th><th>Department</th><th>Status</th><th colspan="2"></th></tr></thead><tbody>
+      <table><thead><tr><th>Name</th><th>Title</th><th>Department</th><th>Email</th><th>Status</th><th colspan="2"></th></tr></thead><tbody>
         ${roster.map(r=> r.name===editingTechName ? teamEditRow(r) : `<tr>
           <td><button class="tech-btn open-report" data-name="${r.name}">${avatar(r.name)} ${r.name}</button></td>
           <td>${r.title||'&mdash;'}</td><td>${r.department}</td>
+          <td>${r.email ? r.email : '<span class="muted" style="font-size:11.5px;">No email on file</span>'}</td>
           <td>${r.active?'<span class="badge2 badge2-ok">Active</span>':'<span class="badge2 badge2-err">Inactive</span>'}</td>
           <td><button class="edit-tech" data-name="${r.name}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Edit</button></td>
           <td><button class="toggle-active" data-name="${r.name}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">${r.active?'Deactivate':'Reactivate'}</button></td>
@@ -1620,6 +1730,7 @@ function teamEditRow(r){
   return `<tr><td>${avatar(r.name)} ${r.name}</td>
     <td><input id="edit_title" type="text" value="${(r.title||'').replace(/"/g,'&quot;')}" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;"></td>
     <td><select id="edit_dept" style="padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;">${DEPTS.map(d=>`<option ${r.department===d?'selected':''}>${d}</option>`).join('')}</select></td>
+    <td><input id="edit_email" type="email" value="${(r.email||'').replace(/"/g,'&quot;')}" placeholder="name@lphservice.com" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;"></td>
     <td>${r.active?'<span class="badge2 badge2-ok">Active</span>':'<span class="badge2 badge2-err">Inactive</span>'}</td>
     <td><button class="save-edit-tech" data-name="${r.name}" style="border:none;background:var(--navy);color:#fff;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;">Save</button></td>
     <td><button class="cancel-edit-tech" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;">Cancel</button></td></tr>`;
@@ -1628,14 +1739,16 @@ async function saveEditTech(name){
   const r = DATA.teamRoster.find(t=>t.name===name); if(!r) return;
   r.title = document.getElementById('edit_title').value.trim();
   r.department = document.getElementById('edit_dept').value;
+  r.email = document.getElementById('edit_email').value.trim();
   editingTechName = null;
   await saveShared('lph-rat-teamroster', DATA.teamRoster);
   renderAdminInto();
 }
 async function addTeamMember(){
   const name = document.getElementById('team_name').value.trim(), title = document.getElementById('team_title').value.trim(), department = document.getElementById('team_dept').value;
+  const email = document.getElementById('team_email').value.trim();
   if(!name || DATA.teamRoster.some(t=>t.name.toLowerCase()===name.toLowerCase())) return;
-  DATA.teamRoster.push({name, title, department, active:true});
+  DATA.teamRoster.push({name, title, department, email, active:true});
   await saveShared('lph-rat-teamroster', DATA.teamRoster);
   renderAdminInto();
 }
@@ -1696,9 +1809,21 @@ async function saveEvaluation(){
   const overall = evalOverallScore(evalDraft.scores);
   if(overall===null) return;
   const stepScores = EVAL_TEMPLATE.map((_,si)=>evalStepScore(evalDraft.scores,si));
-  DATA.evaluations.push({ id:'EV-'+Date.now(), tech:evalDraft.tech, date:evalDraft.date, department:evalDraft.department,
-    scores:{...evalDraft.scores}, overallScore:overall, stepScores, notes: evalDraft.notes||'' });
+  const evRecord = { id:'EV-'+Date.now(), tech:evalDraft.tech, date:evalDraft.date, department:evalDraft.department,
+    scores:{...evalDraft.scores}, overallScore:overall, stepScores, notes: evalDraft.notes||'', manager: currentAdminName||'' };
+  DATA.evaluations.push(evRecord);
   await saveShared('lph-rat-evaluations', DATA.evaluations);
+  sendEvaluationEmail(evRecord).then(r=>{
+    if(!r.sent){
+      const msg = r.reason==='no-email' ? `Evaluation saved. Email NOT sent — no email on file for ${evRecord.tech} (Admin → Team).`
+        : r.reason==='not-configured' ? 'Evaluation saved. Email NOT sent — email notifications aren’t set up yet (Admin → Access → Email Notifications).'
+        : r.reason==='lib-missing' ? 'Evaluation saved. Email NOT sent — email library failed to load (check your connection and try resubmitting).'
+        : 'Evaluation saved. Email NOT sent — something went wrong sending it.';
+      showSyncToast(msg, true);
+    } else {
+      showSyncToast(`Evaluation saved and emailed to ${evRecord.tech}.`, false);
+    }
+  });
   const wasStandalone = (currentView==='evaluate');
   evalDraft = null;
   if(wasStandalone) switchView('ridealongs'); else { adminSubtab='scorecards'; renderAdminInto(); }
