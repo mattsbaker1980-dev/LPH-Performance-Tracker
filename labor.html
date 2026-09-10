@@ -904,28 +904,13 @@ function leaderboardTable(emps){
   let html = `<div class="panel" style="padding:0;overflow-x:auto;"><table>
     <thead><tr>
       <th>Prod. Rank</th><th>Technician</th><th>Dept</th><th>Pay Rank</th><th>Rate</th><th>Hired</th><th>Tenure</th>
-      <th>Conversion Rate</th><th>Revenue (range)</th><th>Rev / Labor $</th><th>Status</th>
+      <th>Conversion Rate</th><th>Revenue (range)</th><th>Rev / Labor $</th>
     </tr></thead><tbody>`;
 
   rows.forEach(s => {
     const emp = s.emp;
     const pr = payRank[emp.name];
     const prod = prodRank[emp.name];
-    let status;
-    if(isApprentice(emp.name)){
-      status = `<span class="badge badge-blue">Apprentice</span>`;
-    } else if(isInstallOnly(emp.name)){
-      status = `<span class="badge badge-purple">Install Tech</span>`;
-    } else if(!emp.matchesProductionData || s.rev === 0){
-      status = `<span class="badge badge-gray">No production data</span>`;
-    } else if(!s.hasHours){
-      status = `<span class="badge badge-gray">No hours logged</span>`;
-    } else {
-      const diff = prod - pr;
-      if(diff <= 0) status = `<span class="badge badge-green">Meeting / exceeding</span>`;
-      else if(diff <= 2) status = `<span class="badge badge-amber">Slightly below</span>`;
-      else status = `<span class="badge badge-red">Underperforming</span>`;
-    }
     html += `<tr>
       <td>${prod ? `<span class="rank-pill ${prod===1?'top':''}">#${prod}</span>` : '<span class="muted">—</span>'}</td>
       <td class="tech-name" data-tech="${encodeURIComponent(emp.name)}" data-dept="${emp.department}">${emp.name}</td>
@@ -937,7 +922,6 @@ function leaderboardTable(emps){
       <td>${s.conversionRate!==null ? s.conversionRate.toFixed(0)+'%' : '<span class="muted">—</span>'}</td>
       <td class="money">${fmtMoney(s.rev)}</td>
       <td>${s.index!==null ? s.index.toFixed(2)+'x' : '<span class="muted">—</span>'}</td>
-      <td>${status}</td>
     </tr>`;
   });
   html += `</tbody></table></div>`;
