@@ -59,11 +59,26 @@ async function ghGet(p) {
   if (res.status === 404) return { json: null, sha: null };
   if (!res.ok) throw new Error(`GET ${p} failed: ${res.status} ${await res.text()}`);
   const body = await res.json();
-  const content = Buffer.from(body.content, 'base64').toString('utf8');
-  return { json: JSON.parse(content), sha: body.sha };
+  let text;
+  // GitHub's Contents API only embeds base64 "content" inline for files under ~1MB.
+  // Past that, "content" is empty/absent and the file must be fetched another way
+  // (this is what broke on 2026-09-10 once td.json's pretty-printed size crossed
+  // the threshold -- JSON.parse('') throws "Unexpected end of JSON input"). Handle
+  // both cases so this keeps working as the data files grow.
+  if (body.content) {
+    text = Buffer.from(body.content, 'base64').toString('utf8');
+  } else {
+    const rawRes = await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${p}?_cb=${Date.now()}`, { headers: { 'User-Agent': 'lph-sync' } });
+    if (!rawRes.ok) throw new Error(`GET ${p} fallback via raw.githubusercontent.com failed: ${rawRes.status}`);
+    text = await rawRes.text();
+  }
+  return { json: JSON.parse(text), sha: body.sha };
 }
 async function ghPut(p, obj, sha, message) {
-  const content = Buffer.from(JSON.stringify(obj, null, 2)).toString('base64');
+  // Compact (no pretty-printing) -- keeps file size down so it stays under the
+  // Contents API's ~1MB inline-content limit for as long as possible. See note
+  // in ghGet() above for what happens when a file crosses that limit anyway.
+  const content = Buffer.from(JSON.stringify(obj)).toString('base64');
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(API + encodeURIComponent(p).replace(/%2F/g, '/'), {
