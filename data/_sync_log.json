@@ -1,6 +1,6 @@
 {
-  "time": "2026-09-10T11:13:39.818Z",
-  "run_context": "scheduled",
+  "time": "2026-09-10T12:39:01.254Z",
   "stage": "started",
-  "detail": "Beginning daily LPH sync run"
+  "detail": "Watchdog: primary sync log found stuck at stage=started (never completed) as of today; running fallback sync",
+  "run_context": "watchdog"
 }
