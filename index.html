@@ -1557,6 +1557,7 @@ function wireAdminSubEvents(){
   const clearTokenBtn = document.getElementById('clearTokenBtn'); if(clearTokenBtn) clearTokenBtn.onclick = ()=>{ try{ localStorage.removeItem('lph_gh_token'); }catch(e){} renderAdminInto(); };
   const saveEmailCfgBtn = document.getElementById('saveEmailCfgBtn'); if(saveEmailCfgBtn) saveEmailCfgBtn.onclick = saveEmailConfig;
   document.querySelectorAll('.remove-sa').forEach(b=> b.onclick = ()=> removeSuperAdmin(parseInt(b.dataset.idx)));
+  document.querySelectorAll('.sa-email-input').forEach(inp=> inp.onchange = ()=> updateSuperAdminEmail(parseInt(inp.dataset.idx), inp.value));
   const addTeamBtn = document.getElementById('addTeamBtn'); if(addTeamBtn) addTeamBtn.onclick = addTeamMember;
   document.querySelectorAll('.edit-tech').forEach(b=> b.onclick = ()=>{ editingTechName = b.dataset.name; renderAdminInto(); });
   document.querySelectorAll('.cancel-edit-tech').forEach(b=> b.onclick = ()=>{ editingTechName = null; renderAdminInto(); });
@@ -1579,7 +1580,7 @@ function renderAccessManagement(){
       ${ghToken() ? '<button id="clearTokenBtn" style="margin-left:8px;border:1px solid var(--border);background:#fff;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;">Remove Key From This Device</button>' : ''}
     </div>
     <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Email Notifications</div>
-      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">When a manager submits a Ride-Along Evaluation, the completed form is emailed to the technician automatically. This uses a free EmailJS account connected to an LPH inbox &mdash; paste the three IDs from your EmailJS dashboard here (Account &rarr; API Keys, and Email Templates). Saved for everyone, not just this device.</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">When a manager submits a Ride-Along Evaluation, the completed form is emailed to the technician automatically. This uses a free EmailJS account connected to one LPH inbox &mdash; paste the three IDs from your EmailJS dashboard here (Account &rarr; API Keys, and Email Templates). Saved for everyone, not just this device. In your EmailJS template settings, set <strong>From Name</strong> to <code>{{from_name}}</code> and <strong>Reply To</strong> to <code>{{reply_to}}</code> so each evaluation shows as coming from whichever manager submitted it (add their email under Super Admins below).</div>
       <div class="row2"><div class="field2"><label>Service ID</label><input id="ej_service" type="text" value="${(DATA.emailConfig.serviceId||'').replace(/"/g,'&quot;')}" placeholder="service_xxxxxxx"></div>
         <div class="field2"><label>Template ID</label><input id="ej_template" type="text" value="${(DATA.emailConfig.templateId||'').replace(/"/g,'&quot;')}" placeholder="template_xxxxxxx"></div></div>
       <div class="field2" style="max-width:340px;"><label>Public Key</label><input id="ej_key" type="text" value="${(DATA.emailConfig.publicKey||'').replace(/"/g,'&quot;')}" placeholder="public key"></div>
@@ -1587,26 +1588,35 @@ function renderAccessManagement(){
       <span style="margin-left:10px;font-size:12px;color:${(DATA.emailConfig.serviceId&&DATA.emailConfig.templateId&&DATA.emailConfig.publicKey)?'#166534':'#991B1B'};font-weight:600;">${(DATA.emailConfig.serviceId&&DATA.emailConfig.templateId&&DATA.emailConfig.publicKey)?'Configured':'Not configured yet'}</span>
     </div>
     <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Add a Super Admin</div>
-      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Every Super Admin gets full access to everything here.</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Every Super Admin gets full access to everything here. Add their email so evaluations they submit are sent to the technician as coming from them.</div>
       <div class="row2"><div class="field2"><label>Name</label><input id="sa_name" type="text"></div><div class="field2"><label>Password</label><input id="sa_password" type="text"></div></div>
+      <div class="field2" style="max-width:340px;"><label>Email</label><input id="sa_email" type="email" placeholder="name@lphservice.com"></div>
       <button class="btn-primary" id="addSuperAdminBtn">Add Super Admin</button>
     </div>
     <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Super Admins</div>
-      <table><thead><tr><th>Name</th><th>Password</th><th></th></tr></thead><tbody>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Email here is used as the Reply-To when that person's evaluations get emailed to a technician &mdash; edits save automatically.</div>
+      <table><thead><tr><th>Name</th><th>Password</th><th>Email</th><th></th></tr></thead><tbody>
         ${DATA.superAdmins.map((a,i)=>`<tr><td>${a.name}${a.name===currentAdminName?' <span class="badge2 badge2-ok">You</span>':''}</td><td>${a.password}</td>
+          <td><input class="sa-email-input" data-idx="${i}" type="email" value="${(a.email||'').replace(/"/g,'&quot;')}" placeholder="name@lphservice.com" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;"></td>
           <td>${DATA.superAdmins.length>1?`<button class="remove-sa" data-idx="${i}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Remove</button>`:'<span style="font-size:11px;color:var(--text-mute);">Last admin</span>'}</td></tr>`).join('')}
       </tbody></table>
     </div>`;
 }
 async function addSuperAdmin(){
   const name = document.getElementById('sa_name').value.trim(), password = document.getElementById('sa_password').value.trim();
+  const email = document.getElementById('sa_email').value.trim();
   if(!name || !password) return;
   if(DATA.superAdmins.some(a=>a.password===password)) return;
-  DATA.superAdmins.push({name, password});
+  DATA.superAdmins.push({name, password, email});
   await saveShared('lph-rat-superadmins', DATA.superAdmins);
   renderAdminInto();
 }
 async function removeSuperAdmin(i){ if(DATA.superAdmins.length<=1) return; DATA.superAdmins.splice(i,1); await saveShared('lph-rat-superadmins', DATA.superAdmins); renderAdminInto(); }
+async function updateSuperAdminEmail(i, email){
+  if(!DATA.superAdmins[i]) return;
+  DATA.superAdmins[i].email = email.trim();
+  await saveShared('lph-rat-superadmins', DATA.superAdmins);
+}
 
 // ---- Email notifications (EmailJS): fires the completed Ride-Along Evaluation to the
 // technician's inbox as soon as a manager hits Submit. Config (Service ID / Template ID /
@@ -1690,9 +1700,13 @@ async function sendEvaluationEmail(ev){
     if(!toEmail) return {sent:false, reason:'no-email'};
     if(typeof emailjs === 'undefined' || !emailjs.send) return {sent:false, reason:'lib-missing'};
     initEmailJs();
+    const managerRec = DATA.superAdmins.find(a=>a.name===ev.manager);
+    const managerEmail = managerRec && managerRec.email || '';
     await emailjs.send(cfg.serviceId, cfg.templateId, {
       to_email: toEmail,
       to_name: ev.tech,
+      from_name: ev.manager || 'LPH Management',
+      reply_to: managerEmail,
       subject: `Your Ride-Along Evaluation — ${ev.date}`,
       message_html: buildEvalEmailHtml(ev)
     });
