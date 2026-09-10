@@ -1,6 +1,6 @@
 {
-  "time": "2026-09-10T13:38:36.246Z",
-  "stage": "reconciled_ok",
-  "detail": "captured=200040.57 excluded=200040.57 total=400081.14",
+  "time": "2026-09-10T13:38:38.436Z",
+  "stage": "wrote_dd",
+  "detail": "{\"before\":812,\"after\":812,\"updated\":19,\"added\":0}",
   "run_context": "scheduled"
 }
