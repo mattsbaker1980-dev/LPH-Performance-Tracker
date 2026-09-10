@@ -1,6 +1,6 @@
 {
-  "time": "2026-09-10T13:12:06.901Z",
-  "stage": "wrote_dd",
-  "detail": "{\"before\":812,\"after\":812,\"updated\":19,\"added\":0}",
+  "time": "2026-09-10T13:12:09.811Z",
+  "stage": "wrote_td",
+  "detail": "{\"before\":4024,\"after\":4024,\"updated\":94,\"added\":0}",
   "run_context": "test-verify"
 }
