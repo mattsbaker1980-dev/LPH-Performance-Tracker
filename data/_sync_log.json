@@ -1,6 +1,12 @@
 {
-  "time": "2026-09-10T12:39:25.809Z",
-  "stage": "attachment_read_large_fallback",
-  "detail": "Attachment too large for direct read; saved to /root/.claude/projects/-home-claude/d005c766-2c76-55be-82bc-5ae45fe58f3d/tool-results/mcp-Microsoft_365-read_resource-1789043960495.txt, reading in chunks",
-  "run_context": "watchdog"
+  "time": "2026-09-10T13:09:20.712Z",
+  "stage": "completed",
+  "detail": "Manual catch-up sync via agent session: processed ServiceTitan \"Daily Job Detail_Dated 09_03_26 - 09_09_26.xlsx\" attachment (from email received 2026-09-10T10:15:49Z). Both the primary and watchdog scheduled tasks were stuck in PENDING and never completed today or reflected 09-09 data; this run bypassed the stuck automation and synced directly.",
+  "run_context": "manual",
+  "confirmed_max_date": "2026-09-09",
+  "confirmed_row_counts": {
+    "dd": 812,
+    "td": 4024,
+    "install": 252
+  }
 }
