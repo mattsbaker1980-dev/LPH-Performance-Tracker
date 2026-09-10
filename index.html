@@ -1566,6 +1566,7 @@ function wireAdminSubEvents(){
   const atSave = document.getElementById('attendSaveBtn'); if(atSave) atSave.onclick = saveAttendance;
   document.querySelectorAll('.del-attend').forEach(b=> b.onclick = ()=> deleteAttendance(b.dataset.id));
   document.querySelectorAll('.del-eval').forEach(b=> b.onclick = ()=> deleteEvaluation(b.dataset.id));
+  document.querySelectorAll('.view-eval').forEach(b=> b.onclick = ()=> openEvalDetail(b.dataset.id));
   document.querySelectorAll('.attend-shift').forEach(b=> b.onclick = ()=> attendShift(parseInt(b.dataset.d)));
   document.querySelectorAll('.open-report').forEach(b=> b.onclick = ()=> openReportCard(b.dataset.name));
 }
@@ -1871,13 +1872,25 @@ function renderScorecards(){
     <div class="panel"><div class="panel-head"><div class="panel-title">Evaluation History &mdash; ${scorecardFilterYear}</div>
       <select id="scorecardTechFilter" style="max-width:220px;"><option value="">All technicians</option>${allTechs.map(t=>`<option ${scorecardFilterTech===t?'selected':''}>${t}</option>`).join('')}</select></div>
       ${evals.length===0?`<div style="padding:20px;color:var(--text-mute);">No evaluations to show.</div>`:`
-      <table><thead><tr><th>Date</th><th>Tech</th><th>Dept</th><th>Overall</th><th>Notes</th><th></th></tr></thead><tbody>
+      <table><thead><tr><th>Date</th><th>Tech</th><th>Dept</th><th>Overall</th><th>Notes</th><th colspan="2"></th></tr></thead><tbody>
         ${evals.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${e.tech}</td><td>${e.department}</td><td>${e.overallScore.toFixed(1)} / 5</td>
-          <td style="white-space:normal;max-width:220px;">${e.notes||''}</td><td><button class="del-eval" data-id="${e.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Delete</button></td></tr>`).join('')}
+          <td style="white-space:normal;max-width:220px;">${e.notes||''}</td>
+          <td><button class="view-eval" data-id="${e.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">View</button></td>
+          <td><button class="del-eval" data-id="${e.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Delete</button></td></tr>`).join('')}
       </tbody></table>`}
     </div>`;
 }
 async function deleteEvaluation(id){ DATA.evaluations = DATA.evaluations.filter(e=>e.id!==id); await saveShared('lph-rat-evaluations', DATA.evaluations); renderAdminInto(); }
+function openEvalDetail(id){
+  const e = DATA.evaluations.find(x=>x.id===id); if(!e) return;
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal-card" style="max-width:640px;">
+        <div class="modal-head">${avatar(e.tech,'lg')}<div><div class="name">${e.tech}</div><div class="title">${fmtDate(e.date)} &middot; ${e.department}${e.manager?' &middot; Evaluated by '+e.manager:''}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-body">${buildEvalEmailHtml(e)}</div>
+      </div>
+    </div>`;
+}
 function renderAttendance(){
   let allTechs = activeTechs();
   if(adminDeptFilter!=='All') allTechs = allTechs.filter(t=> techDept(t)===adminDeptFilter);
