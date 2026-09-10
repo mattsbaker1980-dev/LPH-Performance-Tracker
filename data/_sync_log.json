@@ -1,6 +1,1 @@
-{
-  "time": "2026-09-10T13:38:39.458Z",
-  "stage": "failed",
-  "detail": "Merge/push error: Unexpected end of JSON input",
-  "run_context": "scheduled"
-}
+{"time":"2026-09-10T13:43:44.885Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/13f01729-7411-5d96-8db7-65fc4fb44245/tool-results/mcp-Microsoft_365-read_resource-1789045679740.txt","run_context":"manual-repair"}
