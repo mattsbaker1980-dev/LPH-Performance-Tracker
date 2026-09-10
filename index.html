@@ -1505,7 +1505,7 @@ function cancelRideAlong(id){ deleteRideAlong(id); }
 function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
 
 /* ---- Admin ---- */
-function initEvalDraft(){ evalDraft = { tech:'', date: LATEST_DATE, department:'Plumbing', scores:{}, notes:'' }; }
+function initEvalDraft(){ evalDraft = { tech:'', date: LATEST_DATE, department:'Plumbing', scores:{}, notes:'', manager: currentAdminName || (DATA.superAdmins[0] && DATA.superAdmins[0].name) || '' }; }
 function goToEvaluation(tech){ initEvalDraft(); evalDraft.tech = tech; evalDraft.department = techDept(tech) || 'Plumbing'; switchView('evaluate'); }
 function backFromEvaluation(){ evalDraft = null; switchView('ridealongs'); }
 function checkAdminPassword(){
@@ -1776,7 +1776,10 @@ function renderEvalForm(standalone){
         <div class="field2"><label>Technician</label><select id="eval_tech">${activeTechs().map(t=>`<option ${evalDraft.tech===t?'selected':''}>${t}</option>`).join('')}</select></div>
         <div class="field2"><label>Date</label><input id="eval_date" type="date" value="${evalDraft.date}"></div>
       </div>
-      <div class="field2"><label>Department</label><select id="eval_dept">${DEPTS.map(d=>`<option ${evalDraft.department===d?'selected':''}>${d}</option>`).join('')}</select></div>
+      <div class="row2">
+        <div class="field2"><label>Department</label><select id="eval_dept">${DEPTS.map(d=>`<option ${evalDraft.department===d?'selected':''}>${d}</option>`).join('')}</select></div>
+        <div class="field2"><label>Evaluator (this is who the emailed evaluation appears to come from)</label><select id="eval_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}" ${evalDraft.manager===a.name?'selected':''}>${a.name}</option>`).join('')}</select></div>
+      </div>
       ${EVAL_TEMPLATE.map((step,si)=>renderEvalStep(step,si)).join('')}
       <div class="field2"><label>Notes</label><textarea id="eval_notes" placeholder="Additional coaching notes..."></textarea></div>
       <div style="display:flex;align-items:center;gap:16px;margin-top:6px;">
@@ -1819,12 +1822,13 @@ async function saveEvaluation(){
   evalDraft.tech = document.getElementById('eval_tech').value;
   evalDraft.date = document.getElementById('eval_date').value;
   evalDraft.department = document.getElementById('eval_dept').value;
+  evalDraft.manager = document.getElementById('eval_manager').value;
   evalDraft.notes = document.getElementById('eval_notes').value.trim();
   const overall = evalOverallScore(evalDraft.scores);
   if(overall===null) return;
   const stepScores = EVAL_TEMPLATE.map((_,si)=>evalStepScore(evalDraft.scores,si));
   const evRecord = { id:'EV-'+Date.now(), tech:evalDraft.tech, date:evalDraft.date, department:evalDraft.department,
-    scores:{...evalDraft.scores}, overallScore:overall, stepScores, notes: evalDraft.notes||'', manager: currentAdminName||'' };
+    scores:{...evalDraft.scores}, overallScore:overall, stepScores, notes: evalDraft.notes||'', manager: evalDraft.manager||'' };
   DATA.evaluations.push(evRecord);
   await saveShared('lph-rat-evaluations', DATA.evaluations);
   sendEvaluationEmail(evRecord).then(r=>{
