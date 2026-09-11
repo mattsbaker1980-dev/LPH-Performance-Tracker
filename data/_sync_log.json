@@ -1,13 +1,1 @@
-{
-  "time": "2026-09-10T16:54:17.678Z",
-  "stage": "done",
-  "detail": "One-time corrective rebuild: replaced dd.json/td.json/install.json entirely using an authoritative full-YTD ServiceTitan Job Detail export (Jan 2 - Sep 9) provided directly by the user, after discovering the prior historical data (predating the Aug 18 daily-email automation) was missing roughly $2.3M of Install-category revenue. New totals reconcile exactly to ServiceTitan's own Completed Revenue KPI for the same range ($9,550,058.48). Going forward the normal daily sync/daily_sync.js continues to upsert on top of this corrected baseline.",
-  "run_context": "manual-correction",
-  "confirmed_max_date": "2026-09-09",
-  "confirmed_row_counts": {
-    "dd": 786,
-    "td": 3927,
-    "install": 931
-  },
-  "report_revenue_reconciled": true
-}
+{"time":"2026-09-11T11:30:40.931Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/13f01729-7411-5d96-8db7-65fc4fb44245/tool-results/mcp-Microsoft_365-read_resource-1789126205285.txt","run_context":"diagnostic"}
