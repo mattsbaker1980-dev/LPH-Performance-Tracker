@@ -1,1 +1,972 @@
-{"rideAlongs":[{"id":"RA-1786718760028","date":"2026-08-17","tech":"Ian Worley","department":"Electrical","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1786719474776","date":"2026-08-18","tech":"Mason Kephart","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1786727520928","date":"2026-08-19","tech":"Robert Reynolds","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1786728368601","date":"2026-08-21","tech":"Nick Elam","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1786730308780","date":"2026-08-18","tech":"Brian McNamara","department":"Electrical","manager":"Ian Worely","focus":"Customer Service","rating":"Pending","followup":"No","notes":""},{"id":"RA-1786730383389","date":"2026-08-17","tech":"Matt Baker","department":"Electrical","manager":"Ian Worely","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787236716785","date":"2026-08-24","tech":"Tylor Hughes","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787237144434","date":"2026-08-25","tech":"Derrick Bender","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787237283104","date":"2026-08-26","tech":"Ethan Jones","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787237449397","date":"2026-08-28","tech":"Layne Beard","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787575637305","date":"2026-08-21","tech":"Brian McGlynn","department":"Electrical","manager":"Ian Worely","focus":"Customer Service","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787575665839","date":"2026-08-24","tech":"Brian McNamara","department":"Electrical","manager":"Ian Worely","focus":"Upselling / SPP","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787575758501","date":"2026-08-19","tech":"Ryan Kurtz","department":"Electrical","manager":"Ian Worely","focus":"Upselling / SPP","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787575789748","date":"2026-08-25","tech":"Scott Huber","department":"HVAC","manager":"Ian Worely","focus":"Process / Paperwork","rating":"Pending","followup":"No","notes":""},{"id":"RA-1787575824477","date":"2026-08-26","tech":"Brian Wasche","department":"HVAC","manager":"Ian Worely","focus":"Upselling / SPP","rating":"Pending","followup":"No","notes":""},{"id":"RA-1788546822183","date":"2026-09-01","tech":"Tylor Hughes","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Excellent","followup":"No","notes":""},{"id":"RA-1788546846550","date":"2026-09-02","tech":"Mason Kephart","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Excellent","followup":"No","notes":""},{"id":"RA-1788547301928","date":"2026-09-08","tech":"Robert Reynolds","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1788547555320","date":"2026-09-09","tech":"Mason Kephart","department":"Plumbing","manager":"Matt Baker","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-MIGRATED-1","date":"2026-08-28","tech":"Shane Hetrich","department":"HVAC","manager":"Ian Worely","focus":"Process / Paperwork","rating":"Pending","followup":"No","notes":""},{"id":"RA-MIGRATED-2","date":"2026-08-31","tech":"Brian McNamara","department":"Electrical","manager":"Ian Worely","focus":"Upselling / SPP","rating":"Pending","followup":"No","notes":""},{"id":"RA-MIGRATED-3","date":"2026-09-01","tech":"Cole Portner","department":"Electrical","manager":"Ian Worely","focus":"Customer Service","rating":"Pending","followup":"No","notes":""},{"id":"RA-MIGRATED-4","date":"2026-09-02","tech":"Cesar Rodriguez","department":"HVAC","manager":"Ian Worely","focus":"Customer Service","rating":"Pending","followup":"No","notes":""},{"id":"RA-MIGRATED-5","date":"2026-09-04","tech":"Ryan Walten","department":"Electrical","manager":"Ian Worely","focus":"Process / Paperwork","rating":"Pending","followup":"No","notes":""},{"id":"RA-1788955270255","date":"2026-09-08","tech":"Shane Hetrich","department":"HVAC","manager":"Ian Worely","focus":"Customer Service","rating":"Pending","followup":"No","notes":""},{"id":"RA-1788955595331","date":"2026-09-11","tech":"Brian McGlynn","department":"HVAC","manager":"Ian Worely","focus":"Sales Technique","rating":"Pending","followup":"No","notes":""},{"id":"RA-1788955971629","date":"2026-09-14","tech":"Jeff Watson","department":"HVAC","manager":"Ian Worely","focus":"Sales Technique","rating":"Pending","followup":"No","notes":""},{"id":"RA-1788956028153","date":"2026-09-15","tech":"Garrick Budrow","department":"HVAC","manager":"Ian Worely","focus":"Other","rating":"Pending","followup":"No","notes":""},{"id":"RA-1788962086599","date":"2026-09-09","tech":"Jeff Watson","department":"HVAC","manager":"Ian Worely","focus":"Sales Technique","rating":"Pending","followup":"No","notes":""},{"id":"RA-1789132667167","date":"2026-09-11","tech":"Layne Beard","department":"Plumbing","manager":"Matt Baker","focus":"Sales Technique","rating":"Pending","followup":"No","notes":""}],"evaluations":[{"id":"EV-1787157366925","tech":"Mason Kephart","date":"2026-08-17","department":"Plumbing","scores":{"0.0":3,"0.1":4,"0.2":5,"1.0.0":3,"1.0.1":4,"1.0.2":5,"1.0.3":4,"1.0.4":4,"1.1.0":3,"1.1.1":3,"1.1.2":2,"1.2.0":4,"1.2.1":3,"2.0":4,"2.1":4,"2.2":3,"2.3":4,"2.4":4,"2.5":4,"2.6":3,"3.0":4,"3.1":3,"3.2":3,"3.3":4,"3.4":3,"3.5":2,"3.6":3,"3.7":3,"4.0":4,"4.1":4,"4.2":3,"4.3":3,"4.4":2,"4.5":4,"4.6":2,"4.7":4,"5.0":4,"5.1":4},"overallScore":3.473684210526316,"stepScores":[4,3.5,3.7142857142857144,3.125,3.25,4],"notes":"Masons energy is contagious and genuine.  He needs to maintain that through presentation.  There were a few things that stood out regarding technique.  1.  During presentation, an option was presented for a water softener as “we are at $5,000 but we’re not the cheapest”.  Basically talked himself out of a sale right there or at least invited her to shop around with that phrasing.  2.  Forgot to have customer sign the form stating that we had been there, and offerered a 5 star experience.  I want to make sure that we are deliberate in our core principles.  3.  Misdiagnosed leak in basement and was prepared to have a new water line ran out to Lampeter.  The problem was a valve at the refrigerator causing a leak which I diagnosed.  Slow down and look at the entire problem from beginning of the chain on down to the problem.  Overall, great guy and I have high hopes for him."},{"id":"EV-1787576153660","tech":"Ryan Kurtz","date":"2026-08-17","department":"Electrical","scores":{"0.0":1,"0.1":5,"0.2":5,"1.0.0":1,"1.0.1":5,"1.0.2":5,"1.0.3":5,"1.0.4":5,"1.1.0":3,"1.1.1":1,"1.1.2":1,"1.2.0":1,"1.2.1":1,"2.0":5,"2.1":3,"2.2":2,"2.3":1,"2.4":1,"2.5":5,"2.6":3,"3.0":5,"3.1":1,"3.2":1,"3.3":5,"3.4":3,"3.5":1,"3.6":5,"3.7":5,"4.0":5,"4.1":5,"4.2":1,"4.3":1,"4.4":5,"4.5":5,"4.6":1,"4.7":5,"5.0":5,"5.1":5},"overallScore":3.236842105263158,"stepScores":[3.6666666666666665,2.8,2.857142857142857,3.25,3.5,5],"notes":"agenda card needs used, no clear agenda was set. ask better opened ended questions, stop throwing solutions out right away ask more questions."},{"id":"EV-1787599765517","tech":"Brian McNamara","date":"2026-08-17","department":"Electrical","scores":{"0.0":1,"0.1":2,"0.2":3,"1.0.0":1,"1.0.1":5,"1.0.2":5,"1.0.3":5,"1.0.4":4,"1.1.0":3,"1.1.1":3,"1.1.2":1,"1.2.0":1,"1.2.1":1,"2.0":5,"2.1":2,"2.2":2,"2.3":1,"2.4":1,"2.5":5,"2.6":1,"3.0":3,"3.1":1,"3.2":1,"3.3":3,"3.4":1,"3.5":1,"3.6":5,"3.7":1,"4.0":1,"4.1":1,"4.2":5,"4.3":1,"4.4":1,"4.5":5,"4.6":5,"4.7":1,"5.0":5,"5.1":5},"overallScore":2.5789473684210527,"stepScores":[2,2.9,2.4285714285714284,2,2.5,5],"notes":""},{"id":"EV-MIGRATED-1","tech":"Cole Portner","date":"2026-08-17","department":"Electrical","scores":{},"overallScore":4.1,"stepScores":[],"notes":""},{"id":"EV-MIGRATED-2","tech":"Brian Wasche","date":"2026-08-17","department":"HVAC","scores":{},"overallScore":3.1,"stepScores":[],"notes":""},{"id":"EV-1788975296397","tech":"Jeff Watson","date":"2026-09-08","department":"HVAC","scores":{"0.0":1,"0.1":5,"0.2":5,"1.0.0":5,"1.0.1":5,"1.0.2":5,"1.0.3":1,"1.0.4":1,"1.1.0":1,"1.1.1":1,"1.1.2":1,"1.2.0":1,"1.2.1":1,"2.0":5,"2.1":1,"2.2":5,"2.3":1,"2.4":1,"2.5":5,"2.6":1,"3.0":1,"3.1":2,"3.2":1,"3.3":1,"3.4":5,"3.5":5,"3.6":3,"3.7":5,"4.0":5,"4.1":5,"4.2":5,"4.3":5,"4.4":5,"4.5":5,"4.6":5,"4.7":5,"5.0":5,"5.1":5},"overallScore":3.289473684210526,"stepScores":[3.6666666666666665,2.2,2.7142857142857144,2.875,5,5],"notes":"HVAC Estimate Ride-Along – Jeff\nDate: 9/9/26\n\nJeff and I ran HVAC estimates together today. Jeff has shown improvement in his evaluation process and is doing a better job looking at the full scope of the system rather than focusing only on the immediate issue.\n\nOne area I noticed today that we need to continue working on is the Explore step. Jeff does not currently explain in enough detail what the scope of work is going to look like during the Explore. Instead, he waits until the Present step to explain what will be done.\n\nThe Present step should be focused on the investment, not introducing the scope of work for the first time. When we thoroughly explain the scope of work during the Explore, we build value and create a clear understanding of what the customer is actually investing in. This leads to a stronger Present because the customer already understands the solution, the work involved, and the value behind it. This allows us to focus the Present on the investment and confidently ask for the sale.\n\nAnother area that needs improvement is completing the install video. The install video is an important part of our process. It shows the customer that we care about their project and want to keep them informed throughout the process. It also demonstrates the level of communication and customer experience that we provide at LPH—something that separates us from our competitors.\n\nFocus Areas for Jeff:\n\nContinue improving the full-system evaluation.\nDuring the Explore, thoroughly explain the scope of work and what the installation will look like.\nUse the Present step to focus on the investment and asking for the sale, rather than introducing the scope of work.\nComplete the install video on every applicable job.\nContinue building value through communication and setting clear expectations with the customer.\n\nOverall: Jeff is improving in his evaluation process. The next step is to create a stronger connection between the Explore and Present by thoroughly educating the customer during the Explore. This will create a more powerful Present and give Jeff a better opportunity to confidently ask for the sale."},{"id":"EV-1788976712848","tech":"Shane Hetrich","date":"2026-09-08","department":"HVAC","scores":{"0.0":1,"0.1":5,"0.2":5,"1.0.0":1,"1.0.1":5,"1.0.2":5,"1.0.3":5,"1.0.4":5,"1.1.0":5,"1.1.1":1,"1.1.2":1,"1.2.1":5,"1.2.0":5,"2.0":5,"2.1":1,"2.2":3,"2.3":1,"2.4":1,"2.5":1,"2.6":2,"3.0":3,"3.1":1,"3.2":1,"3.3":1,"3.4":5,"3.5":5,"3.6":5,"3.7":5,"4.0":5,"4.1":5,"4.2":5,"4.3":1,"4.4":5,"4.5":1,"4.6":1,"4.7":5,"5.0":5,"5.1":5},"overallScore":3.3421052631578947,"stepScores":[3.6666666666666665,3.8,2,3.25,3.5,5],"notes":"System Check Ride-Along – Shane\nDate: 9/8/26\n\nShane and I ran three system checks together today.\n\nDuring a previous ride-along, Shane and I discussed the importance of keeping the cab of his truck clean and organized. Staying organized can help reduce stress and make it easier to stay prepared throughout the day. The van could still use some additional cleaning and organization, so this is something Shane should continue to work on.\n\nDuring today's ride-along, we also discussed asking stronger lifestyle questions, specifically when discussing thermostats and IAQ products. These questions help us understand how the customer uses their home, what is important to them, and what concerns they may have with their comfort or indoor air quality.\n\nThe biggest opportunity for Shane continues to be asking enough questions during the call. Shane is still not asking enough questions to fully understand the customer's needs and wants. We need to focus on slowing down during the Explore, asking more open-ended lifestyle questions, and allowing the customer to explain what is important to them.\n\nFocus Areas for Shane:\n\n1 Continue cleaning and organizing the van.\n2 Use organization to help reduce stress and stay prepared.\n3 Ask more lifestyle questions throughout the system check.\n4 Specifically explore customer needs around thermostats and IAQ.\n5 Slow down and ask more questions before moving toward solutions.\n6 Use the customer's answers to create better options and recommendations.\n\nOverall: Shane continues to have an opportunity to improve his Explore. The goal is to ask better questions, not simply more questions. The more we understand the customer's lifestyle, concerns, and wants, the better we can present solutions that are meaningful to them."},{"id":"EV-1789140251243","tech":"Layne Beard","date":"2026-09-10","department":"Plumbing","scores":{"0.0":5,"0.1":5,"0.2":4,"1.0.0":5,"1.0.2":5,"1.0.4":4,"1.1.0":5,"1.1.2":5,"2.0":5,"2.1":5,"2.2":5,"2.5":4,"1.0.1":4,"2.3":5,"2.4":5,"2.6":5,"3.0":4,"3.1":4,"3.2":4,"3.3":5,"3.4":3,"3.5":3,"3.6":5,"3.7":3,"4.0":3,"4.1":3,"4.2":3,"4.3":3,"4.4":3,"4.5":5,"4.6":2,"4.7":4,"5.0":5,"1.0.3":4,"1.1.1":3,"1.2.1":5,"1.2.0":5,"5.1":5},"overallScore":4.2105263157894735,"stepScores":[4.666666666666667,4.5,4.857142857142857,3.875,3.25,5],"notes":"Layne and I were in the cleanest most organized house (with a great cat!).  Customer has had substantial work completed by LPH and Layne was unable to find any immediate concerns at this time.  Customer asked for a quote for a deeper sink and was provided estimates, but made his intention clear that he was going to purchase the sink himself.  I was unable to give Layne exemplary marks for these scenarios as there was no work needed for today.  In these instances , Layne received the grade of “3” which is the equivalent of average.  Layne was personable, fair, and thorough in his inspection, and I appreciate his method of actually using his tablet as a tool during inspection to ensure everything has been checked in accordance with LPH’s standards.  Good job Layne!"}],"attendance":[],"teamRoster":[{"name":"Andrew Gambler","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"andrew@lphservice.com"},{"name":"Bill Price","department":"Sewer","title":"Sewer Install Technician","active":true,"email":"Bill@lphservice.com"},{"name":"Brian McGlynn","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"brianmc@lphservice.com"},{"name":"Brian McNamara","title":"Electrical Service Technician","department":"Electrical","active":true,"email":"brianm@lphservice.com"},{"name":"Brian Wasche","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"brianw@lphservice.com"},{"name":"Cayden Montgomery","department":"Sewer","title":"Sewer Install Technician","active":true},{"name":"Cayden Warner","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"caydenw@lphservice.com"},{"name":"Cesar Rodriguez","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"cesarr@lphservice.com"},{"name":"Cesar Rodriquez","title":"HVAC Technician","department":"HVAC","active":true,"email":"cesarr@lphservice.com"},{"name":"Chris DeCicco","title":"Plumbing Technician","department":"Plumbing","active":false},{"name":"Cole Portner","title":"Electrical Service Technician","department":"Electrical","active":true,"email":"cportner@lphservice.com"},{"name":"Derrick Bender","title":"Plumbing Service Technician","department":"Plumbing","active":true,"email":"dbender@lphservice.com"},{"name":"Eric Vazquez","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"evazquez@lphservice.com"},{"name":"Ethan Jones","title":"Plumbing Technician","department":"Plumbing","active":true,"email":"ethanj@lphservice.com"},{"name":"Garrick Budrow","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"gbudrow@lphservice.com"},{"name":"John Dwyer","title":"Plumbing Service Technician","department":"Plumbing","active":true},{"name":"Josh Rosario","department":"Sewer","title":"Sewer Install Technician","active":true,"email":"jrosario@lphservice.com"},{"name":"Kevin Jones","title":"Plumbing Service Technician","department":"Plumbing","active":true,"email":"kevin@lphservice.com"},{"name":"Layne Beard","title":"Plumbing Service Technician","department":"Plumbing","active":true,"email":"Lbeard@lphservice.com"},{"name":"Mason Kephart","title":"Plumbing Service Technician","department":"Plumbing","active":true,"email":"mkephart@lphservice.com"},{"name":"Mike DeCicco","title":"Sewer Install Technician","department":"Sewer","active":true,"email":"mdecicco@lphservice.com"},{"name":"Nick Elam","title":"Plumbing Service Technician","department":"Plumbing","active":true,"email":"nicke@lphservice.com"},{"name":"Reese Gassert","title":"Sewer Install Technician","department":"Plumbing","active":true,"email":"reeseg@lphservice.com"},{"name":"Robert Fenton","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"robertf@lphservice.com"},{"name":"Robert Reynolds","title":"Plumbing Service Technician","department":"Plumbing","active":true,"email":"rreynolds@lphservice.com"},{"name":"Ryan Kurtz","title":"Electrical Service Technician","department":"Electrical","active":true,"email":"rkurtz@lphservice.com"},{"name":"Ryan Santiago","title":"Electrical Service Technician","department":"Electrical","active":true,"email":"Ryans@lphservice.com"},{"name":"Ryan Walten","title":"Electrical Service Technician","department":"Electrical","active":true,"email":"ryanw@lphservice.com"},{"name":"Scott Huber","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"scotth@lphservice.com"},{"name":"Shane Hetrich","title":"HVAC Service Technician","department":"HVAC","active":true,"email":"Shane@lphservice.com"},{"name":"Tylor Hughes","title":"Plumbing Service Technician","department":"Plumbing","active":true,"email":"thughes@lphservice.com"},{"name":"Tyson Kline","title":"Electrical Service Technician","department":"Electrical","active":false},{"name":"Uriah Warner","title":"HVAC Service Technician","department":"HVAC","active":true},{"name":"Ian Worley","title":"Electrical Service Manager","department":"Electrical","active":true,"email":"ianw@lphservice.com"},{"name":"Matt Baker","title":"Plumbing Service Manager","department":"Plumbing","active":true,"email":"mattb@lphservice.com"},{"name":"Drew Horvath","title":"HVAC Sales","department":"HVAC","active":true,"email":"andrewh@lphservice.com"},{"name":"Jeff Watson","title":"HVAC Sales","department":"HVAC","active":true,"email":"jeff@lphservice.com"}],"superAdmins":[{"name":"Matt Baker","password":"RavensR#1","email":"mattb@LPHservice.com"},{"name":"Larry Gassert","password":"lph-admin","email":"larry@lphservice.com"},{"name":"Ian Worely","password":"Techs717","email":"ianw@lphservice.com"}],"emailConfig":{"serviceId":"service_nk2guu8","templateId":"template_am4vwlj","publicKey":"fcIpDX_8Unv7wXG-P"}}
+{
+  "rideAlongs": [
+    {
+      "id": "RA-1786718760028",
+      "date": "2026-08-17",
+      "tech": "Ian Worley",
+      "department": "Electrical",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1786719474776",
+      "date": "2026-08-18",
+      "tech": "Mason Kephart",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1786727520928",
+      "date": "2026-08-19",
+      "tech": "Robert Reynolds",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1786728368601",
+      "date": "2026-08-21",
+      "tech": "Nick Elam",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1786730308780",
+      "date": "2026-08-18",
+      "tech": "Brian McNamara",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Customer Service",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1786730383389",
+      "date": "2026-08-17",
+      "tech": "Matt Baker",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787236716785",
+      "date": "2026-08-24",
+      "tech": "Tylor Hughes",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787237144434",
+      "date": "2026-08-25",
+      "tech": "Derrick Bender",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787237283104",
+      "date": "2026-08-26",
+      "tech": "Ethan Jones",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787237449397",
+      "date": "2026-08-28",
+      "tech": "Layne Beard",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787575637305",
+      "date": "2026-08-21",
+      "tech": "Brian McGlynn",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Customer Service",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787575665839",
+      "date": "2026-08-24",
+      "tech": "Brian McNamara",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Upselling / SPP",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787575758501",
+      "date": "2026-08-19",
+      "tech": "Ryan Kurtz",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Upselling / SPP",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787575789748",
+      "date": "2026-08-25",
+      "tech": "Scott Huber",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Process / Paperwork",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1787575824477",
+      "date": "2026-08-26",
+      "tech": "Brian Wasche",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Upselling / SPP",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788546822183",
+      "date": "2026-09-01",
+      "tech": "Tylor Hughes",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Excellent",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788546846550",
+      "date": "2026-09-02",
+      "tech": "Mason Kephart",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Excellent",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788547301928",
+      "date": "2026-09-08",
+      "tech": "Robert Reynolds",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788547555320",
+      "date": "2026-09-09",
+      "tech": "Mason Kephart",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-MIGRATED-1",
+      "date": "2026-08-28",
+      "tech": "Shane Hetrich",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Process / Paperwork",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-MIGRATED-2",
+      "date": "2026-08-31",
+      "tech": "Brian McNamara",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Upselling / SPP",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-MIGRATED-3",
+      "date": "2026-09-01",
+      "tech": "Cole Portner",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Customer Service",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-MIGRATED-4",
+      "date": "2026-09-02",
+      "tech": "Cesar Rodriguez",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Customer Service",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-MIGRATED-5",
+      "date": "2026-09-04",
+      "tech": "Ryan Walten",
+      "department": "Electrical",
+      "manager": "Ian Worely",
+      "focus": "Process / Paperwork",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788955270255",
+      "date": "2026-09-08",
+      "tech": "Shane Hetrich",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Customer Service",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788955595331",
+      "date": "2026-09-11",
+      "tech": "Brian McGlynn",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Sales Technique",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788955971629",
+      "date": "2026-09-14",
+      "tech": "Jeff Watson",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Sales Technique",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788956028153",
+      "date": "2026-09-15",
+      "tech": "Garrick Budrow",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Other",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1788962086599",
+      "date": "2026-09-09",
+      "tech": "Jeff Watson",
+      "department": "HVAC",
+      "manager": "Ian Worely",
+      "focus": "Sales Technique",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    },
+    {
+      "id": "RA-1789132667167",
+      "date": "2026-09-11",
+      "tech": "Layne Beard",
+      "department": "Plumbing",
+      "manager": "Matt Baker",
+      "focus": "Sales Technique",
+      "rating": "Pending",
+      "followup": "No",
+      "notes": ""
+    }
+  ],
+  "evaluations": [
+    {
+      "id": "EV-1787157366925",
+      "tech": "Mason Kephart",
+      "date": "2026-08-17",
+      "department": "Plumbing",
+      "scores": {
+        "0.0": 3,
+        "0.1": 4,
+        "0.2": 5,
+        "1.0.0": 3,
+        "1.0.1": 4,
+        "1.0.2": 5,
+        "1.0.3": 4,
+        "1.0.4": 4,
+        "1.1.0": 3,
+        "1.1.1": 3,
+        "1.1.2": 2,
+        "1.2.0": 4,
+        "1.2.1": 3,
+        "2.0": 4,
+        "2.1": 4,
+        "2.2": 3,
+        "2.3": 4,
+        "2.4": 4,
+        "2.5": 4,
+        "2.6": 3,
+        "3.0": 4,
+        "3.1": 3,
+        "3.2": 3,
+        "3.3": 4,
+        "3.4": 3,
+        "3.5": 2,
+        "3.6": 3,
+        "3.7": 3,
+        "4.0": 4,
+        "4.1": 4,
+        "4.2": 3,
+        "4.3": 3,
+        "4.4": 2,
+        "4.5": 4,
+        "4.6": 2,
+        "4.7": 4,
+        "5.0": 4,
+        "5.1": 4
+      },
+      "overallScore": 3.473684210526316,
+      "stepScores": [
+        4,
+        3.5,
+        3.7142857142857144,
+        3.125,
+        3.25,
+        4
+      ],
+      "notes": "Masons energy is contagious and genuine.  He needs to maintain that through presentation.  There were a few things that stood out regarding technique.  1.  During presentation, an option was presented for a water softener as “we are at $5,000 but we’re not the cheapest”.  Basically talked himself out of a sale right there or at least invited her to shop around with that phrasing.  2.  Forgot to have customer sign the form stating that we had been there, and offerered a 5 star experience.  I want to make sure that we are deliberate in our core principles.  3.  Misdiagnosed leak in basement and was prepared to have a new water line ran out to Lampeter.  The problem was a valve at the refrigerator causing a leak which I diagnosed.  Slow down and look at the entire problem from beginning of the chain on down to the problem.  Overall, great guy and I have high hopes for him."
+    },
+    {
+      "id": "EV-1787576153660",
+      "tech": "Ryan Kurtz",
+      "date": "2026-08-17",
+      "department": "Electrical",
+      "scores": {
+        "0.0": 1,
+        "0.1": 5,
+        "0.2": 5,
+        "1.0.0": 1,
+        "1.0.1": 5,
+        "1.0.2": 5,
+        "1.0.3": 5,
+        "1.0.4": 5,
+        "1.1.0": 3,
+        "1.1.1": 1,
+        "1.1.2": 1,
+        "1.2.0": 1,
+        "1.2.1": 1,
+        "2.0": 5,
+        "2.1": 3,
+        "2.2": 2,
+        "2.3": 1,
+        "2.4": 1,
+        "2.5": 5,
+        "2.6": 3,
+        "3.0": 5,
+        "3.1": 1,
+        "3.2": 1,
+        "3.3": 5,
+        "3.4": 3,
+        "3.5": 1,
+        "3.6": 5,
+        "3.7": 5,
+        "4.0": 5,
+        "4.1": 5,
+        "4.2": 1,
+        "4.3": 1,
+        "4.4": 5,
+        "4.5": 5,
+        "4.6": 1,
+        "4.7": 5,
+        "5.0": 5,
+        "5.1": 5
+      },
+      "overallScore": 3.236842105263158,
+      "stepScores": [
+        3.6666666666666665,
+        2.8,
+        2.857142857142857,
+        3.25,
+        3.5,
+        5
+      ],
+      "notes": "agenda card needs used, no clear agenda was set. ask better opened ended questions, stop throwing solutions out right away ask more questions."
+    },
+    {
+      "id": "EV-1787599765517",
+      "tech": "Brian McNamara",
+      "date": "2026-08-17",
+      "department": "Electrical",
+      "scores": {
+        "0.0": 1,
+        "0.1": 2,
+        "0.2": 3,
+        "1.0.0": 1,
+        "1.0.1": 5,
+        "1.0.2": 5,
+        "1.0.3": 5,
+        "1.0.4": 4,
+        "1.1.0": 3,
+        "1.1.1": 3,
+        "1.1.2": 1,
+        "1.2.0": 1,
+        "1.2.1": 1,
+        "2.0": 5,
+        "2.1": 2,
+        "2.2": 2,
+        "2.3": 1,
+        "2.4": 1,
+        "2.5": 5,
+        "2.6": 1,
+        "3.0": 3,
+        "3.1": 1,
+        "3.2": 1,
+        "3.3": 3,
+        "3.4": 1,
+        "3.5": 1,
+        "3.6": 5,
+        "3.7": 1,
+        "4.0": 1,
+        "4.1": 1,
+        "4.2": 5,
+        "4.3": 1,
+        "4.4": 1,
+        "4.5": 5,
+        "4.6": 5,
+        "4.7": 1,
+        "5.0": 5,
+        "5.1": 5
+      },
+      "overallScore": 2.5789473684210527,
+      "stepScores": [
+        2,
+        2.9,
+        2.4285714285714284,
+        2,
+        2.5,
+        5
+      ],
+      "notes": ""
+    },
+    {
+      "id": "EV-MIGRATED-1",
+      "tech": "Cole Portner",
+      "date": "2026-08-17",
+      "department": "Electrical",
+      "scores": {},
+      "overallScore": 4.1,
+      "stepScores": [],
+      "notes": ""
+    },
+    {
+      "id": "EV-MIGRATED-2",
+      "tech": "Brian Wasche",
+      "date": "2026-08-17",
+      "department": "HVAC",
+      "scores": {},
+      "overallScore": 3.1,
+      "stepScores": [],
+      "notes": ""
+    },
+    {
+      "id": "EV-1788975296397",
+      "tech": "Jeff Watson",
+      "date": "2026-09-08",
+      "department": "HVAC",
+      "scores": {
+        "0.0": 1,
+        "0.1": 5,
+        "0.2": 5,
+        "1.0.0": 5,
+        "1.0.1": 5,
+        "1.0.2": 5,
+        "1.0.3": 1,
+        "1.0.4": 1,
+        "1.1.0": 1,
+        "1.1.1": 1,
+        "1.1.2": 1,
+        "1.2.0": 1,
+        "1.2.1": 1,
+        "2.0": 5,
+        "2.1": 1,
+        "2.2": 5,
+        "2.3": 1,
+        "2.4": 1,
+        "2.5": 5,
+        "2.6": 1,
+        "3.0": 1,
+        "3.1": 2,
+        "3.2": 1,
+        "3.3": 1,
+        "3.4": 5,
+        "3.5": 5,
+        "3.6": 3,
+        "3.7": 5,
+        "4.0": 5,
+        "4.1": 5,
+        "4.2": 5,
+        "4.3": 5,
+        "4.4": 5,
+        "4.5": 5,
+        "4.6": 5,
+        "4.7": 5,
+        "5.0": 5,
+        "5.1": 5
+      },
+      "overallScore": 3.289473684210526,
+      "stepScores": [
+        3.6666666666666665,
+        2.2,
+        2.7142857142857144,
+        2.875,
+        5,
+        5
+      ],
+      "notes": "HVAC Estimate Ride-Along – Jeff\nDate: 9/9/26\n\nJeff and I ran HVAC estimates together today. Jeff has shown improvement in his evaluation process and is doing a better job looking at the full scope of the system rather than focusing only on the immediate issue.\n\nOne area I noticed today that we need to continue working on is the Explore step. Jeff does not currently explain in enough detail what the scope of work is going to look like during the Explore. Instead, he waits until the Present step to explain what will be done.\n\nThe Present step should be focused on the investment, not introducing the scope of work for the first time. When we thoroughly explain the scope of work during the Explore, we build value and create a clear understanding of what the customer is actually investing in. This leads to a stronger Present because the customer already understands the solution, the work involved, and the value behind it. This allows us to focus the Present on the investment and confidently ask for the sale.\n\nAnother area that needs improvement is completing the install video. The install video is an important part of our process. It shows the customer that we care about their project and want to keep them informed throughout the process. It also demonstrates the level of communication and customer experience that we provide at LPH—something that separates us from our competitors.\n\nFocus Areas for Jeff:\n\nContinue improving the full-system evaluation.\nDuring the Explore, thoroughly explain the scope of work and what the installation will look like.\nUse the Present step to focus on the investment and asking for the sale, rather than introducing the scope of work.\nComplete the install video on every applicable job.\nContinue building value through communication and setting clear expectations with the customer.\n\nOverall: Jeff is improving in his evaluation process. The next step is to create a stronger connection between the Explore and Present by thoroughly educating the customer during the Explore. This will create a more powerful Present and give Jeff a better opportunity to confidently ask for the sale."
+    },
+    {
+      "id": "EV-1788976712848",
+      "tech": "Shane Hetrich",
+      "date": "2026-09-08",
+      "department": "HVAC",
+      "scores": {
+        "0.0": 1,
+        "0.1": 5,
+        "0.2": 5,
+        "1.0.0": 1,
+        "1.0.1": 5,
+        "1.0.2": 5,
+        "1.0.3": 5,
+        "1.0.4": 5,
+        "1.1.0": 5,
+        "1.1.1": 1,
+        "1.1.2": 1,
+        "1.2.1": 5,
+        "1.2.0": 5,
+        "2.0": 5,
+        "2.1": 1,
+        "2.2": 3,
+        "2.3": 1,
+        "2.4": 1,
+        "2.5": 1,
+        "2.6": 2,
+        "3.0": 3,
+        "3.1": 1,
+        "3.2": 1,
+        "3.3": 1,
+        "3.4": 5,
+        "3.5": 5,
+        "3.6": 5,
+        "3.7": 5,
+        "4.0": 5,
+        "4.1": 5,
+        "4.2": 5,
+        "4.3": 1,
+        "4.4": 5,
+        "4.5": 1,
+        "4.6": 1,
+        "4.7": 5,
+        "5.0": 5,
+        "5.1": 5
+      },
+      "overallScore": 3.3421052631578947,
+      "stepScores": [
+        3.6666666666666665,
+        3.8,
+        2,
+        3.25,
+        3.5,
+        5
+      ],
+      "notes": "System Check Ride-Along – Shane\nDate: 9/8/26\n\nShane and I ran three system checks together today.\n\nDuring a previous ride-along, Shane and I discussed the importance of keeping the cab of his truck clean and organized. Staying organized can help reduce stress and make it easier to stay prepared throughout the day. The van could still use some additional cleaning and organization, so this is something Shane should continue to work on.\n\nDuring today's ride-along, we also discussed asking stronger lifestyle questions, specifically when discussing thermostats and IAQ products. These questions help us understand how the customer uses their home, what is important to them, and what concerns they may have with their comfort or indoor air quality.\n\nThe biggest opportunity for Shane continues to be asking enough questions during the call. Shane is still not asking enough questions to fully understand the customer's needs and wants. We need to focus on slowing down during the Explore, asking more open-ended lifestyle questions, and allowing the customer to explain what is important to them.\n\nFocus Areas for Shane:\n\n1 Continue cleaning and organizing the van.\n2 Use organization to help reduce stress and stay prepared.\n3 Ask more lifestyle questions throughout the system check.\n4 Specifically explore customer needs around thermostats and IAQ.\n5 Slow down and ask more questions before moving toward solutions.\n6 Use the customer's answers to create better options and recommendations.\n\nOverall: Shane continues to have an opportunity to improve his Explore. The goal is to ask better questions, not simply more questions. The more we understand the customer's lifestyle, concerns, and wants, the better we can present solutions that are meaningful to them."
+    },
+    {
+      "id": "EV-1789140251243",
+      "tech": "Layne Beard",
+      "date": "2026-09-10",
+      "department": "Plumbing",
+      "scores": {
+        "0.0": 5,
+        "0.1": 5,
+        "0.2": 4,
+        "1.0.0": 5,
+        "1.0.2": 5,
+        "1.0.4": 4,
+        "1.1.0": 5,
+        "1.1.2": 5,
+        "2.0": 5,
+        "2.1": 5,
+        "2.2": 5,
+        "2.5": 4,
+        "1.0.1": 4,
+        "2.3": 5,
+        "2.4": 5,
+        "2.6": 5,
+        "3.0": 4,
+        "3.1": 4,
+        "3.2": 4,
+        "3.3": 5,
+        "3.4": 3,
+        "3.5": 3,
+        "3.6": 5,
+        "3.7": 3,
+        "4.0": 3,
+        "4.1": 3,
+        "4.2": 3,
+        "4.3": 3,
+        "4.4": 3,
+        "4.5": 5,
+        "4.6": 2,
+        "4.7": 4,
+        "5.0": 5,
+        "1.0.3": 4,
+        "1.1.1": 3,
+        "1.2.1": 5,
+        "1.2.0": 5,
+        "5.1": 5
+      },
+      "overallScore": 4.2105263157894735,
+      "stepScores": [
+        4.666666666666667,
+        4.5,
+        4.857142857142857,
+        3.875,
+        3.25,
+        5
+      ],
+      "notes": "Layne and I were in the cleanest most organized house (with a great cat!).  Customer has had substantial work completed by LPH and Layne was unable to find any immediate concerns at this time.  Customer asked for a quote for a deeper sink and was provided estimates, but made his intention clear that he was going to purchase the sink himself.  I was unable to give Layne exemplary marks for these scenarios as there was no work needed for today.  In these instances , Layne received the grade of “3” which is the equivalent of average.  Layne was personable, fair, and thorough in his inspection, and I appreciate his method of actually using his tablet as a tool during inspection to ensure everything has been checked in accordance with LPH’s standards.  Good job Layne!",
+      "manager": "Matt Baker"
+    }
+  ],
+  "attendance": [],
+  "teamRoster": [
+    {
+      "name": "Andrew Gambler",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "andrew@lphservice.com"
+    },
+    {
+      "name": "Bill Price",
+      "department": "Sewer",
+      "title": "Sewer Install Technician",
+      "active": true,
+      "email": "Bill@lphservice.com"
+    },
+    {
+      "name": "Brian McGlynn",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "brianmc@lphservice.com"
+    },
+    {
+      "name": "Brian McNamara",
+      "title": "Electrical Service Technician",
+      "department": "Electrical",
+      "active": true,
+      "email": "brianm@lphservice.com"
+    },
+    {
+      "name": "Brian Wasche",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "brianw@lphservice.com"
+    },
+    {
+      "name": "Cayden Montgomery",
+      "department": "Sewer",
+      "title": "Sewer Install Technician",
+      "active": true
+    },
+    {
+      "name": "Cayden Warner",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "caydenw@lphservice.com"
+    },
+    {
+      "name": "Cesar Rodriguez",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "cesarr@lphservice.com"
+    },
+    {
+      "name": "Cesar Rodriquez",
+      "title": "HVAC Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "cesarr@lphservice.com"
+    },
+    {
+      "name": "Chris DeCicco",
+      "title": "Plumbing Technician",
+      "department": "Plumbing",
+      "active": false
+    },
+    {
+      "name": "Cole Portner",
+      "title": "Electrical Service Technician",
+      "department": "Electrical",
+      "active": true,
+      "email": "cportner@lphservice.com"
+    },
+    {
+      "name": "Derrick Bender",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "dbender@lphservice.com"
+    },
+    {
+      "name": "Eric Vazquez",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "evazquez@lphservice.com"
+    },
+    {
+      "name": "Ethan Jones",
+      "title": "Plumbing Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "ethanj@lphservice.com"
+    },
+    {
+      "name": "Garrick Budrow",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "gbudrow@lphservice.com"
+    },
+    {
+      "name": "John Dwyer",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true
+    },
+    {
+      "name": "Josh Rosario",
+      "department": "Sewer",
+      "title": "Sewer Install Technician",
+      "active": true,
+      "email": "jrosario@lphservice.com"
+    },
+    {
+      "name": "Kevin Jones",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "kevin@lphservice.com"
+    },
+    {
+      "name": "Layne Beard",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "Lbeard@lphservice.com"
+    },
+    {
+      "name": "Mason Kephart",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "mkephart@lphservice.com"
+    },
+    {
+      "name": "Mike DeCicco",
+      "title": "Sewer Install Technician",
+      "department": "Sewer",
+      "active": true,
+      "email": "mdecicco@lphservice.com"
+    },
+    {
+      "name": "Nick Elam",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "nicke@lphservice.com"
+    },
+    {
+      "name": "Reese Gassert",
+      "title": "Sewer Install Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "reeseg@lphservice.com"
+    },
+    {
+      "name": "Robert Fenton",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "robertf@lphservice.com"
+    },
+    {
+      "name": "Robert Reynolds",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "rreynolds@lphservice.com"
+    },
+    {
+      "name": "Ryan Kurtz",
+      "title": "Electrical Service Technician",
+      "department": "Electrical",
+      "active": true,
+      "email": "rkurtz@lphservice.com"
+    },
+    {
+      "name": "Ryan Santiago",
+      "title": "Electrical Service Technician",
+      "department": "Electrical",
+      "active": true,
+      "email": "Ryans@lphservice.com"
+    },
+    {
+      "name": "Ryan Walten",
+      "title": "Electrical Service Technician",
+      "department": "Electrical",
+      "active": true,
+      "email": "ryanw@lphservice.com"
+    },
+    {
+      "name": "Scott Huber",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "scotth@lphservice.com"
+    },
+    {
+      "name": "Shane Hetrich",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true,
+      "email": "Shane@lphservice.com"
+    },
+    {
+      "name": "Tylor Hughes",
+      "title": "Plumbing Service Technician",
+      "department": "Plumbing",
+      "active": true,
+      "email": "thughes@lphservice.com"
+    },
+    {
+      "name": "Tyson Kline",
+      "title": "Electrical Service Technician",
+      "department": "Electrical",
+      "active": false
+    },
+    {
+      "name": "Uriah Warner",
+      "title": "HVAC Service Technician",
+      "department": "HVAC",
+      "active": true
+    },
+    {
+      "name": "Ian Worley",
+      "title": "Electrical Service Manager",
+      "department": "Electrical",
+      "active": true,
+      "email": "ianw@lphservice.com"
+    },
+    {
+      "name": "Matt Baker",
+      "title": "Plumbing Service Manager",
+      "department": "Plumbing",
+      "active": true,
+      "email": "mattb@lphservice.com"
+    },
+    {
+      "name": "Drew Horvath",
+      "title": "HVAC Sales",
+      "department": "HVAC",
+      "active": true,
+      "email": "andrewh@lphservice.com"
+    },
+    {
+      "name": "Jeff Watson",
+      "title": "HVAC Sales",
+      "department": "HVAC",
+      "active": true,
+      "email": "jeff@lphservice.com"
+    }
+  ],
+  "superAdmins": [
+    {
+      "name": "Matt Baker",
+      "password": "RavensR#1",
+      "email": "mattb@LPHservice.com"
+    },
+    {
+      "name": "Larry Gassert",
+      "password": "lph-admin",
+      "email": "larry@lphservice.com"
+    },
+    {
+      "name": "Ian Worely",
+      "password": "Techs717",
+      "email": "ianw@lphservice.com"
+    }
+  ],
+  "emailConfig": {
+    "serviceId": "service_nk2guu8",
+    "templateId": "template_am4vwlj",
+    "publicKey": "fcIpDX_8Unv7wXG-P"
+  }
+}
