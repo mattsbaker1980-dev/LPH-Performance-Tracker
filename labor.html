@@ -91,6 +91,8 @@
   .other-roles{margin-top:8px;}
   .other-roles-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);font-size:12.5px;flex-wrap:wrap;}
   .other-roles-row:last-child{border-bottom:none;}
+  .ra-eval-row, .annual-review-row, .review-due-row{cursor:pointer;}
+  .ra-eval-row:hover, .annual-review-row:hover, .review-due-row:hover{background:#FAFBFE;}
   .other-roles-row .n{font-weight:700;color:var(--navy);min-width:150px;}
   .other-roles-row .r{color:var(--text-mute);flex:1;min-width:200px;}
   .money{font-weight:700;}
@@ -133,6 +135,31 @@
   .stat-box{background:var(--bg);border-radius:10px;padding:12px;}
   .stat-box .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-mute);margin-bottom:4px;}
   .stat-box .v{font-size:16px;font-weight:800;color:var(--navy);}
+
+  .office-roster-card{cursor:pointer;}
+  .review-cat-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+  .review-cat-row:last-child{border-bottom:none;}
+  .review-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .review-info-grid div{display:flex;flex-direction:column;gap:4px;}
+  .review-info-grid label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-mute);}
+  .review-info-grid input{padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;font-family:inherit;}
+  .review-info-grid input:disabled{background:var(--bg);color:var(--text-mute);}
+  .review-cat-panel{border-left:3px solid var(--orange);}
+  .review-score-options{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+  .review-score-opt{display:flex;align-items:flex-start;gap:8px;font-size:12px;padding:6px 8px;border-radius:7px;cursor:pointer;}
+  .review-score-opt:hover{background:var(--bg);}
+  .review-score-n{font-weight:800;color:var(--navy);min-width:14px;}
+  .review-score-d{color:var(--text);}
+  .review-comment{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;font-family:inherit;resize:vertical;}
+  .review-field-label{display:block;font-size:11px;font-weight:700;color:var(--text-mute);margin:10px 0 4px;}
+  .review-field-label:first-child{margin-top:0;}
+  #rf_strengths, #rf_growth, #rf_empcomments{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;font-family:inherit;resize:vertical;}
+  .review-goal-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .review-goal-row input{padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;font-family:inherit;}
+  .review-goal-row .rf_goal{flex:2;min-width:150px;}
+  .review-goal-row .rf_goal_date{flex:1;min-width:130px;}
+  .review-goal-row .rf_goal_measure{flex:2;min-width:150px;}
+  .review-form-err{color:var(--red);font-size:12px;margin:10px 0;min-height:14px;}
 
   @media (max-width:900px){
     .app{flex-direction:column;}
@@ -219,7 +246,153 @@ const GH_BRANCH = 'main';
 const GH_RAW = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/`;
 const RELAY_URL = 'https://young-sound-f090.mattsbaker1980.workers.dev';
 const ALL_DEPTS = ['Plumbing','Sewer','HVAC','Electrical'];
-const DEPT_COLOR = { Plumbing:'#2B4EE6', Sewer:'#8A4FE0', HVAC:'#F3770C', Electrical:'#1E9E5A' };
+// Office/support departments: they get the same employee roster, review, and
+// ride-along tooling as field departments, but are NOT part of the pay-vs-production
+// comparison (no ServiceTitan revenue to compare against), so they render with a
+// simpler roster-style view instead of the leaderboard/chart view.
+const OFFICE_DEPTS = ['Management','Dispatch','CSR','Warehouse'];
+const ALL_MANAGED_DEPTS = [...ALL_DEPTS, ...OFFICE_DEPTS];
+const DEPT_COLOR = {
+  Plumbing:'#2B4EE6', Sewer:'#8A4FE0', HVAC:'#F3770C', Electrical:'#1E9E5A',
+  Management:'#0F2A4A', Dispatch:'#C97A0A', CSR:'#1D7A6B', Warehouse:'#6B5B95'
+};
+
+// ============================================================================
+// Annual review rubric — mirrors the 8 department PDFs (Plumbing, Sewer, Electrical,
+// HVAC, Management, Dispatch, CSR, Warehouse). 7 of the 9 categories are identical
+// word-for-word across every department; only Category 1 (role knowledge) and
+// Category 4 (customer experience) vary, so they're defined once and reused.
+// ============================================================================
+const REVIEW_SHARED_CATS = {
+  quality: { key:'quality', name:'Quality & Craftsmanship', desc:'Accuracy, thoroughness, and how often the work needs to be revisited.', d:[
+    'Consistently the highest quality work in the department; virtually no comebacks, errors, or rework.',
+    'Well above average quality; rarely needs rework or correction.',
+    'Meets LPH quality standards regularly; a normal amount of review or correction is needed.',
+    'Quality is usually acceptable but needs more than normal review or correction.',
+    'Quality is below standard; requires constant checking or frequent rework.' ]},
+  productivity: { key:'productivity', name:'Productivity & Time Management', desc:'Volume of work produced and how efficiently time on the clock is used.', d:[
+    'High output and makes excellent use of every hour; seeks out more work when caught up.',
+    'Consistently produces more than most; a pacesetter for the team.',
+    'Steady producer; regularly meets recognized time and output standards.',
+    'Fair output, but volume or time management should improve.',
+    'Consistently behind on output or time management.' ]},
+  safety: { key:'safety', name:'Safety & Compliance', desc:'PPE use, safe work practices, and following code and company policy.', d:[
+    'Models safe work practices at all times; proactively catches and corrects hazards for others too.',
+    'Consistently follows PPE, safety, and code requirements without reminders.',
+    'Follows standard safety and PPE requirements with normal reminders.',
+    'Occasionally skips safety steps or PPE; needs reminders more than normal.',
+    'Frequently disregards safety practices or PPE; a real concern.' ]},
+  initiative: { key:'initiative', name:'Initiative & Problem-Solving', desc:'Self-reliance, originality, and how well they handle the unexpected.', d:[
+    'Exceptionally resourceful; regularly brings new ideas or better ways of doing things.',
+    'A self-starter; handles the unexpected well with little guidance.',
+    'Shows normal initiative and self-reliance in day-to-day work.',
+    'Shows limited initiative; tends to wait to be told what to do.',
+    'Lacks initiative; needs constant direction, even on routine work.' ]},
+  reliability: { key:'reliability', name:'Reliability & Attendance', desc:'Getting assigned work done promptly, and being at work when scheduled.', d:[
+    'Always at work, on time, and ready to go; regularly steps up when the team is short-handed.',
+    'Very prompt and regular; can be counted on without exception.',
+    'Normally present and on time; dependable on the results of their work.',
+    'Occasionally absent, late, or requires more than normal follow-up.',
+    'Unreliable; frequently absent, late, or requires close supervision to get results.' ]},
+  teamwork: { key:'teamwork', name:'Teamwork & Communication', desc:'Working well with the crew, dispatch, the office, and supervisors.', d:[
+    'Goes out of their way to support the crew, dispatch, and office; actively promotes company goals.',
+    'Works well with others and communicates clearly, well above average.',
+    'Cooperates and communicates as expected with supervisors and coworkers.',
+    'Communication or cooperation is inconsistent; some friction with others.',
+    'Reluctant to cooperate or communicate; frequent friction with others.' ]},
+  professionalism: { key:'professionalism', name:'Professionalism & Brand Representation', desc:'Appearance, truck or work area, and how well they represent Lancaster.', d:[
+    'Truck or work area and appearance are always sharp; a walking billboard for how LPH should look.',
+    'Consistently well-presented and organized; above-average attention to appearance and brand standards.',
+    'Uniform, truck, and work area are usually neat and represent LPH well.',
+    'Tendency to be careless with appearance, truck, or work area.',
+    'No attention to appearance or work area; reflects poorly on the company.' ]}
+};
+const REVIEW_CUSTOMER_VARIANTS = {
+  field: { key:'customer', name:'Customer Experience', desc:'How the employee shows up for the customer on a call, tied to the LPH Service System.', d:[
+    'Consistently runs the full Service System (Prepare, Greet, Explore, Present, Execute, Wrap Up) and customers regularly praise them by name.',
+    'Runs the Service System well on most calls; customer feedback is consistently positive.',
+    'Follows the core Service System steps and leaves customers satisfied on standard calls.',
+    'Inconsistent on Service System steps; occasional customer complaints about communication or professionalism.',
+    'Regularly skips Service System steps; customer complaints are frequent.' ]},
+  phone: { key:'customer', name:'Customer Experience', desc:'How the employee shows up for the customer and the crew on the phone and in ServiceTitan.', d:[
+    'Every caller feels heard and taken care of; customers and techs regularly compliment their communication.',
+    'Consistently clear, courteous, and helpful with callers and techs; feedback is positive.',
+    'Handles calls professionally and courteously on standard interactions.',
+    'Inconsistent tone or follow-through with callers or techs; occasional complaints.',
+    'Frequent complaints about communication or follow-through.' ]},
+  internal: { key:'customer', name:'Customer Experience', desc:'How the employee treats techs and other departments as customers of their own work.', d:[
+    'Treats techs and coworkers like customers; consistently proactive and reliable support others count on.',
+    'Consistently responsive and helpful to techs and other departments.',
+    'Provides standard support to techs and other departments as expected.',
+    'Inconsistent responsiveness or follow-through with internal requests.',
+    'Frequent complaints from techs or other departments about support.' ]}
+};
+const DEPT_REVIEW_META = {
+  Plumbing: { customer:'field', knowledge:{ key:'knowledge', name:'Plumbing Knowledge & Skill', desc:'Diagnostic and hands-on ability across residential plumbing and gas work.', d:[
+    'Diagnoses and completes plumbing repairs, installs, and gas work correctly on the first visit; sought out by others for the tough calls.',
+    'Handles the full range of residential plumbing and gas work confidently and correctly with minimal help.',
+    'Completes standard plumbing service and repair jobs to LPH and code standards with normal oversight.',
+    'Handles routine plumbing tasks but needs help or more training on complex jobs.',
+    'Requires close supervision even on routine plumbing calls.' ]}},
+  Sewer: { customer:'field', knowledge:{ key:'knowledge', name:'Sewer & Excavation Knowledge & Skill', desc:'Diagnostic and hands-on ability across sewer lateral work and digs.', d:[
+    'Diagnoses and completes sewer and lateral repairs, installs, and digs correctly on the first attempt; handles the toughest jobs.',
+    'Handles the full range of sewer service, repair, and excavation work confidently with minimal help.',
+    'Completes standard sewer service and repair jobs to LPH standards with normal oversight.',
+    'Handles routine sewer tasks but needs help or more training on complex jobs.',
+    'Requires close supervision even on routine sewer calls.' ]}},
+  Electrical: { customer:'field', knowledge:{ key:'knowledge', name:'Electrical Knowledge & Skill', desc:'Diagnostic and hands-on ability across residential electrical work.', d:[
+    'Diagnoses and completes electrical repairs and installs correctly on the first visit, fully code-compliant.',
+    'Handles the full range of residential electrical work confidently and correctly with minimal help.',
+    'Completes standard electrical service and repair jobs to LPH and code standards with normal oversight.',
+    'Handles routine electrical tasks but needs help or more training on complex jobs.',
+    'Requires close supervision even on routine electrical calls.' ]}},
+  HVAC: { customer:'field', knowledge:{ key:'knowledge', name:'HVAC Knowledge & Skill', desc:'Diagnostic and hands-on ability across heating and cooling systems.', d:[
+    'Diagnoses and repairs or installs HVAC systems correctly on the first visit; the go-to for complex diagnostics.',
+    'Handles the full range of HVAC service, repair, and install work confidently with minimal help.',
+    'Completes standard HVAC service calls to LPH and manufacturer standards with normal oversight.',
+    'Handles routine HVAC tasks but needs help or more training on complex systems.',
+    'Requires close supervision even on routine HVAC calls.' ]}},
+  Management: { customer:'internal', knowledge:{ key:'knowledge', name:'Operational & Leadership Knowledge', desc:'Command of department operations and the ability to lead others through them.', d:[
+    'Deep command of department operations and leadership; others look to them for direction on the tough calls.',
+    'Strong operational and leadership knowledge; runs the department well with minimal oversight from above.',
+    'Manages standard department operations to LPH standards with normal oversight.',
+    'Handles routine management tasks but needs support or development on more complex situations.',
+    'Requires close oversight even on routine management tasks.' ]}},
+  Dispatch: { customer:'phone', knowledge:{ key:'knowledge', name:'Product & Process Knowledge', desc:'Command of the dispatch board, ServiceTitan, and technician-job matching.', d:[
+    'Expert at board management and technician-job matching; keeps the day running smoothly under pressure without help.',
+    'Strong command of the dispatch board and ServiceTitan; handles most days, including busy ones, with minimal help.',
+    'Manages the board and standard dispatch decisions to LPH process with normal oversight.',
+    'Handles routine dispatch tasks but needs help or more training on the board or process.',
+    'Requires close supervision even on routine dispatch days.' ]}},
+  CSR: { customer:'phone', knowledge:{ key:'knowledge', name:'Product & Process Knowledge', desc:'Command of booking process, ServiceTitan, and the LPH phone standard.', d:[
+    'Expert on booking, ServiceTitan, and phone process; handles any call type correctly without help.',
+    'Strong command of booking and ServiceTitan process; handles most calls, including tricky ones, with minimal help.',
+    'Books and processes standard calls correctly to LPH script and process with normal oversight.',
+    'Handles routine calls but needs help or more training on process or ServiceTitan.',
+    'Requires close supervision even on routine calls.' ]}},
+  Warehouse: { customer:'internal', knowledge:{ key:'knowledge', name:'Product & Process Knowledge', desc:"Command of parts, materials, and LPH's stocking and receiving process.", d:[
+    'Knows the full parts and materials inventory cold; keeps stock accurate and trucks ready without being asked.',
+    'Strong knowledge of parts and stocking systems; restocks and receives with minimal errors.',
+    'Handles standard receiving, stocking, and truck restocking to LPH process with normal oversight.',
+    'Handles routine warehouse tasks but needs help or more training on process or inventory systems.',
+    'Requires close supervision even on routine warehouse tasks.' ]}}
+};
+function reviewCategoriesFor(dept){
+  const meta = DEPT_REVIEW_META[dept];
+  if(!meta) return null;
+  return [
+    meta.knowledge, REVIEW_SHARED_CATS.quality, REVIEW_SHARED_CATS.productivity,
+    REVIEW_CUSTOMER_VARIANTS[meta.customer], REVIEW_SHARED_CATS.safety, REVIEW_SHARED_CATS.initiative,
+    REVIEW_SHARED_CATS.reliability, REVIEW_SHARED_CATS.teamwork, REVIEW_SHARED_CATS.professionalism
+  ];
+}
+function overallRatingLabel(total){
+  if(total>=40) return 'Exceptional — Sets the Standard';
+  if(total>=32) return 'Exceeds Expectations';
+  if(total>=23) return 'Meets Expectations';
+  if(total>=14) return 'Needs Improvement';
+  return 'Below Standard — Action Plan Required';
+}
 
 function laborKey(){ try{ return localStorage.getItem('lph_labor_key') || ''; }catch(e){ return ''; } }
 function setLaborKey(k){ try{ localStorage.setItem('lph_labor_key', k); }catch(e){} }
@@ -231,8 +404,10 @@ const state = {
   tdRows: [],            // raw td.json rows
   instRows: [],          // raw install.json rows
   roles: { excluded: {}, apprentices: {}, installOnly: {} }, // name -> {reason[, badge]}, see loadAll()
+  rideAlongEvals: [],    // Ride-Along Evaluation records from the public tracker (data/ridealong.json), for reference
+  reviews: [],           // Annual review records for this key's departments, from the gated /api/labor-reviews endpoint
   range: 'w12',          // w4 | w8 | w12 | w26 | all
-  view: 'overview',      // overview | Plumbing | Sewer | HVAC | Electrical
+  view: 'overview',      // overview | Plumbing | Sewer | HVAC | Electrical | Management | Dispatch | CSR | Warehouse
   charts: {}
 };
 function isExcluded(name){ return !!state.roles.excluded[name]; }
@@ -272,6 +447,25 @@ async function fetchPublicJson(path){
   if(!res.ok) throw new Error('failed to load ' + path);
   return res.json();
 }
+// ---- Annual reviews: same private repo + gated Worker as pay data, so they inherit
+// the exact same per-department access scoping (extends the Worker with /api/labor-reviews). ----
+async function fetchLaborReviews(key){
+  const res = await fetch(RELAY_URL + '/api/labor-reviews', { headers: { 'X-Labor-Key': key } });
+  if(res.status === 401) throw new Error('unauthorized');
+  if(!res.ok) throw new Error('load failed (' + res.status + ')');
+  return res.json();
+}
+async function postLaborReview(op, payload){
+  const res = await fetch(RELAY_URL + '/api/labor-reviews', {
+    method: 'POST',
+    headers: { 'X-Labor-Key': laborKey(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ op, ...payload })
+  });
+  const body = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(body.error || ('request failed (' + res.status + ')'));
+  state.reviews = body.reviews || [];
+  return body;
+}
 
 async function boot(){
   const key = laborKey();
@@ -286,11 +480,15 @@ async function boot(){
 }
 
 async function loadAll(key){
-  const [labor, tdFile, instFile, rolesFile] = await Promise.all([
+  const [labor, tdFile, instFile, rolesFile, reviewsResp, ridealongFile] = await Promise.all([
     fetchLaborData(key),
     fetchPublicJson('data/td.json'),
     fetchPublicJson('data/install.json'),
-    fetchPublicJson('data/tech_roles.json').catch(() => ({excluded:[], apprentices:[], installOnly:[]}))
+    fetchPublicJson('data/tech_roles.json').catch(() => ({excluded:[], apprentices:[], installOnly:[]})),
+    fetchLaborReviews(key).catch(() => ({reviews:[]})),
+    // Ride-Along Evaluations live in the PUBLIC tracker repo (same as revenue data) — read
+    // directly rather than copying, so this always matches the main tracker with zero sync risk.
+    fetchPublicJson('data/ridealong.json').catch(() => ({evaluations:[]}))
   ]);
   state.user = { name: labor.name, departments: labor.departments || [], admin: !!labor.admin };
   state.employees = labor.employees || [];
@@ -302,6 +500,8 @@ async function loadAll(key){
     apprentices: toMap(rolesFile.apprentices),
     installOnly: toMap(rolesFile.installOnly)
   };
+  state.reviews = reviewsResp.reviews || [];
+  state.rideAlongEvals = ridealongFile.evaluations || [];
 }
 
 function showGate(err){
@@ -346,7 +546,7 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') document.getEle
 function buildDeptNav(){
   const wrap = document.getElementById('deptNav');
   wrap.innerHTML = '';
-  ALL_DEPTS.filter(d => state.user.departments.includes(d)).forEach(dept => {
+  ALL_MANAGED_DEPTS.filter(d => state.user.departments.includes(d)).forEach(dept => {
     const has = state.employees.some(e => e.department === dept);
     const item = document.createElement('div');
     item.className = 'nav-item';
@@ -602,7 +802,58 @@ function techSummary(emp){
 function render(){
   renderRangeBar();
   if(state.view === 'overview') renderOverview();
+  else if(OFFICE_DEPTS.includes(state.view)) renderOfficeDept(state.view);
   else renderDept(state.view);
+}
+
+// ---- Annual review due-tracking (computed live on every load — no scheduled job,
+// so there's nothing that can silently stop working the way the ServiceTitan sync did) ----
+function reviewStatus(emp){
+  if(!emp.hireDate) return { due:false };
+  const hire = new Date(emp.hireDate + 'T00:00:00Z');
+  const today = new Date();
+  const firstAnniv = new Date(Date.UTC(hire.getUTCFullYear()+1, hire.getUTCMonth(), hire.getUTCDate()));
+  const empReviews = (state.reviews||[]).filter(r => r.employeeName===emp.name && r.department===emp.department);
+  if(today < firstAnniv){
+    const daysToNext = Math.round((firstAnniv - today)/86400000);
+    if(daysToNext <= 30) return { due:true, overdue:false, dueDate: firstAnniv.toISOString().slice(0,10), daysToNext };
+    return { due:false };
+  }
+  let lastAnniv = new Date(firstAnniv);
+  while(true){
+    const next = new Date(lastAnniv); next.setUTCFullYear(next.getUTCFullYear()+1);
+    if(next > today) break;
+    lastAnniv = next;
+  }
+  const nextAnniv = new Date(lastAnniv); nextAnniv.setUTCFullYear(nextAnniv.getUTCFullYear()+1);
+  const lastAnnivIso = lastAnniv.toISOString().slice(0,10);
+  const satisfied = empReviews.some(r => r.evaluationDate >= lastAnnivIso);
+  if(satisfied){
+    const daysToNext = Math.round((nextAnniv - today)/86400000);
+    if(daysToNext <= 30) return { due:true, overdue:false, dueDate: nextAnniv.toISOString().slice(0,10), daysToNext };
+    return { due:false };
+  }
+  return { due:true, overdue:true, sinceDate: lastAnnivIso };
+}
+function reviewsDuePanelHtml(scopeDept){
+  let emps = state.employees;
+  if(scopeDept) emps = emps.filter(e => e.department === scopeDept);
+  const due = emps.map(e => ({emp:e, status:reviewStatus(e)})).filter(x => x.status.due)
+    .sort((a,b) => (b.status.overdue?1:0) - (a.status.overdue?1:0));
+  if(!due.length) return '';
+  const rows = due.map(({emp,status}) => `
+    <div class="other-roles-row review-due-row" data-name="${encodeURIComponent(emp.name)}" data-dept="${encodeURIComponent(emp.department)}">
+      <span class="n">${emp.name}</span>
+      <span class="muted">${emp.department}</span>
+      <span class="badge ${status.overdue?'badge-red':'badge-amber'}">${status.overdue ? 'Overdue since '+fmtDate(status.sinceDate) : 'Due by '+fmtDate(status.dueDate)}</span>
+    </div>`).join('');
+  return `<div class="panel"><div class="panel-title">Reviews Due</div><div class="other-roles">${rows}</div></div>`;
+}
+function wireReviewsDuePanel(root){
+  root.querySelectorAll('.review-due-row').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => openTechModal(decodeURIComponent(row.dataset.name), decodeURIComponent(row.dataset.dept)));
+  });
 }
 
 function destroyChart(id){
@@ -632,6 +883,8 @@ function renderOverview(){
     <div class="kpi-card"><div class="kpi-label">Avg. Hourly Rate</div><div class="kpi-value">${fmtMoney2(avgRate)}</div><div class="kpi-sub">Across techs in comparison</div></div>
     <div class="kpi-card"><div class="kpi-label">Blended Revenue / Labor $</div><div class="kpi-value">${blendedIndex!==null ? blendedIndex.toFixed(2)+'x' : '—'}</div><div class="kpi-sub">Revenue generated per $1 paid</div></div>
   </div>`;
+
+  html += reviewsDuePanelHtml(null);
 
   html += `<div class="section-title">Departments</div><div class="dept-grid">`;
   ALL_DEPTS.forEach(dept => {
@@ -667,6 +920,7 @@ function renderOverview(){
   content.innerHTML = html;
   content.querySelectorAll('.dept-card[data-dept]').forEach(el => el.addEventListener('click', () => setView(el.dataset.dept)));
   wireLeaderboard(content);
+  wireReviewsDuePanel(content);
   initDailyTotalsWidget('overviewDailyChart', 'overviewDailySlider', 'overviewDailyLabel', allEmp, 'overviewDaily');
 }
 
@@ -708,6 +962,8 @@ function renderDept(dept){
     <div class="kpi-card"><div class="kpi-label">Revenue / Labor $</div><div class="kpi-value">${idx!==null ? idx.toFixed(2)+'x' : '—'}</div></div>
   </div>`;
 
+  html += reviewsDuePanelHtml(dept);
+
   html += dailyTotalsPanelHtml('deptDailyChart', 'deptDailySlider', 'deptDailyLabel', `Total Revenue vs. Labor Cost — Daily (${dept})`);
 
   html += `<div class="section-title">Pay Rank vs. Production Rank — ${dept}</div>`;
@@ -717,7 +973,43 @@ function renderDept(dept){
 
   content.innerHTML = html;
   wireLeaderboard(content);
+  wireReviewsDuePanel(content);
   initDailyTotalsWidget('deptDailyChart', 'deptDailySlider', 'deptDailyLabel', deptEmp, 'deptDaily');
+  wireManageEmployees(content, dept);
+}
+
+// ---- Office/support department view: roster + reviews, no revenue comparison ----
+function renderOfficeDept(dept){
+  document.getElementById('pageTitle').textContent = dept;
+  document.getElementById('pageSub').textContent = dept + ' roster — pay/tenure and annual reviews (not part of the pay-vs-production comparison)';
+  const content = document.getElementById('content');
+  const deptEmp = state.employees.filter(e => e.department === dept);
+
+  let html = reviewsDuePanelHtml(dept);
+
+  if(deptEmp.length === 0){
+    html += `<div class="placeholder-note" style="font-size:13px;padding:20px;">No employees added to ${dept} yet — add them below.</div>`;
+  } else {
+    html += `<div class="section-title">${dept} Roster</div><div class="dept-grid">`;
+    deptEmp.forEach(emp => {
+      const status = reviewStatus(emp);
+      html += `<div class="dept-card office-roster-card" style="--dept-color:${DEPT_COLOR[dept]}" data-name="${encodeURIComponent(emp.name)}" data-dept="${encodeURIComponent(dept)}">
+        <div class="dept-card-name">${emp.name}</div>
+        <div class="muted" style="font-size:12px;margin-top:2px;">${emp.title || ''}</div>
+        <div class="dept-card-row"><span>Hourly Rate</span><span class="money">${fmtMoney2(emp.rate)}</span></div>
+        <div class="dept-card-row"><span>Hired</span><span>${fmtDate(emp.hireDate)} &middot; ${tenure(emp.hireDate)}</span></div>
+        ${status.due ? `<div class="dept-card-row"><span>Review</span><span class="badge ${status.overdue?'badge-red':'badge-amber'}">${status.overdue?'Overdue':'Due Soon'}</span></div>` : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += manageEmployeesPanelHtml(dept, deptEmp);
+
+  content.innerHTML = html;
+  content.querySelectorAll('.office-roster-card').forEach(el => el.addEventListener('click', () =>
+    openTechModal(decodeURIComponent(el.dataset.name), decodeURIComponent(el.dataset.dept))));
+  wireReviewsDuePanel(content);
   wireManageEmployees(content, dept);
 }
 
@@ -942,12 +1234,15 @@ function wireLeaderboard(root){
 function openTechModal(name, dept){
   const emp = state.employees.find(e => e.name === name && e.department === dept);
   if(!emp) return;
-  const s = techSummary(emp);
   document.getElementById('modalName').textContent = emp.name;
   document.getElementById('modalMeta').textContent = `${emp.department} · ${emp.title || ''}`;
-
+  const isField = ALL_DEPTS.includes(dept);
   const body = document.getElementById('modalBody');
-  body.innerHTML = `
+
+  let html = '';
+  if(isField){
+    const s = techSummary(emp);
+    html += `
     <div class="stat-grid">
       <div class="stat-box"><div class="l">Hourly Rate</div><div class="v">${fmtMoney2(emp.rate)}</div></div>
       <div class="stat-box"><div class="l">Hired</div><div class="v">${fmtDate(emp.hireDate)}</div></div>
@@ -963,10 +1258,323 @@ function openTechModal(name, dept){
       isExcluded(emp.name) ? `<div class="placeholder-note">${(state.roles.excluded[emp.name]||{}).reason || 'Not part of the pay-vs-production comparison.'}</div>` :
       (!emp.matchesProductionData ? `<div class="placeholder-note">This employee wasn't matched to any production revenue rows under this name — their totals above may be incomplete. Worth confirming the name used in ServiceTitan reports.</div>` : '')}
     ${emp.note ? `<div class="placeholder-note">${emp.note}</div>` : ''}
-    <div style="margin-top:16px;">${dailyTotalsPanelHtml('techDailyChart', 'techDailySlider', 'techDailyLabel', 'Revenue vs. Labor Cost — Daily')}</div>
-  `;
+    <div style="margin-top:16px;">${dailyTotalsPanelHtml('techDailyChart', 'techDailySlider', 'techDailyLabel', 'Revenue vs. Labor Cost — Daily')}</div>`;
+  } else {
+    html += `
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-box"><div class="l">Hourly Rate</div><div class="v">${fmtMoney2(emp.rate)}</div></div>
+      <div class="stat-box"><div class="l">Hired</div><div class="v">${fmtDate(emp.hireDate)}</div></div>
+      <div class="stat-box"><div class="l">Tenure</div><div class="v">${tenure(emp.hireDate)}</div></div>
+    </div>
+    <div class="placeholder-note">${dept} isn't part of the pay-vs-production comparison (no ServiceTitan revenue to compare against) — this folder just tracks pay, tenure, ride-alongs, and annual reviews for this role.</div>`;
+  }
+
+  html += rideAlongHistoryHtml(emp);
+  html += annualReviewsHtml(emp);
+
+  body.innerHTML = html;
   document.getElementById('modalOverlay').hidden = false;
-  initDailyTotalsWidget('techDailyChart', 'techDailySlider', 'techDailyLabel', [emp], 'techDaily', { showGoal:false });
+  wireModalHistorySections(body, emp);
+  if(isField) initDailyTotalsWidget('techDailyChart', 'techDailySlider', 'techDailyLabel', [emp], 'techDaily', { showGoal:false });
+}
+
+// ---- Ride-Along Evaluations reference panel (read-only; pulled live from the public
+// tracker's data/ridealong.json, matched by tech name — never copied/duplicated) ----
+function rideAlongHistoryHtml(emp){
+  const evals = (state.rideAlongEvals||[]).filter(e => e.tech === emp.name).sort((a,b) => b.date.localeCompare(a.date));
+  const rows = evals.map(e => `
+    <div class="other-roles-row ra-eval-row" data-id="${e.id}">
+      <span class="n">${fmtDate(e.date)}</span>
+      <span class="badge badge-blue">${e.overallScore!=null ? e.overallScore.toFixed(1)+' / 5' : '—'}</span>
+      <span class="muted">${e.manager ? 'by '+e.manager : ''}</span>
+      <span class="r">${e.notes ? e.notes.slice(0,90)+(e.notes.length>90?'…':'') : ''}</span>
+    </div>`).join('');
+  return `<div class="panel" style="margin-top:16px;"><div class="panel-title">Ride-Along Evaluations ${evals.length?`(${evals.length})`:''}</div>
+    ${evals.length ? `<div class="other-roles">${rows}</div>` : `<div class="muted" style="padding:6px 0;">No ride-along evaluations on file for ${emp.name} yet.</div>`}
+  </div>`;
+}
+
+// ---- Annual Reviews panel: past reviews (read-only detail) + Give Annual Review entry point ----
+function annualReviewsHtml(emp){
+  const reviews = (state.reviews||[]).filter(r => r.employeeName===emp.name && r.department===emp.department).sort((a,b) => b.evaluationDate.localeCompare(a.evaluationDate));
+  const status = reviewStatus(emp);
+  const rows = reviews.map(r => `
+    <div class="other-roles-row annual-review-row" data-id="${r.id}">
+      <span class="n">${fmtDate(r.evaluationDate)}</span>
+      <span class="badge badge-purple">${r.totalScore} / 45</span>
+      <span class="muted">${r.overallRating}</span>
+      <span class="r">${r.evaluationPeriod || ''}</span>
+    </div>`).join('');
+  return `<div class="panel" style="margin-top:16px;">
+    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="panel-title" style="margin-bottom:0;">Annual Reviews ${reviews.length?`(${reviews.length})`:''} ${status.due?`<span class="badge ${status.overdue?'badge-red':'badge-amber'}" style="margin-left:8px;">${status.overdue?'Overdue':'Due Soon'}</span>`:''}</div>
+      <button class="btn-add-emp give-review-btn">Give Annual Review</button>
+    </div>
+    ${reviews.length ? `<div class="other-roles">${rows}</div>` : `<div class="muted" style="padding:6px 0;">No annual reviews on file for ${emp.name} yet.</div>`}
+  </div>`;
+}
+
+function wireModalHistorySections(root, emp){
+  root.querySelectorAll('.ra-eval-row').forEach(row => row.addEventListener('click', () => openRideAlongEvalReadonly(emp, row.dataset.id)));
+  root.querySelectorAll('.annual-review-row').forEach(row => row.addEventListener('click', () => openAnnualReviewReadonly(emp, row.dataset.id)));
+  const giveBtn = root.querySelector('.give-review-btn');
+  if(giveBtn) giveBtn.addEventListener('click', () => openReviewForm(emp));
+}
+
+function openRideAlongEvalReadonly(emp, id){
+  const e = (state.rideAlongEvals||[]).find(x => x.id===id);
+  if(!e) return;
+  document.getElementById('modalMeta').textContent = `${emp.department} · Ride-Along Evaluation · ${fmtDate(e.date)}`;
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `<button class="btn-add-emp" id="backToProfileBtn" style="margin-bottom:14px;">&larr; Back to ${emp.name}</button>
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-box"><div class="l">Overall Score</div><div class="v">${e.overallScore!=null?e.overallScore.toFixed(1):'—'} / 5</div></div>
+      <div class="stat-box"><div class="l">Evaluated By</div><div class="v" style="font-size:13px;">${e.manager||'—'}</div></div>
+      <div class="stat-box"><div class="l">Date</div><div class="v" style="font-size:13px;">${fmtDate(e.date)}</div></div>
+    </div>
+    ${e.notes ? `<div class="panel" style="margin-top:14px;"><div class="panel-title">Notes</div><div style="font-size:13px;white-space:pre-wrap;">${e.notes.replace(/</g,'&lt;')}</div></div>` : ''}
+    <div class="placeholder-note" style="margin-top:14px;">This is the same evaluation recorded in the main LPH Performance Tracker under Ride-Alongs — open it there for the full item-by-item checklist.</div>`;
+  document.getElementById('backToProfileBtn').addEventListener('click', () => openTechModal(emp.name, emp.department));
+}
+
+function openAnnualReviewReadonly(emp, id){
+  const r = (state.reviews||[]).find(x => x.id===id);
+  if(!r) return;
+  document.getElementById('modalMeta').textContent = `${emp.department} · Annual Review · ${fmtDate(r.evaluationDate)}`;
+  const body = document.getElementById('modalBody');
+  const cats = reviewCategoriesFor(r.department) || [];
+  const catRows = cats.map(c => {
+    const v = r.scores ? r.scores[c.key] : null;
+    return `<div class="review-cat-row"><span>${c.name}</span><span class="money">${v!=null?v+' / 5':'—'}</span></div>`;
+  }).join('');
+  body.innerHTML = `<button class="btn-add-emp" id="backToProfileBtn" style="margin-bottom:14px;">&larr; Back to ${emp.name}</button>
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-box"><div class="l">Total Score</div><div class="v">${r.totalScore} / 45</div></div>
+      <div class="stat-box"><div class="l">Overall Rating</div><div class="v" style="font-size:13px;">${r.overallRating}</div></div>
+      <div class="stat-box"><div class="l">Evaluated By</div><div class="v" style="font-size:13px;">${r.evaluatedBy||'—'}</div></div>
+    </div>
+    <div class="panel" style="margin-top:14px;"><div class="panel-title">Category Scores</div>${catRows}</div>
+    ${r.strengths?`<div class="panel"><div class="panel-title">Greatest Strengths</div><div style="font-size:13px;white-space:pre-wrap;">${r.strengths.replace(/</g,'&lt;')}</div></div>`:''}
+    ${r.growthAreas?`<div class="panel"><div class="panel-title">Growth Areas</div><div style="font-size:13px;white-space:pre-wrap;">${r.growthAreas.replace(/</g,'&lt;')}</div></div>`:''}
+    ${r.employeeComments?`<div class="panel"><div class="panel-title">Employee Comments</div><div style="font-size:13px;white-space:pre-wrap;">${r.employeeComments.replace(/</g,'&lt;')}</div></div>`:''}
+    ${(r.goals||[]).some(g=>g.goal)?`<div class="panel"><div class="panel-title">Goals for Next Period</div>${(r.goals||[]).filter(g=>g.goal).map(g=>`<div class="review-cat-row"><span>${g.goal}</span><span class="muted">${g.targetDate||''} — ${g.measure||''}</span></div>`).join('')}</div>`:''}
+    <div class="placeholder-note" style="margin-top:14px;">Submitted ${fmtDate((r.submittedAt||'').slice(0,10))} without a signature (digital copy) — signed on paper separately if you printed this at the time.</div>`;
+  document.getElementById('backToProfileBtn').addEventListener('click', () => openTechModal(emp.name, emp.department));
+}
+
+// ---- Give Annual Review: native scored form, department-aware, with Print (for the
+// physical sign-off) and Submit (stores the digital copy, no signature, to this
+// employee's folder) as two separate actions, per how LPH runs the review process. ----
+function openReviewForm(emp){
+  const cats = reviewCategoriesFor(emp.department);
+  document.getElementById('modalMeta').textContent = `${emp.department} · Annual Review`;
+  const body = document.getElementById('modalBody');
+  if(!cats){
+    body.innerHTML = `<button class="btn-add-emp" id="backToProfileBtn" style="margin-bottom:14px;">&larr; Back to ${emp.name}</button>
+      <div class="placeholder-note">No review rubric is set up for ${emp.department} yet.</div>`;
+    document.getElementById('backToProfileBtn').addEventListener('click', () => openTechModal(emp.name, emp.department));
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const catHtml = cats.map((c,i) => `
+    <div class="panel review-cat-panel">
+      <div class="panel-title">Category ${i+1} of 9 — ${c.name}</div>
+      <div class="muted" style="font-size:12px;margin:-8px 0 10px;">${c.desc}</div>
+      <div class="review-score-options" data-key="${c.key}">
+        ${[5,4,3,2,1].map(n => `<label class="review-score-opt">
+          <input type="radio" name="score_${c.key}" value="${n}">
+          <span class="review-score-n">${n}</span>
+          <span class="review-score-d">${c.d[5-n]}</span>
+        </label>`).join('')}
+      </div>
+      <textarea class="review-comment" data-key="${c.key}" placeholder="Comments (optional)" rows="2"></textarea>
+    </div>`).join('');
+
+  body.innerHTML = `
+    <button class="btn-add-emp" id="backToProfileBtn" style="margin-bottom:14px;">&larr; Back to ${emp.name}</button>
+    <div class="panel">
+      <div class="panel-title">Employee Information</div>
+      <div class="review-info-grid">
+        <div><label>Employee</label><input type="text" id="rf_name" value="${emp.name}" disabled></div>
+        <div><label>Job Title</label><input type="text" id="rf_title" value="${emp.title||''}"></div>
+        <div><label>Department</label><input type="text" id="rf_dept" value="${emp.department}" disabled></div>
+        <div><label>Evaluation Date</label><input type="date" id="rf_date" value="${today}"></div>
+        <div><label>Evaluated By</label><input type="text" id="rf_evaluator" value="${state.user.name||''}"></div>
+        <div><label>Evaluation Period</label><input type="text" id="rf_period" value="Annual Review — ${new Date().getFullYear()}"></div>
+      </div>
+    </div>
+    <div class="panel" style="text-align:center;">
+      <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Running Total</div>
+      <div id="rf_total" style="font-size:28px;font-weight:800;color:var(--navy);">0 / 45</div>
+      <div id="rf_rating" class="muted" style="font-size:13px;"></div>
+    </div>
+    ${catHtml}
+    <div class="panel">
+      <div class="panel-title">Summary</div>
+      <label class="review-field-label">Greatest Strengths</label><textarea id="rf_strengths" rows="2"></textarea>
+      <label class="review-field-label">Growth Areas</label><textarea id="rf_growth" rows="2"></textarea>
+      <label class="review-field-label">Employee Comments</label><textarea id="rf_empcomments" rows="2"></textarea>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Goals for Next Period</div>
+      ${[0,1,2].map(i => `<div class="review-goal-row">
+        <input type="text" class="rf_goal" placeholder="Goal">
+        <input type="date" class="rf_goal_date">
+        <input type="text" class="rf_goal_measure" placeholder="How we'll measure it">
+      </div>`).join('')}
+    </div>
+    <div class="review-form-err" id="rf_err"></div>
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button class="btn-add-emp" id="rf_print" style="background:#fff;color:var(--navy);border:1px solid var(--navy);">Print for Signature</button>
+      <button class="btn-add-emp" id="rf_submit">Submit Digital Copy (No Signature)</button>
+    </div>
+    <div class="muted" style="font-size:11.5px;margin-top:8px;">Print gives you a paper copy to sign with ${emp.name} in person. Submit saves this exact data to their folder here — it does not require a signature.</div>
+  `;
+  document.getElementById('backToProfileBtn').addEventListener('click', () => openTechModal(emp.name, emp.department));
+  body.querySelectorAll('.review-score-options input[type=radio]').forEach(inp => inp.addEventListener('change', () => updateReviewTotal(body)));
+  document.getElementById('rf_print').addEventListener('click', () => printReviewForm(emp, body));
+  document.getElementById('rf_submit').addEventListener('click', () => submitReviewForm(emp, body));
+}
+
+function readReviewFormState(root){
+  const scores = {};
+  root.querySelectorAll('.review-score-options').forEach(wrap => {
+    const key = wrap.dataset.key;
+    const checked = wrap.querySelector('input[type=radio]:checked');
+    if(checked) scores[key] = parseInt(checked.value, 10);
+  });
+  const comments = {};
+  root.querySelectorAll('.review-comment').forEach(ta => { if(ta.value.trim()) comments[ta.dataset.key] = ta.value.trim(); });
+  const goals = Array.from(root.querySelectorAll('.review-goal-row')).map(row => ({
+    goal: row.querySelector('.rf_goal').value.trim(),
+    targetDate: row.querySelector('.rf_goal_date').value,
+    measure: row.querySelector('.rf_goal_measure').value.trim()
+  }));
+  return {
+    jobTitle: root.querySelector('#rf_title').value.trim(),
+    evaluationDate: root.querySelector('#rf_date').value,
+    evaluatedBy: root.querySelector('#rf_evaluator').value.trim(),
+    evaluationPeriod: root.querySelector('#rf_period').value.trim(),
+    scores, comments,
+    strengths: root.querySelector('#rf_strengths').value.trim(),
+    growthAreas: root.querySelector('#rf_growth').value.trim(),
+    employeeComments: root.querySelector('#rf_empcomments').value.trim(),
+    goals
+  };
+}
+function updateReviewTotal(root){
+  const f = readReviewFormState(root);
+  const total = Object.values(f.scores).reduce((a,b) => a+b, 0);
+  root.querySelector('#rf_total').textContent = `${total} / 45`;
+  root.querySelector('#rf_rating').textContent = total>0 ? overallRatingLabel(total) : '';
+}
+
+function printReviewForm(emp, root){
+  const f = readReviewFormState(root);
+  const cats = reviewCategoriesFor(emp.department);
+  const total = Object.values(f.scores).reduce((a,b) => a+b, 0);
+  const win = window.open('', '_blank');
+  if(!win){ alert('Your browser blocked the print window — please allow pop-ups for this site and try again.'); return; }
+  const catBlocks = cats.map((c,i) => `
+    <div class="p-cat">
+      <div class="p-cat-num">CATEGORY ${i+1} OF 9</div>
+      <div class="p-cat-name">${c.name}</div>
+      <div class="p-cat-desc">${c.desc}</div>
+      <div class="p-cat-score">Score: <strong>${f.scores[c.key]!=null ? f.scores[c.key]+' / 5' : '_____'}</strong></div>
+      <div class="p-cat-comments">Comments: ${f.comments[c.key] || ''}</div>
+    </div>`).join('');
+  win.document.write(`<!doctype html><html><head><title>${emp.name} — Annual Review</title><style>
+    body{font-family:Arial,Helvetica,sans-serif;color:#182246;margin:0;padding:0;}
+    .p-header{background:#082971;color:#fff;padding:24px 32px;}
+    .p-header h1{margin:0;font-size:22px;color:#F3770C;}
+    .p-header .sub{font-size:13px;opacity:.85;margin-top:4px;}
+    .p-body{padding:24px 32px;}
+    .p-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px;}
+    .p-info-grid div{font-size:12px;}
+    .p-info-grid label{display:block;font-size:9.5px;text-transform:uppercase;color:#6B7290;letter-spacing:.04em;margin-bottom:3px;}
+    .p-cat{border-top:2px solid #0f2a4a;padding:12px 0;}
+    .p-cat-num{font-size:10px;color:#F3770C;font-weight:700;letter-spacing:.05em;}
+    .p-cat-name{font-size:14px;font-weight:800;color:#0f2a4a;}
+    .p-cat-desc{font-size:11.5px;font-style:italic;color:#555;margin:2px 0 6px;}
+    .p-cat-score{font-size:12.5px;margin-bottom:4px;}
+    .p-cat-comments{font-size:12px;color:#333;}
+    .p-summary-box{border:1px solid #ccc;border-radius:8px;padding:14px;margin-top:16px;}
+    .p-goals{width:100%;border-collapse:collapse;margin-top:8px;}
+    .p-goals th,.p-goals td{border:1px solid #ccc;padding:6px 8px;font-size:11.5px;text-align:left;}
+    .p-sig{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:36px;}
+    .p-sig-line{border-top:1px solid #333;margin-top:36px;padding-top:4px;font-size:11px;color:#555;}
+    @media print{ body{-webkit-print-color-adjust:exact;print-color-adjust:exact;} }
+  </style></head><body>
+    <div class="p-header"><h1>PERFORMANCE EVALUATION</h1><div class="sub">Annual &amp; Milestone Review — ${emp.department} Department</div></div>
+    <div class="p-body">
+      <div class="p-info-grid">
+        <div><label>Employee Name</label>${emp.name}</div>
+        <div><label>Job Title</label>${f.jobTitle||''}</div>
+        <div><label>Department</label>${emp.department}</div>
+        <div><label>Evaluation Date</label>${f.evaluationDate||''}</div>
+        <div><label>Evaluated By</label>${f.evaluatedBy||''}</div>
+        <div><label>Evaluation Period</label>${f.evaluationPeriod||''}</div>
+      </div>
+      ${catBlocks}
+      <div class="p-summary-box">
+        <strong>TOTAL SCORE: ${total} / 45</strong> &nbsp;&middot;&nbsp; <strong>${total>0?overallRatingLabel(total):''}</strong>
+        <div style="margin-top:10px;"><strong>Greatest Strengths:</strong> ${f.strengths||''}</div>
+        <div style="margin-top:6px;"><strong>Growth Areas:</strong> ${f.growthAreas||''}</div>
+        <div style="margin-top:6px;"><strong>Employee Comments:</strong> ${f.employeeComments||''}</div>
+      </div>
+      <table class="p-goals"><thead><tr><th>Goal</th><th>Target Date</th><th>How We'll Measure It</th></tr></thead><tbody>
+        ${f.goals.map(g => `<tr><td>${g.goal||''}</td><td>${g.targetDate||''}</td><td>${g.measure||''}</td></tr>`).join('')}
+      </tbody></table>
+      <div class="p-sig">
+        <div class="p-sig-line">Evaluator Signature &amp; Date</div>
+        <div class="p-sig-line">Employee Signature &amp; Date</div>
+      </div>
+      <div style="font-size:10.5px;color:#888;margin-top:24px;">I certify that this evaluation has been discussed with me and I have had the opportunity to note any points of disagreement above.<br>LANCASTER PLUMBING · HEATING · COOLING · DRAIN CLEANING · ELECTRICAL — INTERNAL USE ONLY</div>
+    </div>
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
+async function submitReviewForm(emp, root){
+  const f = readReviewFormState(root);
+  const err = root.querySelector('#rf_err');
+  err.textContent = '';
+  const cats = reviewCategoriesFor(emp.department);
+  const missing = cats.filter(c => f.scores[c.key] == null);
+  if(!f.evaluationDate || missing.length){
+    err.textContent = missing.length ? `Score all 9 categories before submitting (missing: ${missing.map(c=>c.name).join(', ')}).` : 'Evaluation date is required.';
+    return;
+  }
+  const total = Object.values(f.scores).reduce((a,b) => a+b, 0);
+  const review = {
+    id: 'REV-' + Date.now(),
+    employeeName: emp.name,
+    department: emp.department,
+    jobTitle: f.jobTitle,
+    evaluationDate: f.evaluationDate,
+    evaluatedBy: f.evaluatedBy,
+    evaluationPeriod: f.evaluationPeriod,
+    scores: f.scores,
+    comments: f.comments,
+    totalScore: total,
+    overallRating: overallRatingLabel(total),
+    strengths: f.strengths,
+    growthAreas: f.growthAreas,
+    employeeComments: f.employeeComments,
+    goals: f.goals.filter(g => g.goal),
+    submittedAt: new Date().toISOString()
+  };
+  const btn = document.getElementById('rf_submit');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try{
+    await postLaborReview('add', { review });
+    openTechModal(emp.name, emp.department);
+  }catch(e){
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Submit Digital Copy (No Signature)';
+  }
 }
 
 boot();
