@@ -1567,6 +1567,7 @@ function wireAdminSubEvents(){
   document.querySelectorAll('.del-attend').forEach(b=> b.onclick = ()=> deleteAttendance(b.dataset.id));
   document.querySelectorAll('.del-eval').forEach(b=> b.onclick = ()=> deleteEvaluation(b.dataset.id));
   document.querySelectorAll('.view-eval').forEach(b=> b.onclick = ()=> openEvalDetail(b.dataset.id));
+  document.querySelectorAll('.resend-eval').forEach(b=> b.onclick = ()=> resendEvaluationEmail(b.dataset.id));
   document.querySelectorAll('.attend-shift').forEach(b=> b.onclick = ()=> attendShift(parseInt(b.dataset.d)));
   document.querySelectorAll('.open-report').forEach(b=> b.onclick = ()=> openReportCard(b.dataset.name));
 }
@@ -1872,15 +1873,26 @@ function renderScorecards(){
     <div class="panel"><div class="panel-head"><div class="panel-title">Evaluation History &mdash; ${scorecardFilterYear}</div>
       <select id="scorecardTechFilter" style="max-width:220px;"><option value="">All technicians</option>${allTechs.map(t=>`<option ${scorecardFilterTech===t?'selected':''}>${t}</option>`).join('')}</select></div>
       ${evals.length===0?`<div style="padding:20px;color:var(--text-mute);">No evaluations to show.</div>`:`
-      <table><thead><tr><th>Date</th><th>Tech</th><th>Dept</th><th>Overall</th><th>Notes</th><th colspan="2"></th></tr></thead><tbody>
+      <table><thead><tr><th>Date</th><th>Tech</th><th>Dept</th><th>Overall</th><th>Notes</th><th colspan="3"></th></tr></thead><tbody>
         ${evals.map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${e.tech}</td><td>${e.department}</td><td>${e.overallScore.toFixed(1)} / 5</td>
           <td style="white-space:normal;max-width:220px;">${e.notes||''}</td>
           <td><button class="view-eval" data-id="${e.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">View</button></td>
+          <td><button class="resend-eval" data-id="${e.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Email</button></td>
           <td><button class="del-eval" data-id="${e.id}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Delete</button></td></tr>`).join('')}
       </tbody></table>`}
     </div>`;
 }
 async function deleteEvaluation(id){ DATA.evaluations = DATA.evaluations.filter(e=>e.id!==id); await saveShared('lph-rat-evaluations', DATA.evaluations); renderAdminInto(); }
+async function resendEvaluationEmail(id){
+  const e = DATA.evaluations.find(x=>x.id===id); if(!e) return;
+  const r = await sendEvaluationEmail(e);
+  const msg = r.sent ? `Evaluation emailed to ${e.tech}.`
+    : r.reason==='no-email' ? `Email NOT sent — no email on file for ${e.tech} (Admin → Team).`
+    : r.reason==='not-configured' ? 'Email NOT sent — email notifications aren’t set up yet (Admin → Access → Email Notifications).'
+    : r.reason==='lib-missing' ? 'Email NOT sent — email library failed to load (check your connection and try again).'
+    : 'Email NOT sent — something went wrong sending it.';
+  showSyncToast(msg, !r.sent);
+}
 function openEvalDetail(id){
   const e = DATA.evaluations.find(x=>x.id===id); if(!e) return;
   document.getElementById('modalRoot').innerHTML = `
