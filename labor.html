@@ -1301,14 +1301,17 @@ function annualReviewsHtml(emp){
   const rows = reviews.map(r => `
     <div class="other-roles-row annual-review-row" data-id="${r.id}">
       <span class="n">${fmtDate(r.evaluationDate)}</span>
-      <span class="badge badge-purple">${r.totalScore} / 45</span>
-      <span class="muted">${r.overallRating}</span>
+      <span class="badge ${r.method==='historical'?'badge-amber':'badge-purple'}">${r.method==='historical' ? 'Paper (on file)' : (r.totalScore + ' / 45')}</span>
+      <span class="muted">${r.method==='historical' ? '' : r.overallRating}</span>
       <span class="r">${r.evaluationPeriod || ''}</span>
     </div>`).join('');
   return `<div class="panel" style="margin-top:16px;">
-    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
       <div class="panel-title" style="margin-bottom:0;">Annual Reviews ${reviews.length?`(${reviews.length})`:''} ${status.due?`<span class="badge ${status.overdue?'badge-red':'badge-amber'}" style="margin-left:8px;">${status.overdue?'Overdue':'Due Soon'}</span>`:''}</div>
-      <button class="btn-add-emp give-review-btn">Give Annual Review</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-add-emp log-past-review-btn" style="background:#fff;color:var(--navy);border:1px solid var(--navy);">Log Past Review (Paper)</button>
+        <button class="btn-add-emp give-review-btn">Give Annual Review</button>
+      </div>
     </div>
     ${reviews.length ? `<div class="other-roles">${rows}</div>` : `<div class="muted" style="padding:6px 0;">No annual reviews on file for ${emp.name} yet.</div>`}
   </div>`;
@@ -1319,6 +1322,8 @@ function wireModalHistorySections(root, emp){
   root.querySelectorAll('.annual-review-row').forEach(row => row.addEventListener('click', () => openAnnualReviewReadonly(emp, row.dataset.id)));
   const giveBtn = root.querySelector('.give-review-btn');
   if(giveBtn) giveBtn.addEventListener('click', () => openReviewForm(emp));
+  const logBtn = root.querySelector('.log-past-review-btn');
+  if(logBtn) logBtn.addEventListener('click', () => openHistoricalReviewForm(emp));
 }
 
 function openRideAlongEvalReadonly(emp, id){
@@ -1342,6 +1347,20 @@ function openAnnualReviewReadonly(emp, id){
   if(!r) return;
   document.getElementById('modalMeta').textContent = `${emp.department} · Annual Review · ${fmtDate(r.evaluationDate)}`;
   const body = document.getElementById('modalBody');
+
+  if(r.method === 'historical'){
+    body.innerHTML = `<button class="btn-add-emp" id="backToProfileBtn" style="margin-bottom:14px;">&larr; Back to ${emp.name}</button>
+      <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-box"><div class="l">Status</div><div class="v" style="font-size:15px;">Completed (Paper)</div></div>
+        <div class="stat-box"><div class="l">Date</div><div class="v" style="font-size:13px;">${fmtDate(r.evaluationDate)}</div></div>
+        <div class="stat-box"><div class="l">Evaluated By</div><div class="v" style="font-size:13px;">${r.evaluatedBy||'—'}</div></div>
+      </div>
+      ${r.note?`<div class="panel" style="margin-top:14px;"><div class="panel-title">Note</div><div style="font-size:13px;white-space:pre-wrap;">${r.note.replace(/</g,'&lt;')}</div></div>`:''}
+      <div class="placeholder-note" style="margin-top:14px;">Logged as completed via the old paper process — no scored digital copy was recorded for this one, it's here only so the review-due tracking stays accurate.</div>`;
+    document.getElementById('backToProfileBtn').addEventListener('click', () => openTechModal(emp.name, emp.department));
+    return;
+  }
+
   const cats = reviewCategoriesFor(r.department) || [];
   const catRows = cats.map(c => {
     const v = r.scores ? r.scores[c.key] : null;
@@ -1360,6 +1379,68 @@ function openAnnualReviewReadonly(emp, id){
     ${(r.goals||[]).some(g=>g.goal)?`<div class="panel"><div class="panel-title">Goals for Next Period</div>${(r.goals||[]).filter(g=>g.goal).map(g=>`<div class="review-cat-row"><span>${g.goal}</span><span class="muted">${g.targetDate||''} — ${g.measure||''}</span></div>`).join('')}</div>`:''}
     <div class="placeholder-note" style="margin-top:14px;">Submitted ${fmtDate((r.submittedAt||'').slice(0,10))} without a signature (digital copy) — signed on paper separately if you printed this at the time.</div>`;
   document.getElementById('backToProfileBtn').addEventListener('click', () => openTechModal(emp.name, emp.department));
+}
+
+// ---- Log Past Review: a lightweight way to mark a review that already happened via
+// the old paper process as done, so the Reviews Due tracker stops flagging it. Records
+// only date/evaluator/note — no scored rubric, since that work isn't being redone. ----
+function openHistoricalReviewForm(emp){
+  document.getElementById('modalMeta').textContent = `${emp.department} · Log Past Review`;
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <button class="btn-add-emp" id="backToProfileBtn" style="margin-bottom:14px;">&larr; Back to ${emp.name}</button>
+    <div class="panel">
+      <div class="panel-title">Log a Review Already Completed on Paper</div>
+      <div class="muted" style="font-size:12px;margin:-8px 0 14px;">Use this for reviews already done the old way, before this tool existed — it just records that ${emp.name} is up to date, without redoing the scoring digitally. For a new review, use "Give Annual Review" instead.</div>
+      <div class="review-info-grid">
+        <div><label>Employee</label><input type="text" value="${emp.name}" disabled></div>
+        <div><label>Department</label><input type="text" value="${emp.department}" disabled></div>
+        <div><label>Date Review Was Completed</label><input type="date" id="hr_date"></div>
+        <div><label>Evaluated By</label><input type="text" id="hr_evaluator" value="${state.user.name||''}"></div>
+      </div>
+      <label class="review-field-label">Note (optional)</label>
+      <textarea id="hr_note" rows="2" placeholder="e.g. Completed via the old paper process prior to this tool"></textarea>
+    </div>
+    <div class="review-form-err" id="hr_err"></div>
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button class="btn-add-emp" id="hr_submit">Log as Completed</button>
+    </div>
+  `;
+  document.getElementById('backToProfileBtn').addEventListener('click', () => openTechModal(emp.name, emp.department));
+  document.getElementById('hr_submit').addEventListener('click', () => submitHistoricalReview(emp, body));
+}
+
+async function submitHistoricalReview(emp, root){
+  const err = root.querySelector('#hr_err');
+  err.textContent = '';
+  const date = root.querySelector('#hr_date').value;
+  const evaluatedBy = root.querySelector('#hr_evaluator').value.trim();
+  const note = root.querySelector('#hr_note').value.trim();
+  if(!date){ err.textContent = 'Enter the date the paper review was actually completed.'; return; }
+  const review = {
+    id: 'REV-' + Date.now(),
+    employeeName: emp.name,
+    department: emp.department,
+    evaluationDate: date,
+    evaluatedBy: evaluatedBy,
+    evaluationPeriod: 'Annual Review — ' + new Date(date + 'T00:00:00Z').getUTCFullYear(),
+    method: 'historical',
+    note: note,
+    scores: {},
+    totalScore: null,
+    overallRating: null,
+    goals: [],
+    submittedAt: new Date().toISOString()
+  };
+  const btn = document.getElementById('hr_submit');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try{
+    await postLaborReview('add', { review });
+    openTechModal(emp.name, emp.department);
+  }catch(e){
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Log as Completed';
+  }
 }
 
 // ---- Give Annual Review: native scored form, department-aware, with Print (for the
