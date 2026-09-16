@@ -198,7 +198,7 @@ function parseDump(dumpPath) {
     if (!r || !r.length) continue;
     const col = i => (i < r.length ? r[i] : undefined);
     const bu = col(5), status = col(6), opp = col(7), compDateRaw = col(10);
-    const warrantyFlag = col(14), recallFlag = col(15), convertedFlag = col(16);
+    const warrantyFlag = col(14), recallFlag = col(15), convertedFlag = col(16), zeroDollarFlag = col(17);
     const primaryTech = col(18);
     const soldHrs = num(col(19)), paidTime = num(col(20)), hoursWorked = num(col(21));
     const revenue = num(col(28));
@@ -215,11 +215,30 @@ function parseDump(dumpPath) {
     capturedRevenue += revenue;
     const tech = resolveTech(dept, primaryTech);
     const isCompleted = status === 'Completed';
-    const isMoney = isCompleted && revenue > 0;
     const isWarranty = warrantyFlag === 'TRUE' || warrantyFlag === true;
     const isRecall = recallFlag === 'TRUE' || recallFlag === true;
     const isConverted = convertedFlag === 'TRUE' || convertedFlag === true;
     const isOpportunity = opp === 'TRUE' || opp === true;
+    const isZeroDollar = zeroDollarFlag === 'TRUE' || zeroDollarFlag === true;
+
+    // "Does this job count as a call" — derived by cross-checking a full year of this
+    // report against every department's manual Nexstar C&T Mgr workbook (Sept 2026).
+    // The raw report includes every completed job in a Demand/SPP/COD business unit,
+    // but the manual/Nexstar figures only count ones ServiceTitan flagged as a genuine
+    // sales Opportunity — a huge share of "Demand" jobs are tagged "Non-Repair" and
+    // never flagged as an opportunity, which was the single biggest source of the
+    // dashboard overcounting calls relative to the C&T Mgr workbooks. For Demand jobs
+    // specifically, a $0 job only still counts if it converted into a sale — this
+    // closes most of the remaining gap. This isn't a perfect match to the manually
+    // compiled workbooks in every single month (that process appears to involve some
+    // human judgment on individual jobs), but it brings automated Demand/SPP/COD call
+    // counts to within a few percent of the source of truth across a full year of
+    // cross-checked data, versus being 10-70%+ overcounted before this fix.
+    let isCall = isCompleted && isOpportunity;
+    if (cat === 'Demand' && isCall) {
+      isCall = !isZeroDollar || isConverted;
+    }
+    const isMoney = isCall && revenue > 0;
 
     if (cat === 'Installs' || cat === 'InstallSales' || cat === 'Service') {
       const ikey = dept + '|' + tech + '|' + compDate;
@@ -241,21 +260,21 @@ function parseDump(dumpPath) {
     const d = deptDay[ddKey];
 
     t.rev += revenue; t.sold += soldHrs;
-    if (isCompleted) { t.calls += 1; d.calls += 1; }
+    if (isCall) { t.calls += 1; d.calls += 1; }
     if (isMoney) { t.money_calls += 1; d.money_calls += 1; }
     if (cat === 'Demand') {
       t.demand_rev += revenue; d.demand_rev += revenue;
-      if (isCompleted) { t.demand_calls += 1; d.demand_calls += 1; }
+      if (isCall) { t.demand_calls += 1; d.demand_calls += 1; }
       if (isMoney) { t.demand_money += 1; d.demand_money += 1; }
     }
     if (cat === 'SystemCheck') {
       t.spp_rev += revenue; d.spp_rev += revenue;
-      if (isCompleted) { t.spp_calls += 1; d.spp_calls += 1; }
+      if (isCall) { t.spp_calls += 1; d.spp_calls += 1; }
       if (isMoney) { t.spp_money += 1; d.spp_money += 1; }
     }
     if (cat === 'COD') {
       t.cod_rev += revenue; d.cod_rev += revenue;
-      if (isCompleted) { t.cod_calls += 1; d.cod_calls += 1; }
+      if (isCall) { t.cod_calls += 1; d.cod_calls += 1; }
       if (isMoney) { t.cod_money += 1; d.cod_money += 1; }
     }
     d.rev += revenue; d.sold += soldHrs;
@@ -421,7 +440,11 @@ async function main() {
   console.log(`Row counts — dd: ${ddFinal.dd.length}, td: ${summary.td.after}, install: ${summary.install.after}`);
 }
 
-main().catch(e => {
-  console.error('FATAL:', e);
-  process.exit(1);
-});
+module.exports = { parseDump, classifyBU, toIsoDateSerial, mergeAndPush, writeLog };
+
+if (require.main === module) {
+  main().catch(e => {
+    console.error('FATAL:', e);
+    process.exit(1);
+  });
+}
