@@ -1,1 +1,1 @@
-{"time":"2026-09-18T11:24:36.699Z","stage":"wrote_install","detail":"{\"before\":951,\"after\":956,\"updated\":14,\"added\":5}","run_context":"scheduled"}
+{"time":"2026-09-18T11:24:37.856Z","stage":"done","detail":"Sync completed successfully","run_context":"scheduled","confirmed_max_date":"2026-09-17","confirmed_row_counts":{"dd":812,"td":4066,"install":956},"report_revenue_reconciled":true}
