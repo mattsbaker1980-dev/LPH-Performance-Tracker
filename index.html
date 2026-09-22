@@ -1132,6 +1132,7 @@ let raSort = {key:'daysSince', dir:'desc'};
 let adminUnlocked = false, adminPasswordError = false, currentAdminName = null;
 let adminSubtab = 'scorecards', adminDeptFilter = 'All';
 let ooFilterTech = '';
+let ooCalYear = new Date().getFullYear(), ooCalMonth = new Date().getMonth()+1;
 const OO_HOURS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 let evalDraft = null, scorecardFilterYear = new Date(LATEST_DATE).getFullYear(), scorecardFilterTech = '';
 let editingTechName = null;
@@ -1546,6 +1547,46 @@ function ooStatusPill(st){
   if(st.status==='scheduled') return `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:#2B4EE61A;color:#2B4EE6;border:1px solid #2B4EE666;">${st.label}</span>`;
   return `<span style="font-size:11.5px;color:var(--text-mute);">${st.label}</span>`;
 }
+function ooCalShift(delta){ ooCalMonth += delta; if(ooCalMonth<1){ooCalMonth=12; ooCalYear--;} if(ooCalMonth>12){ooCalMonth=1; ooCalYear++;} document.getElementById('content').innerHTML = renderOneOnOnes(); wireOneOnOneEvents(); }
+function ooCalPickDate(iso){ const el = document.getElementById('oo_date'); if(!el) return; el.value = iso; if(el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus(); }
+function ooStatusColor(o){
+  if(o.status==='completed') return 'var(--green)';
+  if(o.date < todayIso()) return 'var(--orange)'; // booked, time passed, no recap yet
+  return '#2B4EE6'; // booked, still upcoming
+}
+function renderOneOnOneCalendar(){
+  const firstOfMonth = new Date(ooCalYear, ooCalMonth-1, 1);
+  const startDow = firstOfMonth.getDay();
+  const daysInMonth = new Date(ooCalYear, ooCalMonth, 0).getDate();
+  const today = todayIso();
+  const byDate = {};
+  DATA.oneOnOnes.forEach(o=> { (byDate[o.date]=byDate[o.date]||[]).push(o); });
+  Object.values(byDate).forEach(list=> list.sort((a,b)=> a.startTime.localeCompare(b.startTime)));
+  let cells = '';
+  for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = `${ooCalYear}-${String(ooCalMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entries = byDate[iso] || [];
+    cells += `<div class="cal-cell ${iso===today?'today':''}" onclick="ooCalPickDate('${iso}')" style="cursor:pointer;">
+      <div class="cal-date">${d}</div>
+      ${entries.map(o=>{
+        const c = ooStatusColor(o);
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px solid ${c}66;" onclick="event.stopPropagation(); openOneOnOneDetail('${o.id}')" title="${o.employeeName} &mdash; ${fmtHour12(o.startTime)}${o.manager?' w/ '+o.manager:''}">${fmtHour12(o.startTime).replace(' AM','a').replace(' PM','p')} ${o.employeeName}</div>`;
+      }).join('')}
+    </div>`;
+  }
+  return `
+    <div class="cal-head">
+      <button class="cal-nav" onclick="ooCalShift(-1)">&larr;</button>
+      <div class="cal-month-label">${new Date(ooCalYear,ooCalMonth-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+      <button class="cal-nav" onclick="ooCalShift(1)">&rarr;</button>
+    </div>
+    <div class="cal-grid">
+      ${DOW_NAMES2.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>
+    <div style="font-size:11.5px;color:var(--text-mute);margin-top:10px;">Blue = scheduled &middot; green = recap completed &middot; amber = time's passed, still needs a recap &middot; click a day to set that date in the booking form below, click a booking to open it</div>`;
+}
 function renderOneOnOnes(){
   const today = todayIso();
   const roster = DATA.teamRoster.filter(t=>t.active).slice().sort((a,b)=> a.department.localeCompare(b.department) || a.name.localeCompare(b.name));
@@ -1563,6 +1604,8 @@ function renderOneOnOnes(){
       <div class="card2"><div class="n">${scheduledCount}</div><div class="l">Booked, Upcoming</div></div>
       <div class="card2"><div class="n">${overdueCount}</div><div class="l">Overdue / Needs Recap</div></div>
     </div>
+
+    <div class="panel"><div class="panel-title">Calendar</div>${renderOneOnOneCalendar()}</div>
 
     <div class="panel">
       <div class="panel-title" style="margin-bottom:4px;">Book the Meeting Room</div>
