@@ -30,6 +30,16 @@
   a{color:inherit;}
   .app{display:flex;min-height:100vh;}
 
+  /* Login gate */
+  .login-gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--navy) 0%,#0c3aa0 100%);z-index:999;padding:20px;}
+  .login-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  .login-logo{width:100%;max-width:220px;display:block;margin:0 auto 18px;border-radius:8px;}
+  .login-title{font-size:19px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+  .login-sub{font-size:12.5px;color:var(--text-mute);margin-bottom:18px;}
+  .login-card input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;text-align:center;}
+  .login-card .btn-primary{width:100%;}
+  #loginErr{color:var(--red);font-size:12px;margin:-6px 0 12px;}
+
   /* Sidebar */
   .sidebar{width:300px;flex-shrink:0;background:var(--orange);color:#fff;display:flex;flex-direction:column;}
   .brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.25);}
@@ -204,7 +214,17 @@
 </style>
 </head>
 <body>
-<div class="app">
+<div id="loginGate" class="login-gate">
+  <div class="login-card">
+    <img class="login-logo" src="data:image/png;base64,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" alt="Lancaster Plumbing, Heating, Cooling, Drain Cleaning, Electrical">
+    <div class="login-title">Performance Tracker</div>
+    <div class="login-sub" id="loginSub">Enter your password to continue</div>
+    <input id="login_pw" type="password" placeholder="Password" disabled>
+    <div id="loginErr" style="display:none;">Incorrect password.</div>
+    <button class="btn-primary" id="loginBtn" onclick="attemptLogin()" disabled>Loading&hellip;</button>
+  </div>
+</div>
+<div class="app" style="display:none;">
 
   <div class="sidebar">
     <div class="brand">
@@ -227,7 +247,7 @@
       <div class="nav-label">Coaching</div>
       <div class="nav-item" data-view="ridealongs"><span class="nav-num">06</span> Ride-Alongs</div>
       <div class="nav-item" data-view="oneonones"><span class="nav-num">07</span> 1:1 Meetings</div>
-      <div class="nav-item" data-view="training"><span class="nav-num">08</span> Technical Training</div>
+      <div class="nav-item" data-view="training"><span class="nav-num">08</span> Technician Training</div>
       <div class="nav-item" data-view="admin"><span class="nav-num">09</span> Admin</div>
     </div>
     <div class="nav-group">
@@ -288,7 +308,7 @@ const NAME_MAP = {"Electrical|tyson|k": "Tyson Kline", "Electrical|ryan|k": "Rya
 const DEPT_COLOR = {Plumbing:'#2B4EE6', Sewer:'#1E9E5A', HVAC:'#F3770C', Electrical:'#8A4FE0'};
 const DEPTS = ['Plumbing','Sewer','HVAC','Electrical'];
 // Warehouse is a full 5th department for people-ops purposes (roster, ride-alongs, evaluations,
-// attendance, 1:1 Meetings, Technical Training) but is intentionally left out of DEPTS above,
+// attendance, 1:1 Meetings, Technician Training) but is intentionally left out of DEPTS above,
 // since DEPTS drives the revenue/conversion dashboards (Overview + per-dept charts) and Warehouse
 // has no ServiceTitan sales data to show there. ROSTER_DEPTS is used anywhere a person (not
 // production numbers) needs a department picker.
@@ -1199,6 +1219,10 @@ let rlFilterTech = '', rlDeptFilter = 'All';
 let raSort = {key:'daysSince', dir:'desc'};
 let adminUnlocked = false, adminPasswordError = false, currentAdminName = null;
 let adminSubtab = 'scorecards', adminDeptFilter = 'All';
+// The whole app is gated behind this -- currentSessionUser is null until someone logs in via
+// the loginGate screen. {name, role:'full'|'manager', department} once signed in.
+let currentSessionUser = null;
+let appDataReady = false;
 let ooFilterTech = '';
 let ooCalYear = new Date().getFullYear(), ooCalMonth = new Date().getMonth()+1;
 const OO_HOURS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
@@ -1282,6 +1306,10 @@ function avatar(name, size){
 }
 function techTitle(tech){ const r = DATA.teamRoster.find(t=>t.name===tech); return r ? r.title : null; }
 function techDept(tech){ const r = DATA.teamRoster.find(t=>t.name===tech); return r ? r.department : null; }
+// Department-scoped manager accounts (e.g. a Warehouse manager) only ever see their own
+// department's data in 1:1 Meetings / Technician Training. Returns null for full-access users.
+function sessionDeptScope(){ return (currentSessionUser && currentSessionUser.role==='manager') ? currentSessionUser.department : null; }
+function adminRole(a){ return (a && a.role==='manager') ? 'manager' : 'full'; }
 function isTechActive(tech){ const r = DATA.teamRoster.find(t=>t.name===tech); return r ? !!r.active : true; }
 function activeTechs(){ return DATA.teamRoster.filter(t=>t.active).map(t=>t.name).sort(); }
 function allKnownTechs(){
@@ -1399,13 +1427,49 @@ function whRaRows(summary){
 }
 function renderWarehouseDept(){
   const activeList = DATA.teamRoster.filter(t=>t.active && t.department==='Warehouse').map(t=>t.name).sort();
+  const oneOnOneDoneCount = activeList.filter(n=> oneOnOneStatusForTech(n).status==='done').length;
+  const trainStatus = trainingStatusForDept('Warehouse');
+
+  // A Department Manager login (e.g. Trent Helm) gets a stripped-down version of this page:
+  // just their own team and the two tools they're scoped to. No ride-along counts, no
+  // evaluation scores, no links into Ride-Alongs or Admin -- those stay full-admin-only.
+  if(currentSessionUser && currentSessionUser.role==='manager'){
+    return `
+      <div class="cards2">
+        <div class="card2"><div class="n">${activeList.length}</div><div class="l">Active Employees</div></div>
+        <div class="card2"><div class="n">${oneOnOneDoneCount}/${activeList.length||0}</div><div class="l">1:1s Done This Month</div></div>
+      </div>
+
+      <div class="panel" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="panel-title" style="margin-bottom:2px;">Technician Training This Week</div>
+          <div style="font-size:11.5px;color:var(--text-mute);">${ttStatusPill(trainStatus)}</div>
+        </div>
+        <button class="btn-primary" onclick="switchView('training')">Go to Technician Training</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Your Team</div>
+        <div style="font-size:11.5px;color:var(--text-mute);margin:4px 0 12px;">Schedule a 1:1 or plan a training session for anyone below.</div>
+        ${activeList.length===0 ? `<div style="padding:20px;color:var(--text-mute);">No active Warehouse employees yet.</div>` : `
+        <div style="display:flex;flex-wrap:wrap;gap:10px;">
+          ${activeList.map(n=>`<span class="tech-btn" style="padding:8px 12px;cursor:default;">${avatar(n)} ${n}</span>`).join('')}
+        </div>`}
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Go To</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="switchView('oneonones')">1:1 Meetings</button>
+          <button class="btn-primary" onclick="switchView('training')">Technician Training</button>
+        </div>
+      </div>`;
+  }
+
   let summary = rideAlongSummary().filter(s=> techDept(s.tech)==='Warehouse');
   summary = sortSummary(summary, 'daysSince', 'desc');
   const totalRA = DATA.rideAlongs.filter(r=> techDept(r.tech)==='Warehouse').length;
   const neverVisited = summary.filter(s=>s.count===0).length;
-
-  const oneOnOneDoneCount = activeList.filter(n=> oneOnOneStatusForTech(n).status==='done').length;
-  const trainStatus = trainingStatusForDept('Warehouse');
 
   const whEvals = DATA.evaluations.filter(e=> techDept(e.tech)==='Warehouse');
   const thisYear = new Date(LATEST_DATE).getFullYear();
@@ -1422,10 +1486,10 @@ function renderWarehouseDept(){
 
     <div class="panel" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
       <div>
-        <div class="panel-title" style="margin-bottom:2px;">Technical Training This Month</div>
+        <div class="panel-title" style="margin-bottom:2px;">Technician Training This Week</div>
         <div style="font-size:11.5px;color:var(--text-mute);">${ttStatusPill(trainStatus)}</div>
       </div>
-      <button class="btn-primary" onclick="switchView('training')">Go to Technical Training</button>
+      <button class="btn-primary" onclick="switchView('training')">Go to Technician Training</button>
     </div>
 
     <div class="panel">
@@ -1669,7 +1733,9 @@ function oneOnOneDepts(){ return [...new Set(DATA.teamRoster.filter(t=>t.active)
 function todayIso(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function fmtHour12(hhmm){ const [h,m] = hhmm.split(':').map(Number); const period = h>=12?'PM':'AM'; const h12 = ((h+11)%12)+1; return h12+':'+String(m).padStart(2,'0')+' '+period; }
 function ooEndTime(startTime){ const [h,m] = startTime.split(':').map(Number); return String(h+1).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
-function roomSlotTaken(date, startTime, excludeId){ return DATA.oneOnOnes.some(o=> o.date===date && o.startTime===startTime && o.id!==excludeId); }
+// Only bookings that actually reserved the shared meeting room can conflict with each other --
+// managers meeting in their own offices can freely overlap.
+function roomSlotTaken(date, startTime, excludeId){ return DATA.oneOnOnes.some(o=> o.reserveRoom && o.date===date && o.startTime===startTime && o.id!==excludeId); }
 function oneOnOneStatusForTech(name){
   const today = todayIso();
   const now = new Date();
@@ -1704,8 +1770,9 @@ function renderOneOnOneCalendar(){
   const startDow = firstOfMonth.getDay();
   const daysInMonth = new Date(ooCalYear, ooCalMonth, 0).getDate();
   const today = todayIso();
+  const scope = sessionDeptScope();
   const byDate = {};
-  DATA.oneOnOnes.forEach(o=> { (byDate[o.date]=byDate[o.date]||[]).push(o); });
+  DATA.oneOnOnes.filter(o=> !scope || techDept(o.employeeName)===scope).forEach(o=> { (byDate[o.date]=byDate[o.date]||[]).push(o); });
   Object.values(byDate).forEach(list=> list.sort((a,b)=> a.startTime.localeCompare(b.startTime)));
   let cells = '';
   for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
@@ -1716,7 +1783,7 @@ function renderOneOnOneCalendar(){
       <div class="cal-date">${d}</div>
       ${entries.map(o=>{
         const c = ooStatusColor(o);
-        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px solid ${c}66;" onclick="event.stopPropagation(); openOneOnOneDetail('${o.id}')" title="${o.employeeName} &mdash; ${fmtHour12(o.startTime)}${o.manager?' w/ '+o.manager:''}">${fmtHour12(o.startTime).replace(' AM','a').replace(' PM','p')} ${o.employeeName}</div>`;
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px solid ${c}66;" onclick="event.stopPropagation(); openOneOnOneDetail('${o.id}')" title="${o.employeeName} &mdash; ${fmtHour12(o.startTime)}${o.manager?' w/ '+o.manager:''}${o.reserveRoom?' (meeting room reserved)':''}">${fmtHour12(o.startTime).replace(' AM','a').replace(' PM','p')} ${o.employeeName}${o.reserveRoom?' &middot; Room':''}</div>`;
       }).join('')}
     </div>`;
   }
@@ -1734,14 +1801,15 @@ function renderOneOnOneCalendar(){
 }
 function renderOneOnOnes(){
   const today = todayIso();
-  const roster = DATA.teamRoster.filter(t=>t.active).slice().sort((a,b)=> a.department.localeCompare(b.department) || a.name.localeCompare(b.name));
-  const depts = oneOnOneDepts();
+  const scope = sessionDeptScope();
+  const roster = DATA.teamRoster.filter(t=>t.active && (!scope || t.department===scope)).slice().sort((a,b)=> a.department.localeCompare(b.department) || a.name.localeCompare(b.name));
+  const depts = scope ? [scope] : oneOnOneDepts();
   const statuses = roster.map(r=> ({...r, st: oneOnOneStatusForTech(r.name)}));
   const doneCount = statuses.filter(s=>s.st.status==='done').length;
   const overdueCount = statuses.filter(s=>s.st.status==='overdue' || s.st.status==='needs-recap').length;
   const scheduledCount = statuses.filter(s=>s.st.status==='scheduled').length;
-  const upcoming = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date>=today).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-  const needsRecapList = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date<today).sort((a,b)=> a.date.localeCompare(b.date));
+  const upcoming = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date>=today && (!scope || techDept(o.employeeName)===scope)).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  const needsRecapList = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date<today && (!scope || techDept(o.employeeName)===scope)).sort((a,b)=> a.date.localeCompare(b.date));
 
   return `
     <div class="cards2">
@@ -1753,28 +1821,33 @@ function renderOneOnOnes(){
     <div class="panel"><div class="panel-title">Calendar</div>${renderOneOnOneCalendar()}</div>
 
     <div class="panel">
-      <div class="panel-title" style="margin-bottom:4px;">Book the Meeting Room</div>
-      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:14px;">One-hour slots, 7 AM&ndash;5 PM. After the meeting, open the booking to fill in a recap &mdash; that's what marks the employee as covered for the month.</div>
+      <div class="panel-title" style="margin-bottom:4px;">Schedule a 1:1</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:14px;">One-hour slots, 7 AM&ndash;5 PM. Most managers meet in their own office, so times can overlap &mdash; only check the box below if you specifically need the shared meeting room (there's just the one, so it can't be double-booked). After the meeting, open the booking to fill in a recap &mdash; that's what marks the employee as covered for the month.</div>
       <div class="row2">
         <div class="field2"><label>Date</label><input id="oo_date" type="date" value="${today}" min="${today}"></div>
         <div class="field2"><label>Time</label><select id="oo_time">${OO_HOURS.map(h=>`<option value="${h}">${fmtHour12(h)} &ndash; ${fmtHour12(ooEndTime(h))}</option>`).join('')}</select></div>
       </div>
       <div class="row2">
         <div class="field2"><label>Employee</label><select id="oo_emp">${depts.map(d=>`<optgroup label="${d}">${roster.filter(r=>r.department===d).map(r=>`<option>${r.name}</option>`).join('')}</optgroup>`).join('')}</select></div>
-        <div class="field2"><label>Manager</label><select id="oo_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}">${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
+        <div class="field2"><label>Manager</label><select id="oo_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}" ${currentSessionUser && a.name===currentSessionUser.name ? 'selected':''}>${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
       </div>
-      <div id="oo_bookErr" style="display:none;color:var(--red);font-size:12px;margin:-4px 0 10px;">This slot is already booked &mdash; pick a different time.</div>
-      <button class="btn-primary" onclick="saveOneOnOneBooking()">Book the Room</button>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;margin-bottom:12px;">
+        <input type="checkbox" id="oo_reserveRoom" style="width:15px;height:15px;flex:none;padding:0;border-radius:3px;margin:0;">
+        Reserve the shared meeting room for this <span style="font-weight:700;">(there's only one &mdash; not required if you're meeting in your own office)</span>
+      </label>
+      <div id="oo_bookErr" style="display:none;color:var(--red);font-size:12px;margin:-4px 0 10px;">The meeting room is already reserved for that time &mdash; pick a different time.</div>
+      <button class="btn-primary" onclick="saveOneOnOneBooking()">Schedule It</button>
     </div>
 
     <div class="panel">
       <div class="panel-title">Upcoming (${upcoming.length})</div>
       ${upcoming.length===0 ? `<div style="padding:20px;color:var(--text-mute);">Nothing booked yet.</div>` : `
-      <table><thead><tr><th>Date</th><th>Time</th><th>Employee</th><th>Dept</th><th>Manager</th><th></th></tr></thead>
+      <table><thead><tr><th>Date</th><th>Time</th><th>Employee</th><th>Dept</th><th>Manager</th><th>Room</th><th></th></tr></thead>
       <tbody>${upcoming.map(o=>`<tr>
         <td>${fmtDate(o.date)}</td><td>${fmtHour12(o.startTime)}</td>
         <td><button class="tech-btn" onclick="openOneOnOneDetail('${o.id}')">${avatar(o.employeeName)} ${o.employeeName}</button></td>
         <td>${o.department}</td><td>${o.manager?raInitials(o.manager):'&mdash;'}</td>
+        <td>${o.reserveRoom?'<span class="badge2 badge2-warn">Reserved</span>':'&mdash;'}</td>
         <td><button class="btn-ghost btn-sm" onclick="openOneOnOneDetail('${o.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
       </tr>`).join('')}</tbody></table>`}
     </div>
@@ -1813,13 +1886,14 @@ async function saveOneOnOneBooking(){
   const startTime = document.getElementById('oo_time').value;
   const employeeName = document.getElementById('oo_emp').value;
   const manager = document.getElementById('oo_manager').value;
+  const reserveRoom = document.getElementById('oo_reserveRoom').checked;
   const errEl = document.getElementById('oo_bookErr');
   if(!date || !employeeName) return;
-  if(roomSlotTaken(date, startTime, null)){ errEl.style.display='block'; return; }
+  if(reserveRoom && roomSlotTaken(date, startTime, null)){ errEl.style.display='block'; return; }
   errEl.style.display='none';
   DATA.oneOnOnes.push({
     id: 'OTO-'+Date.now(), date, startTime, endTime: ooEndTime(startTime),
-    employeeName, department: techDept(employeeName) || '',
+    employeeName, department: techDept(employeeName) || '', reserveRoom,
     manager, status: 'booked', recap: null,
     createdAt: new Date().toISOString()
   });
@@ -1833,7 +1907,7 @@ function openOneOnOneDetail(id){
   document.getElementById('modalRoot').innerHTML = `
     <div class="overlay" onclick="if(event.target===this) closeModal()">
       <div class="modal-card" style="max-width:480px;">
-        <div class="modal-head">${avatar(o.employeeName,'lg')}<div><div class="name">${o.employeeName}</div><div class="title">${fmtDate(o.date)} &middot; ${fmtHour12(o.startTime)}&ndash;${fmtHour12(o.endTime)}${o.manager?' &middot; w/ '+o.manager:''}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-head">${avatar(o.employeeName,'lg')}<div><div class="name">${o.employeeName}</div><div class="title">${fmtDate(o.date)} &middot; ${fmtHour12(o.startTime)}&ndash;${fmtHour12(o.endTime)}${o.manager?' &middot; w/ '+o.manager:''}${o.reserveRoom?' &middot; Meeting room reserved':''}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
         <div class="modal-body">
           ${o.status==='completed' ? `
           <div class="modal-section"><div class="modal-section-title">Recap</div>
@@ -1918,13 +1992,14 @@ function openOneOnOneHistory(name){
     </div>`;
 }
 
-/* ---- Technical Training (monthly department training + attendance confirmation) ----
+/* ---- Technician Training (weekly department training + attendance confirmation) ----
    A session (DATA.trainingSessions entry) is created with a topic, date/time, department,
    and a checklist of attendees, each starting status:'pending'. It only counts toward that
-   department's monthly coverage once a manager opens it and confirms attendance, which sets
+   department's weekly coverage once a manager opens it and confirms attendance, which sets
    confirmed:true and locks in each attendee's final status:'attended'|'absent'. Unlike the
    1:1 Meeting Room, there's no shared-resource conflict check here -- different departments
-   train in their own space and can run sessions at the same time. */
+   train in their own space and can run sessions at the same time. Each department is expected
+   to hold one confirmed session per calendar week (Sun-Sat). */
 function ttAttendeeChecklist(dept, checkedNames){
   const roster = DATA.teamRoster.filter(t=>t.active && t.department===dept).sort((a,b)=> a.name.localeCompare(b.name));
   if(!roster.length) return `<div style="font-size:12px;color:var(--text-mute);">No active employees in this department.</div>`;
@@ -1944,19 +2019,26 @@ function ttAllActiveGroupedOptions(excludeNames){
   }).join('');
   return groups;
 }
+// Sunday-Saturday calendar week containing Date d, as ISO date strings.
+function weekBoundsIso(d){
+  const iso = x=> x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()-d.getDay());
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate()+6);
+  return {start: iso(start), end: iso(end)};
+}
 function trainingStatusForDept(dept){
   const today = todayIso();
   const now = new Date();
-  const monthPrefix = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const {start:weekStart, end:weekEnd} = weekBoundsIso(now);
   const sessions = DATA.trainingSessions.filter(s=>s.department===dept);
-  const doneThisMonth = sessions.filter(s=> s.confirmed && s.date.slice(0,7)===monthPrefix).sort((a,b)=> b.date.localeCompare(a.date));
+  const doneThisWeek = sessions.filter(s=> s.confirmed && s.date>=weekStart && s.date<=weekEnd).sort((a,b)=> b.date.localeCompare(a.date));
   const needsConfirm = sessions.filter(s=> !s.confirmed && s.date<today).sort((a,b)=> a.date.localeCompare(b.date));
-  const upcoming = sessions.filter(s=> s.date>=today).sort((a,b)=> a.date.localeCompare(b.date));
-  if(doneThisMonth.length) return {status:'done', label:'Done &mdash; '+doneThisMonth[0].topic+' ('+fmtDate(doneThisMonth[0].date)+')', entry:doneThisMonth[0]};
+  const upcomingThisWeek = sessions.filter(s=> s.date>=today && s.date<=weekEnd).sort((a,b)=> a.date.localeCompare(b.date));
+  if(doneThisWeek.length) return {status:'done', label:'Done &mdash; '+doneThisWeek[0].topic+' ('+fmtDate(doneThisWeek[0].date)+')', entry:doneThisWeek[0]};
   if(needsConfirm.length) return {status:'needs-confirm', label:'Needs Attendance Confirmed', entry:needsConfirm[0]};
-  if(upcoming.length) return {status:'scheduled', label:'Scheduled &mdash; '+upcoming[0].topic+' ('+fmtDate(upcoming[0].date)+')', entry:upcoming[0]};
-  if(now.getDate() > 15) return {status:'overdue', label:'Overdue &mdash; Not Scheduled', entry:null};
-  return {status:'due', label:'Not Yet Scheduled', entry:null};
+  if(upcomingThisWeek.length) return {status:'scheduled', label:'Scheduled &mdash; '+upcomingThisWeek[0].topic+' ('+fmtDate(upcomingThisWeek[0].date)+')', entry:upcomingThisWeek[0]};
+  if(now.getDay() >= 4) return {status:'overdue', label:'Overdue &mdash; Not Scheduled This Week', entry:null};
+  return {status:'due', label:'Not Yet Scheduled This Week', entry:null};
 }
 function ttStatusPill(st){
   if(st.status==='done') return `<span class="badge2 badge2-ok">${st.label}</span>`;
@@ -1977,8 +2059,9 @@ function renderTrainingCalendar(){
   const startDow = firstOfMonth.getDay();
   const daysInMonth = new Date(ttCalYear, ttCalMonth, 0).getDate();
   const today = todayIso();
+  const scope = sessionDeptScope();
   const byDate = {};
-  DATA.trainingSessions.forEach(s=> { (byDate[s.date]=byDate[s.date]||[]).push(s); });
+  DATA.trainingSessions.filter(s=> !scope || s.department===scope).forEach(s=> { (byDate[s.date]=byDate[s.date]||[]).push(s); });
   Object.values(byDate).forEach(list=> list.sort((a,b)=> a.startTime.localeCompare(b.startTime)));
   let cells = '';
   for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
@@ -2007,17 +2090,18 @@ function renderTrainingCalendar(){
 }
 function renderTechnicalTraining(){
   const today = todayIso();
-  const depts = oneOnOneDepts();
+  const scope = sessionDeptScope();
+  const depts = scope ? [scope] : oneOnOneDepts();
   const deptStatuses = depts.map(d=> ({department:d, st: trainingStatusForDept(d)}));
   const doneCount = deptStatuses.filter(s=>s.st.status==='done').length;
-  const needsConfirmList = DATA.trainingSessions.filter(s=> !s.confirmed && s.date<today).sort((a,b)=> a.date.localeCompare(b.date));
-  const upcoming = DATA.trainingSessions.filter(s=> s.date>=today).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-  const allSessions = DATA.trainingSessions.filter(s=> !ttLogDeptFilter || s.department===ttLogDeptFilter).slice().sort((a,b)=> b.date.localeCompare(a.date));
+  const needsConfirmList = DATA.trainingSessions.filter(s=> !s.confirmed && s.date<today && (!scope || s.department===scope)).sort((a,b)=> a.date.localeCompare(b.date));
+  const upcoming = DATA.trainingSessions.filter(s=> s.date>=today && (!scope || s.department===scope)).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  const allSessions = DATA.trainingSessions.filter(s=> (!scope || s.department===scope) && (!ttLogDeptFilter || s.department===ttLogDeptFilter)).slice().sort((a,b)=> b.date.localeCompare(a.date));
   const defaultDept = depts[0] || '';
 
   return `
     <div class="cards2">
-      <div class="card2"><div class="n">${doneCount}/${depts.length}</div><div class="l">Departments Covered This Month</div></div>
+      <div class="card2"><div class="n">${doneCount}/${depts.length}</div><div class="l">Departments Covered This Week</div></div>
       <div class="card2"><div class="n">${upcoming.length}</div><div class="l">Scheduled, Upcoming</div></div>
       <div class="card2"><div class="n">${needsConfirmList.length}</div><div class="l">Needs Attendance Confirmed</div></div>
     </div>
@@ -2025,7 +2109,7 @@ function renderTechnicalTraining(){
     <div class="panel"><div class="panel-title">Calendar</div>${renderTrainingCalendar()}</div>
 
     <div class="panel">
-      <div class="panel-title" style="margin-bottom:4px;">Schedule a Technical Training</div>
+      <div class="panel-title" style="margin-bottom:4px;">Schedule a Technician Training</div>
       <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:14px;">Pick a topic, date, and time, then choose who's attending. Come back afterward to confirm who actually showed up.</div>
       <div class="field2"><label>Topic</label><input id="tt_topic" type="text" placeholder="e.g. Proper PPE for Confined Space Entry"></div>
       <div class="row2">
@@ -2036,7 +2120,7 @@ function renderTechnicalTraining(){
         <div class="field2"><label>Start Time</label><input id="tt_start" type="time" value="08:00"></div>
         <div class="field2"><label>End Time</label><input id="tt_end" type="time" value="09:00"></div>
       </div>
-      <div class="field2"><label>Manager</label><select id="tt_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}">${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
+      <div class="field2"><label>Manager</label><select id="tt_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}" ${currentSessionUser && a.name===currentSessionUser.name ? 'selected':''}>${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
       <div style="margin-bottom:12px;">
         <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-mute);font-weight:700;margin-bottom:4px;">Attendees</label>
         <div id="tt_attendeesBox">${ttAttendeeChecklist(defaultDept)}</div>
@@ -2071,7 +2155,7 @@ function renderTechnicalTraining(){
     </div>` : ''}
 
     <div class="panel">
-      <div class="panel-title">Monthly Coverage by Department</div>
+      <div class="panel-title">Weekly Coverage by Department</div>
       <table><thead><tr><th>Department</th><th>Status</th></tr></thead>
       <tbody>${deptStatuses.map(s=>`<tr>
         <td>${s.department}</td>
@@ -2238,7 +2322,7 @@ function openTrainingHistory(name){
   document.getElementById('modalRoot').innerHTML = `
     <div class="overlay" onclick="if(event.target===this) closeModal()">
       <div class="modal-card" style="max-width:520px;">
-        <div class="modal-head">${avatar(name,'lg')}<div><div class="name">${name}</div><div class="title">Technical Training History</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-head">${avatar(name,'lg')}<div><div class="name">${name}</div><div class="title">Technician Training History</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
         <div class="modal-body">
           ${sessions.length===0 ? `<div class="modal-section"><div style="font-size:12.5px;color:var(--text-mute);">No technical trainings on file yet.</div></div>` : sessions.map(s=>{
             const a = s.attendees.find(x=>x.name===name);
@@ -2261,7 +2345,9 @@ function goToEvaluation(tech){ initEvalDraft(); evalDraft.tech = tech; evalDraft
 function backFromEvaluation(){ evalDraft = null; switchView('ridealongs'); }
 function checkAdminPassword(){
   const val = document.getElementById('admin_pw').value;
-  const match = DATA.superAdmins.find(a=>a.password===val);
+  // Department Manager logins never unlock Admin, even if they somehow land on this screen --
+  // scorecards/attendance/team/access are full-admin-only.
+  const match = DATA.superAdmins.find(a=>a.password===val && adminRole(a)==='full');
   if(match){ adminUnlocked = true; adminPasswordError = false; currentAdminName = match.name; }
   else adminPasswordError = true;
   document.getElementById('content').innerHTML = renderAdmin();
@@ -2309,6 +2395,8 @@ function wireAdminSubEvents(){
   const saveEmailCfgBtn = document.getElementById('saveEmailCfgBtn'); if(saveEmailCfgBtn) saveEmailCfgBtn.onclick = saveEmailConfig;
   document.querySelectorAll('.remove-sa').forEach(b=> b.onclick = ()=> removeSuperAdmin(parseInt(b.dataset.idx)));
   document.querySelectorAll('.sa-email-input').forEach(inp=> inp.onchange = ()=> updateSuperAdminEmail(parseInt(inp.dataset.idx), inp.value));
+  document.querySelectorAll('.sa-role-select').forEach(sel=> sel.onchange = ()=> updateSuperAdminRole(parseInt(sel.dataset.idx), sel.value));
+  document.querySelectorAll('.sa-dept-select').forEach(sel=> sel.onchange = ()=> updateSuperAdminDept(parseInt(sel.dataset.idx), sel.value));
   const addTeamBtn = document.getElementById('addTeamBtn'); if(addTeamBtn) addTeamBtn.onclick = addTeamMember;
   document.querySelectorAll('.edit-tech').forEach(b=> b.onclick = ()=>{ editingTechName = b.dataset.name; renderAdminInto(); });
   document.querySelectorAll('.cancel-edit-tech').forEach(b=> b.onclick = ()=>{ editingTechName = null; renderAdminInto(); });
@@ -2340,16 +2428,22 @@ function renderAccessManagement(){
       <button class="btn-primary" id="saveEmailCfgBtn">Save Email Settings</button>
       <span style="margin-left:10px;font-size:12px;color:${(DATA.emailConfig.serviceId&&DATA.emailConfig.templateId&&DATA.emailConfig.publicKey)?'#166534':'#991B1B'};font-weight:600;">${(DATA.emailConfig.serviceId&&DATA.emailConfig.templateId&&DATA.emailConfig.publicKey)?'Configured':'Not configured yet'}</span>
     </div>
-    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Add a Super Admin</div>
-      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Every Super Admin gets full access to everything here. Add their email so evaluations they submit are sent to the technician as coming from them.</div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Add a Login</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">A <strong>Super Admin</strong> gets full access to everything here. A <strong>Department Manager</strong> signs into the same link with their own password but only sees their one department's people-ops tab, plus 1:1 Meetings and Technician Training scoped to their department &mdash; no Overview, no other departments, no revenue data, no Admin, no Ride-Alongs. Add their email so evaluations they submit are sent to the technician as coming from them (Super Admins only).</div>
       <div class="row2"><div class="field2"><label>Name</label><input id="sa_name" type="text"></div><div class="field2"><label>Password</label><input id="sa_password" type="text"></div></div>
+      <div class="row2">
+        <div class="field2"><label>Role</label><select id="sa_role"><option value="full">Super Admin (full access)</option><option value="manager">Department Manager (restricted)</option></select></div>
+        <div class="field2"><label>Department (Managers only)</label><select id="sa_department">${ROSTER_DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+      </div>
       <div class="field2" style="max-width:340px;"><label>Email</label><input id="sa_email" type="email" placeholder="name@lphservice.com"></div>
-      <button class="btn-primary" id="addSuperAdminBtn">Add Super Admin</button>
+      <button class="btn-primary" id="addSuperAdminBtn">Add Login</button>
     </div>
-    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Super Admins</div>
+    <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Logins</div>
       <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Email here is used as the Reply-To when that person's evaluations get emailed to a technician &mdash; edits save automatically.</div>
-      <table><thead><tr><th>Name</th><th>Password</th><th>Email</th><th></th></tr></thead><tbody>
+      <table><thead><tr><th>Name</th><th>Password</th><th>Role</th><th>Department</th><th>Email</th><th></th></tr></thead><tbody>
         ${DATA.superAdmins.map((a,i)=>`<tr><td>${a.name}${a.name===currentAdminName?' <span class="badge2 badge2-ok">You</span>':''}</td><td>${a.password}</td>
+          <td><select class="sa-role-select" data-idx="${i}" style="padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;"><option value="full" ${adminRole(a)==='full'?'selected':''}>Super Admin</option><option value="manager" ${adminRole(a)==='manager'?'selected':''}>Dept Manager</option></select></td>
+          <td><select class="sa-dept-select" data-idx="${i}" style="padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;" ${adminRole(a)==='manager'?'':'disabled'}>${ROSTER_DEPTS.map(d=>`<option ${a.department===d?'selected':''}>${d}</option>`).join('')}</select></td>
           <td><input class="sa-email-input" data-idx="${i}" type="email" value="${(a.email||'').replace(/"/g,'&quot;')}" placeholder="name@lphservice.com" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:12.5px;"></td>
           <td>${DATA.superAdmins.length>1?`<button class="remove-sa" data-idx="${i}" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Remove</button>`:'<span style="font-size:11px;color:var(--text-mute);">Last admin</span>'}</td></tr>`).join('')}
       </tbody></table>
@@ -2358,9 +2452,13 @@ function renderAccessManagement(){
 async function addSuperAdmin(){
   const name = document.getElementById('sa_name').value.trim(), password = document.getElementById('sa_password').value.trim();
   const email = document.getElementById('sa_email').value.trim();
+  const role = document.getElementById('sa_role').value;
+  const department = document.getElementById('sa_department').value;
   if(!name || !password) return;
   if(DATA.superAdmins.some(a=>a.password===password)) return;
-  DATA.superAdmins.push({name, password, email});
+  const entry = {name, password, email};
+  if(role==='manager'){ entry.role = 'manager'; entry.department = department; }
+  DATA.superAdmins.push(entry);
   await saveShared('lph-rat-superadmins', DATA.superAdmins);
   renderAdminInto();
 }
@@ -2368,6 +2466,18 @@ async function removeSuperAdmin(i){ if(DATA.superAdmins.length<=1) return; DATA.
 async function updateSuperAdminEmail(i, email){
   if(!DATA.superAdmins[i]) return;
   DATA.superAdmins[i].email = email.trim();
+  await saveShared('lph-rat-superadmins', DATA.superAdmins);
+}
+async function updateSuperAdminRole(i, role){
+  if(!DATA.superAdmins[i]) return;
+  if(role==='manager'){ DATA.superAdmins[i].role = 'manager'; if(!DATA.superAdmins[i].department) DATA.superAdmins[i].department = ROSTER_DEPTS[0]; }
+  else { delete DATA.superAdmins[i].role; delete DATA.superAdmins[i].department; }
+  await saveShared('lph-rat-superadmins', DATA.superAdmins);
+  renderAdminInto();
+}
+async function updateSuperAdminDept(i, department){
+  if(!DATA.superAdmins[i]) return;
+  DATA.superAdmins[i].department = department;
   await saveShared('lph-rat-superadmins', DATA.superAdmins);
 }
 
@@ -2749,6 +2859,15 @@ function openReportCard(tech){
 
 
 function switchView(view){
+  // Defense in depth: a Department Manager login can only ever land on their own department
+  // tab, 1:1 Meetings, or Technician Training -- redirect anything else back to their home tab,
+  // even if something tried to navigate there directly (nav items for other views are hidden,
+  // but this keeps stray links/buttons from actually rendering restricted data).
+  if(currentSessionUser && currentSessionUser.role==='manager'){
+    const dept = currentSessionUser.department;
+    const allowed = view===dept || view==='oneonones' || view==='training';
+    if(!allowed) view = dept;
+  }
   currentView = view;
   destroyCharts();
   document.querySelectorAll('.nav-item').forEach(el=> el.classList.toggle('active', el.dataset.view===view));
@@ -2772,8 +2891,8 @@ function switchView(view){
     document.getElementById('content').innerHTML = renderOneOnOnes();
     wireOneOnOneEvents();
   } else if(view==='training'){
-    document.getElementById('pageTitle').textContent = 'Technical Training';
-    document.getElementById('pageSub').textContent = 'Plan monthly department trainings and confirm attendance';
+    document.getElementById('pageTitle').textContent = 'Technician Training';
+    document.getElementById('pageSub').textContent = 'Required weekly per department — plan trainings and confirm attendance';
     document.getElementById('content').innerHTML = renderTechnicalTraining();
     wireTrainingEvents();
   } else if(view==='admin'){
@@ -2848,9 +2967,47 @@ loadAllShared().then(()=>{
     const start = new Date(end.getFullYear(), 0, 1);
     range = {from:start.toISOString().slice(0,10), to:LATEST_DATE};
   }
-  applyRange();
+  appDataReady = true;
+  const pwEl = document.getElementById('login_pw'), btnEl = document.getElementById('loginBtn');
+  if(pwEl){ pwEl.disabled = false; pwEl.focus(); }
+  if(btnEl){ btnEl.disabled = false; btnEl.textContent = 'Sign In'; }
 });
 
+/* ---- Login gate: the whole app (everything below) is hidden until this succeeds. A Super
+   Admin sees everything as before; a Department Manager (e.g. Trent Helm / Warehouse) only
+   ever sees their own department's tab plus 1:1 Meetings and Technician Training, scoped to
+   their department -- see sessionDeptScope() and applyNavVisibility(). ---- */
+function attemptLogin(){
+  if(!appDataReady) return;
+  const val = document.getElementById('login_pw').value;
+  const errEl = document.getElementById('loginErr');
+  const match = DATA.superAdmins.find(a=>a.password===val);
+  if(!match){ errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  currentSessionUser = {name: match.name, role: adminRole(match), department: match.department || null};
+  document.getElementById('loginGate').style.display = 'none';
+  document.querySelector('.app').style.display = '';
+  applyNavVisibility();
+  currentView = (currentSessionUser.role==='manager' && currentSessionUser.department) ? currentSessionUser.department : 'overview';
+  applyRange();
+}
+function applyNavVisibility(){
+  const isManager = currentSessionUser && currentSessionUser.role==='manager';
+  const dept = currentSessionUser && currentSessionUser.department;
+  document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
+    const v = el.dataset.view;
+    const allowed = !isManager || v===dept || v==='oneonones' || v==='training';
+    el.style.display = allowed ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-group').forEach(g=>{
+    const anyVisible = [...g.querySelectorAll('.nav-item')].some(el=> el.style.display!=='none');
+    g.style.display = anyVisible ? '' : 'none';
+  });
+}
+{
+  const pwEl = document.getElementById('login_pw');
+  if(pwEl) pwEl.addEventListener('keydown', e=>{ if(e.key==='Enter') attemptLogin(); });
+}
 </script>
 </body>
 </html>
