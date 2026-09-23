@@ -1850,9 +1850,21 @@ function openOneOnOneHistory(name){
 function ttAttendeeChecklist(dept, checkedNames){
   const roster = DATA.teamRoster.filter(t=>t.active && t.department===dept).sort((a,b)=> a.name.localeCompare(b.name));
   if(!roster.length) return `<div style="font-size:12px;color:var(--text-mute);">No active employees in this department.</div>`;
-  return roster.map(r=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;">
-    <input type="checkbox" class="tt-attendee-cb" value="${r.name}" ${(!checkedNames || checkedNames.includes(r.name))?'checked':''}> ${r.name}
-  </label>`).join('');
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 14px;border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
+    ${roster.map(r=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;cursor:pointer;min-width:0;">
+      <input type="checkbox" class="tt-attendee-cb" value="${r.name}" style="width:15px;height:15px;flex:none;padding:0;border-radius:3px;margin:0;" ${(!checkedNames || checkedNames.includes(r.name))?'checked':''}> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name}</span>
+    </label>`).join('')}
+  </div>`;
+}
+function ttAllActiveGroupedOptions(excludeNames){
+  const exclude = new Set(excludeNames || []);
+  const depts = [...new Set(DATA.teamRoster.filter(t=>t.active).map(t=>t.department))].sort();
+  const groups = depts.map(d=>{
+    const people = DATA.teamRoster.filter(t=>t.active && t.department===d && !exclude.has(t.name)).sort((a,b)=> a.name.localeCompare(b.name));
+    if(!people.length) return '';
+    return `<optgroup label="${d}">${people.map(p=>`<option>${p.name}</option>`).join('')}</optgroup>`;
+  }).join('');
+  return groups;
 }
 function trainingStatusForDept(dept){
   const today = todayIso();
@@ -1947,7 +1959,10 @@ function renderTechnicalTraining(){
         <div class="field2"><label>End Time</label><input id="tt_end" type="time" value="09:00"></div>
       </div>
       <div class="field2"><label>Manager</label><select id="tt_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}">${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
-      <div class="field2"><label>Attendees</label><div id="tt_attendeesBox">${ttAttendeeChecklist(defaultDept)}</div></div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-mute);font-weight:700;margin-bottom:4px;">Attendees</label>
+        <div id="tt_attendeesBox">${ttAttendeeChecklist(defaultDept)}</div>
+      </div>
       <div class="field2"><label>Notes (optional)</label><textarea id="tt_notes" placeholder="Anything worth noting for next time"></textarea></div>
       <div id="tt_saveErr" style="display:none;color:var(--red);font-size:12px;margin:-4px 0 10px;"></div>
       <button class="btn-primary" onclick="saveTrainingSession()">Schedule Training</button>
@@ -1994,7 +2009,7 @@ function renderTechnicalTraining(){
       <table><thead><tr><th>Date</th><th>Topic</th><th>Dept</th><th>Attendees</th><th>Status</th><th></th></tr></thead>
       <tbody>${allSessions.map(s=>`<tr>
         <td>${fmtDate(s.date)}</td><td>${s.topic}</td><td>${s.department}</td>
-        <td>${s.attendees.map(a=>`<button class="tech-btn" onclick="openTrainingHistory('${a.name}')" style="margin:1px;">${a.name}</button>`).join('')}</td>
+        <td>${s.attendees.map(a=>`<button class="tech-btn" onclick="openTrainingHistory('${a.name}')" style="margin:1px;white-space:nowrap;display:inline-block;">${a.name}</button>`).join(', ')}</td>
         <td>${s.confirmed ? `<span class="badge2 badge2-ok">Confirmed</span>` : (s.date<today ? `<span class="badge2 badge2-warn">Needs Confirm</span>` : `<span style="font-size:11px;color:var(--text-mute);">Scheduled</span>`)}</td>
         <td><button class="btn-ghost btn-sm" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
       </tr>`).join('')}</tbody></table>`}
@@ -2022,7 +2037,7 @@ async function saveTrainingSession(){
   if(errEl) errEl.style.display='none';
   DATA.trainingSessions.push({
     id: 'TT-'+Date.now(), topic, date, startTime, endTime, department, manager,
-    attendees: checked.map(name=>({name, status:'pending'})),
+    attendees: checked.map(name=>({name, status:'pending', department: techDept(name) || department})),
     notes, confirmed:false, confirmedBy:null, confirmedAt:null,
     createdAt: new Date().toISOString()
   });
@@ -2032,14 +2047,18 @@ async function saveTrainingSession(){
 }
 function openTrainingDetail(id){
   const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  const editable = !s.confirmed;
   const rows = s.attendees.map(a=>`
-    <div class="tt-att-row" data-name="${a.name}" data-status="${a.status}" style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
-      <button class="tech-btn" onclick="closeModal(); openTrainingHistory('${a.name}')">${avatar(a.name)} ${a.name}</button>
-      <div class="tt-att-toggle" style="display:flex;gap:6px;">
-        <button type="button" class="tt-mark" onclick="ttSetAttendeeStatus(this,'attended')" style="border:1px solid var(--border);background:${a.status==='attended'?'var(--green)':'#fff'};color:${a.status==='attended'?'#fff':'inherit'};border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Attended</button>
-        <button type="button" class="tt-mark" onclick="ttSetAttendeeStatus(this,'absent')" style="border:1px solid var(--border);background:${a.status==='absent'?'var(--red)':'#fff'};color:${a.status==='absent'?'#fff':'inherit'};border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Absent</button>
+    <div class="tt-att-row" data-name="${a.name}" data-status="${a.status}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
+      <button class="tech-btn" onclick="closeModal(); openTrainingHistory('${a.name}')" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;">${avatar(a.name)} ${a.name}${(a.department && a.department!==s.department) ? ` <span style="font-weight:400;color:var(--text-mute);">(${a.department})</span>` : ''}</button>
+      <div style="display:flex;gap:6px;flex:none;">
+        ${editable ? `
+        <button type="button" class="tt-mark" onclick="ttSetAttendeeStatus(this,'${a.status==='attended'?'pending':'attended'}')" style="border:1px solid var(--border);background:${a.status==='attended'?'var(--green)':'#fff'};color:${a.status==='attended'?'#fff':'inherit'};border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">Attended</button>
+        <button type="button" onclick="removeTrainingAttendee('${s.id}','${a.name}')" title="Remove from this session" style="border:1px solid var(--border);background:#fff;color:var(--red);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">&times;</button>
+        ` : `<span style="font-size:11px;font-weight:700;color:${a.status==='attended'?'var(--green)':'var(--red)'};white-space:nowrap;">${a.status==='attended'?'Attended':'Absent'}</span>`}
       </div>
     </div>`).join('');
+  const addOptions = editable ? ttAllActiveGroupedOptions(s.attendees.map(a=>a.name)) : '';
   document.getElementById('modalRoot').innerHTML = `
     <div class="overlay" onclick="if(event.target===this) closeModal()">
       <div class="modal-card" style="max-width:520px;">
@@ -2048,10 +2067,20 @@ function openTrainingDetail(id){
           ${s.notes ? `<div class="modal-section"><div class="modal-section-title">Notes</div><div style="font-size:12.5px;line-height:1.5;">${s.notes}</div></div>` : ''}
           <div class="modal-section">
             <div class="modal-section-title">Attendance ${s.confirmed?`<span class="badge2 badge2-ok" style="margin-left:6px;">Confirmed</span>`:''}</div>
-            <div style="font-size:11px;color:var(--text-mute);margin-bottom:6px;">Anyone left unmarked is recorded as absent when you confirm.</div>
+            <div style="font-size:11px;color:var(--text-mute);margin-bottom:6px;">Click a name's Attended button to check them in &mdash; anyone left unmarked is recorded as absent when you confirm.</div>
             <div id="tt_attRows">${rows}</div>
             ${s.confirmed ? `<div style="font-size:11px;color:var(--text-mute);margin-top:10px;">Confirmed by ${s.confirmedBy||'&mdash;'} on ${fmtDate((s.confirmedAt||'').slice(0,10))}</div>` : ''}
           </div>
+          ${editable ? `
+          <div class="modal-section">
+            <div class="modal-section-title">Roster Changed?</div>
+            <div style="font-size:11px;color:var(--text-mute);margin-bottom:8px;">New hire, transfer, or someone left the department since this was scheduled &mdash; bring the list up to date, or pull in someone from another department just for this session.</div>
+            <button class="btn-ghost" onclick="syncTrainingAttendeesToRoster('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;margin-bottom:10px;">&#8635; Update to Current ${s.department} Roster</button>
+            <div style="display:flex;gap:8px;">
+              <select id="tt_addAttendee" style="flex:1;">${addOptions || '<option value="">Everyone active is already on this list</option>'}</select>
+              <button class="btn-ghost" onclick="addTrainingAttendee('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;white-space:nowrap;">+ Add</button>
+            </div>
+          </div>` : ''}
           <div class="modal-section">
             <button class="btn-primary" onclick="confirmTrainingAttendance('${s.id}')">${s.confirmed ? 'Update Attendance' : 'Confirm Attendance'}</button>
             <button class="btn-ghost" onclick="deleteTrainingSession('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Delete session</button>
@@ -2063,9 +2092,44 @@ function openTrainingDetail(id){
 function ttSetAttendeeStatus(btn, status){
   const row = btn.closest('.tt-att-row'); if(!row) return;
   row.dataset.status = status;
-  row.querySelectorAll('.tt-mark').forEach(b=>{ b.style.background = '#fff'; b.style.color='inherit'; });
-  btn.style.background = status==='attended' ? 'var(--green)' : 'var(--red)';
-  btn.style.color = '#fff';
+  btn.style.background = status==='attended' ? 'var(--green)' : '#fff';
+  btn.style.color = status==='attended' ? '#fff' : 'inherit';
+}
+async function addTrainingAttendee(id){
+  const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  const sel = document.getElementById('tt_addAttendee');
+  const name = sel && sel.value;
+  if(!name || s.attendees.some(a=>a.name===name)) return;
+  s.attendees.push({name, status:'pending', department: techDept(name) || s.department});
+  await saveShared('lph-rat-training', DATA.trainingSessions);
+  document.getElementById('content').innerHTML = renderTechnicalTraining();
+  wireTrainingEvents();
+  openTrainingDetail(id);
+}
+async function removeTrainingAttendee(id, name){
+  const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  s.attendees = s.attendees.filter(a=>a.name!==name);
+  await saveShared('lph-rat-training', DATA.trainingSessions);
+  document.getElementById('content').innerHTML = renderTechnicalTraining();
+  wireTrainingEvents();
+  openTrainingDetail(id);
+}
+async function syncTrainingAttendeesToRoster(id){
+  const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  const currentDeptActive = DATA.teamRoster.filter(t=>t.active && t.department===s.department).map(t=>t.name).sort((a,b)=>a.localeCompare(b));
+  // Anyone pulled in from a different department is a deliberate one-off addition -- leave them alone.
+  const keptOutsiders = s.attendees.filter(a=> (a.department || s.department) !== s.department);
+  // Rebuild this session's own-department attendees from who's active there right now, keeping
+  // the existing status for anyone who's still on the roster so a sync doesn't wipe check-ins.
+  const rebuiltNative = currentDeptActive.map(name=>{
+    const existing = s.attendees.find(a=> a.name===name && (a.department || s.department)===s.department);
+    return existing || {name, status:'pending', department: s.department};
+  });
+  s.attendees = [...rebuiltNative, ...keptOutsiders];
+  await saveShared('lph-rat-training', DATA.trainingSessions);
+  document.getElementById('content').innerHTML = renderTechnicalTraining();
+  wireTrainingEvents();
+  openTrainingDetail(id);
 }
 async function confirmTrainingAttendance(id){
   const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
