@@ -221,17 +221,18 @@
       <div class="nav-item" data-view="Sewer"><span class="nav-num">02</span> Sewer</div>
       <div class="nav-item" data-view="HVAC"><span class="nav-num">03</span> HVAC</div>
       <div class="nav-item" data-view="Electrical"><span class="nav-num">04</span> Electrical</div>
+      <div class="nav-item" data-view="Warehouse"><span class="nav-num">05</span> Warehouse</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Coaching</div>
-      <div class="nav-item" data-view="ridealongs"><span class="nav-num">05</span> Ride-Alongs</div>
-      <div class="nav-item" data-view="oneonones"><span class="nav-num">06</span> 1:1 Meetings</div>
-      <div class="nav-item" data-view="training"><span class="nav-num">07</span> Technical Training</div>
-      <div class="nav-item" data-view="admin"><span class="nav-num">08</span> Admin</div>
+      <div class="nav-item" data-view="ridealongs"><span class="nav-num">06</span> Ride-Alongs</div>
+      <div class="nav-item" data-view="oneonones"><span class="nav-num">07</span> 1:1 Meetings</div>
+      <div class="nav-item" data-view="training"><span class="nav-num">08</span> Technical Training</div>
+      <div class="nav-item" data-view="admin"><span class="nav-num">09</span> Admin</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Tools</div>
-      <div class="nav-item active" data-view="upload"><span class="nav-num">09</span> Upload Data</div>
+      <div class="nav-item active" data-view="upload"><span class="nav-num">10</span> Upload Data</div>
     </div>
     <div class="sidebar-foot" id="sidebarFoot">Data through 2026-08-17<div style="margin-top:4px;color:#FFD9C2;font-weight:700;">● Local copy — not shared</div></div>
   </div>
@@ -286,9 +287,11 @@ const NAME_MAP = {"Electrical|tyson|k": "Tyson Kline", "Electrical|ryan|k": "Rya
 
 const DEPT_COLOR = {Plumbing:'#2B4EE6', Sewer:'#1E9E5A', HVAC:'#F3770C', Electrical:'#8A4FE0'};
 const DEPTS = ['Plumbing','Sewer','HVAC','Electrical'];
-// Roster entry only accepts these extra departments beyond the four production departments above.
-// They don't get their own nav tab / production dashboard yet -- that's a later build -- but
-// employees tagged with them can still be added to the Team Roster and show up in 1:1 Meetings.
+// Warehouse is a full 5th department for people-ops purposes (roster, ride-alongs, evaluations,
+// attendance, 1:1 Meetings, Technical Training) but is intentionally left out of DEPTS above,
+// since DEPTS drives the revenue/conversion dashboards (Overview + per-dept charts) and Warehouse
+// has no ServiceTitan sales data to show there. ROSTER_DEPTS is used anywhere a person (not
+// production numbers) needs a department picker.
 const ROSTER_DEPTS = [...DEPTS, 'Warehouse'];
 let LATEST_DATE = '2026-09-02';
 let EARLIEST_DATE = '2026-01-01';
@@ -1377,6 +1380,81 @@ function raSummaryRows(summary){
     </tr>`;
   }).join('');
 }
+/* ---- Warehouse (people-ops only -- no ServiceTitan sales/conversion data for this department,
+   so this page reuses the roster/ride-along/evaluation/1:1/training pieces built for the other
+   four departments but leaves out revenue, calls, conversion rate, and avg sale entirely). ---- */
+function whRaRows(summary){
+  return summary.map(s=>{
+    const ratingBits = Object.entries(s.ratingCounts).map(([r,c])=>
+      `<span class="rating-pill rate-${r.replace(/ /g,'-')}" style="margin-right:3px;">${c} ${r}</span>`).join('');
+    return `<tr class="tech-row">
+      <td><button class="tech-btn" onclick="goToEvaluation('${s.tech}')">${avatar(s.tech)} ${s.tech}</button></td>
+      <td>${techTitle(s.tech)||'&mdash;'}</td>
+      <td>${s.count}</td>
+      <td>${s.lastDate ? fmtDate(s.lastDate) : '<span class="badge2 badge2-err">Never</span>'}</td>
+      <td>${s.openFollowups>0 ? `<span class="badge2 badge2-warn">${s.openFollowups}</span>` : '0'}</td>
+      <td style="white-space:normal;">${ratingBits || '&mdash;'}</td>
+    </tr>`;
+  }).join('');
+}
+function renderWarehouseDept(){
+  const activeList = DATA.teamRoster.filter(t=>t.active && t.department==='Warehouse').map(t=>t.name).sort();
+  let summary = rideAlongSummary().filter(s=> techDept(s.tech)==='Warehouse');
+  summary = sortSummary(summary, 'daysSince', 'desc');
+  const totalRA = DATA.rideAlongs.filter(r=> techDept(r.tech)==='Warehouse').length;
+  const neverVisited = summary.filter(s=>s.count===0).length;
+
+  const oneOnOneDoneCount = activeList.filter(n=> oneOnOneStatusForTech(n).status==='done').length;
+  const trainStatus = trainingStatusForDept('Warehouse');
+
+  const whEvals = DATA.evaluations.filter(e=> techDept(e.tech)==='Warehouse');
+  const thisYear = new Date(LATEST_DATE).getFullYear();
+  const whEvalsYear = whEvals.filter(e=> new Date(e.date).getFullYear()===thisYear);
+  const avgEval = whEvalsYear.length ? whEvalsYear.reduce((s,e)=>s+e.overallScore,0)/whEvalsYear.length : null;
+
+  return `
+    <div class="cards2">
+      <div class="card2"><div class="n">${activeList.length}</div><div class="l">Active Employees</div></div>
+      <div class="card2"><div class="n">${oneOnOneDoneCount}/${activeList.length||0}</div><div class="l">1:1s Done This Month</div></div>
+      <div class="card2"><div class="n">${totalRA}</div><div class="l">Ride-Alongs Logged</div></div>
+      <div class="card2"><div class="n">${avgEval?avgEval.toFixed(1):'&mdash;'}</div><div class="l">Avg Evaluation (${thisYear})</div></div>
+    </div>
+
+    <div class="panel" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div class="panel-title" style="margin-bottom:2px;">Technical Training This Month</div>
+        <div style="font-size:11.5px;color:var(--text-mute);">${ttStatusPill(trainStatus)}</div>
+      </div>
+      <button class="btn-primary" onclick="switchView('training')">Go to Technical Training</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Team</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin:4px 0 12px;">Click a name for their full report card &mdash; ride-alongs, evaluations, and attendance. Warehouse doesn't track sales revenue, so there are no performance charts here.</div>
+      ${activeList.length===0 ? `<div style="padding:20px;color:var(--text-mute);">No active Warehouse employees yet. Add them in Admin &rarr; Team.</div>` : `
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        ${activeList.map(n=>`<button class="tech-btn" style="padding:8px 12px;" onclick="openReportCard('${n}')">${avatar(n)} ${n}</button>`).join('')}
+      </div>`}
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Ride-Along Coverage</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin:4px 0 12px;">Sorted by longest since last ride-along. Click a name to open their evaluation.${neverVisited>0?` ${neverVisited} never visited.`:''}</div>
+      <table>
+        <thead><tr><th>Tech</th><th>Title</th><th>#RA</th><th>Last Visit</th><th>Follow-ups</th><th>Ratings</th></tr></thead>
+        <tbody>${summary.length===0 ? `<tr><td colspan="6" style="text-align:center;color:var(--text-mute);padding:20px;">No employees on file yet.</td></tr>` : whRaRows(summary)}</tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Go To</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="rlDeptFilter='Warehouse'; switchView('ridealongs')">Ride-Alongs</button>
+        <button class="btn-primary" onclick="switchView('oneonones')">1:1 Meetings</button>
+        <button class="btn-primary" onclick="adminDeptFilter='Warehouse'; switchView('admin')">Admin &mdash; Scorecards / Attendance</button>
+      </div>
+    </div>`;
+}
 function calShift(delta){ calMonth += delta; if(calMonth<1){calMonth=12;calYear--;} if(calMonth>12){calMonth=1;calYear++;} renderRideAlongsInto(); }
 function attendShift(delta){ attendMonth += delta; if(attendMonth<1){attendMonth=12;attendYear--;} if(attendMonth>12){attendMonth=1;attendYear++;} renderAdminInto(); }
 
@@ -1445,7 +1523,7 @@ function renderRideAlongs(){
         <div class="field2"><label>Technician</label><select id="ra_tech">${activeList.map(t=>`<option>${t}</option>`).join('')}</select></div>
       </div>
       <div class="row2">
-        <div class="field2"><label>Department</label><select id="ra_dept">${DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+        <div class="field2"><label>Department</label><select id="ra_dept">${ROSTER_DEPTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
         <div class="field2"><label>Manager doing the ride-along</label><select id="ra_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}">${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
       </div>
       <div class="row2">
@@ -1468,7 +1546,7 @@ function renderRideAlongs(){
       <div style="font-size:11.5px;color:var(--text-mute);margin:4px 0 12px;">Sorted by longest since last ride-along. Click a name to open their evaluation.</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
         <button class="preset-btn ${rlDeptFilter==='All'?'active':''}" onclick="setRlDeptFilter('All')">All</button>
-        ${DEPTS.map(f=>`<button class="preset-btn ${rlDeptFilter===f?'active':''}" onclick="setRlDeptFilter('${f}')">${f}</button>`).join('')}
+        ${ROSTER_DEPTS.map(f=>`<button class="preset-btn ${rlDeptFilter===f?'active':''}" onclick="setRlDeptFilter('${f}')">${f}</button>`).join('')}
       </div>
       <table id="raSummaryTable">
         <thead><tr><th>Tech</th><th>Title</th><th data-sort="count">#RA</th><th data-sort="daysSince">Last Visit</th><th data-sort="openFollowups">Follow-ups</th><th>Ratings</th><th data-sort="convRate">Conv Rate</th><th data-sort="avgSale">Avg Sale</th></tr></thead>
@@ -2201,7 +2279,7 @@ function renderAdmin(){
   return `
     <div style="font-size:12.5px;color:var(--text-mute);margin-bottom:12px;">Signed in as ${currentAdminName}</div>
     <div class="field2" style="max-width:260px;"><label>Department</label>
-      <select id="adminDeptSel"><option value="All">All Departments</option>${DEPTS.map(f=>`<option ${adminDeptFilter===f?'selected':''}>${f}</option>`).join('')}</select>
+      <select id="adminDeptSel"><option value="All">All Departments</option>${ROSTER_DEPTS.map(f=>`<option ${adminDeptFilter===f?'selected':''}>${f}</option>`).join('')}</select>
     </div>
     <div class="subtabs">
       <button class="subtab ${adminSubtab==='scorecards'?'on':''}" data-sub="scorecards">Scorecards</button>
@@ -2452,7 +2530,7 @@ function renderEvalForm(standalone){
         <div class="field2"><label>Date</label><input id="eval_date" type="date" value="${evalDraft.date}"></div>
       </div>
       <div class="row2">
-        <div class="field2"><label>Department</label><select id="eval_dept">${DEPTS.map(d=>`<option ${evalDraft.department===d?'selected':''}>${d}</option>`).join('')}</select></div>
+        <div class="field2"><label>Department</label><select id="eval_dept">${ROSTER_DEPTS.map(d=>`<option ${evalDraft.department===d?'selected':''}>${d}</option>`).join('')}</select></div>
         <div class="field2"><label>Evaluator (this is who the emailed evaluation appears to come from)</label><select id="eval_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}" ${evalDraft.manager===a.name?'selected':''}>${a.name}</option>`).join('')}</select></div>
       </div>
       ${EVAL_TEMPLATE.map((step,si)=>renderEvalStep(step,si)).join('')}
@@ -2620,6 +2698,7 @@ async function saveAttendance(){
 async function deleteAttendance(id){ DATA.attendance = DATA.attendance.filter(a=>a.id!==id); await saveShared('lph-rat-attendance', DATA.attendance); renderAdminInto(); }
 
 function openReportCard(tech){
+  const isWarehouse = techDept(tech)==='Warehouse';
   const perf = combinedTechPerf(tech);
   const raEntries = DATA.rideAlongs.filter(r=>r.tech===tech).sort((a,b)=>b.date.localeCompare(a.date));
   const thisYear = new Date(LATEST_DATE).getFullYear();
@@ -2642,6 +2721,7 @@ function openReportCard(tech){
               <div class="card2"><div class="n">${pto}</div><div class="l">PTO</div></div>
             </div>
           </div>
+          ${isWarehouse ? '' : `
           <div class="modal-section"><div class="modal-section-title">Performance (selected range)</div>
             <div class="cards2" style="margin-bottom:0;">
               <div class="card2"><div class="n">${fmtMoney(perf.revenue)}</div><div class="l">Revenue</div></div>
@@ -2649,7 +2729,7 @@ function openReportCard(tech){
               <div class="card2"><div class="n">${fmtPct(perf.convRate)}</div><div class="l">Conv Rate</div></div>
               <div class="card2"><div class="n">${fmtMoney(perf.avgSale)}</div><div class="l">Avg Sale</div></div>
             </div>
-          </div>
+          </div>`}
           <div class="modal-section"><div class="modal-section-title">Ride-Alongs (${raEntries.length})</div>
             ${raEntries.length===0?`<div style="font-size:12px;color:var(--text-mute);">None logged yet.</div>`:`
             <table><thead><tr><th>Date</th><th>Focus</th><th>Rating</th><th>Notes</th></tr></thead><tbody>
@@ -2672,7 +2752,7 @@ function switchView(view){
   currentView = view;
   destroyCharts();
   document.querySelectorAll('.nav-item').forEach(el=> el.classList.toggle('active', el.dataset.view===view));
-  document.getElementById('rangeBar').style.display = (view==='upload'||view==='ridealongs'||view==='oneonones'||view==='training'||view==='admin'||view==='evaluate') ? 'none' : 'flex';
+  document.getElementById('rangeBar').style.display = (view==='upload'||view==='ridealongs'||view==='oneonones'||view==='training'||view==='admin'||view==='evaluate'||view==='Warehouse') ? 'none' : 'flex';
   if(view==='overview'){
     document.getElementById('pageTitle').textContent = 'Company Overview';
     document.getElementById('pageSub').textContent = 'All departments, selected range';
@@ -2707,6 +2787,10 @@ function switchView(view){
     document.getElementById('pageSub').textContent = evalDraft ? evalDraft.tech : '';
     document.getElementById('content').innerHTML = renderEvalForm(true);
     wireEvalEvents();
+  } else if(view==='Warehouse'){
+    document.getElementById('pageTitle').textContent = 'Warehouse';
+    document.getElementById('pageSub').textContent = 'Team, ride-alongs, evaluations & attendance — no sales data tracked for this department';
+    document.getElementById('content').innerHTML = renderWarehouseDept();
   } else {
     document.getElementById('pageTitle').textContent = view;
     document.getElementById('pageSub').textContent = view + ' department, selected range';
