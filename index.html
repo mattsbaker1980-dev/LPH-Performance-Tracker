@@ -226,11 +226,12 @@
       <div class="nav-label">Coaching</div>
       <div class="nav-item" data-view="ridealongs"><span class="nav-num">05</span> Ride-Alongs</div>
       <div class="nav-item" data-view="oneonones"><span class="nav-num">06</span> 1:1 Meetings</div>
-      <div class="nav-item" data-view="admin"><span class="nav-num">07</span> Admin</div>
+      <div class="nav-item" data-view="training"><span class="nav-num">07</span> Technical Training</div>
+      <div class="nav-item" data-view="admin"><span class="nav-num">08</span> Admin</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Tools</div>
-      <div class="nav-item active" data-view="upload"><span class="nav-num">08</span> Upload Data</div>
+      <div class="nav-item active" data-view="upload"><span class="nav-num">09</span> Upload Data</div>
     </div>
     <div class="sidebar-foot" id="sidebarFoot">Data through 2026-08-17<div style="margin-top:4px;color:#FFD9C2;font-weight:700;">● Local copy — not shared</div></div>
   </div>
@@ -280,7 +281,7 @@
 </div>
 
 <script>
-const DATA = {"td_fields":["dept","tech","date","src","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"td":[],"dd_fields":["dept","date","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"dd":[],"install_fields":["dept","tech","date","install_rev"],"install":[],"rideAlongs":[],"evaluations":[],"attendance":[],"teamRoster":[],"superAdmins":[{"name":"Matt Baker","password":"RavensR#1"}],"emailConfig":{},"oneOnOnes":[]};
+const DATA = {"td_fields":["dept","tech","date","src","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"td":[],"dd_fields":["dept","date","rev","calls","money_calls","tasks","hours_paid","on_job","sold","demand_rev","demand_calls","demand_money","demand_tasks","spp_rev","spp_calls","spp_money","spp_tasks","cod_rev","cod_calls","cod_money","cod_tasks","warranty","callbacks","service_agreements","spp_missed"],"dd":[],"install_fields":["dept","tech","date","install_rev"],"install":[],"rideAlongs":[],"evaluations":[],"attendance":[],"teamRoster":[],"superAdmins":[{"name":"Matt Baker","password":"RavensR#1"}],"emailConfig":{},"oneOnOnes":[],"trainingSessions":[]};
 const NAME_MAP = {"Electrical|tyson|k": "Tyson Kline", "Electrical|ryan|k": "Ryan Kurtz", "Electrical|brian|m": "Brian McNamara", "Electrical|cole|p": "Cole Portner", "Electrical|ryan|s": "Ryan Santiago", "Electrical|ryan|w": "Ryan Walten", "HVAC|garrick|b": "Garrick Budrow", "HVAC|robert|f": "Robert Fenton", "HVAC|andrew|g": "Andrew Gambler", "HVAC|shane|h": "Shane Hetrich", "HVAC|cesar|r": "Cesar Rodriguez", "HVAC|cayden|w": "Cayden Warner", "HVAC|uriah|w": "Uriah Warner", "HVAC|brian|w": "Brian Wasche", "HVAC|jeff|w": "Jeff Watson", "HVAC|eric|v": "Eric Vazquez", "HVAC|traevon|h": "Traevon Hinton", "HVAC|scott|h": "Scott Huber", "HVAC|brian|m": "Brian McGlynn", "Plumbing|layne|b": "Layne Beard", "Plumbing|derrick|b": "Derrick Bender", "Plumbing|chris|d": "Chris DeCicco", "Plumbing|john|d": "John Dwyer", "Plumbing|jason|g": "Jason Gantt", "Plumbing|nick|e": "Nick Elam", "Plumbing|tylor|h": "Tylor Hughes", "Plumbing|austin|j": "Austin Johnson", "Plumbing|mason|k": "Mason Kephart", "Plumbing|robert|r": "Robert Reynolds", "Plumbing|mike|d": "Mike DeCicco", "Plumbing|ethan|j": "Ethan Jones", "Plumbing|kevin|j": "Kevin Jones", "Plumbing|reese|g": "Reese Gassert", "Sewer|ethan|j": "Ethan Jones", "Sewer|mike|d": "Mike DeCicco", "Sewer|layne|b": "Layne Beard", "Sewer|derrick|b": "Derrick Bender", "Sewer|chris|d": "Chris DeCicco", "Sewer|john|d": "John Dwyer", "Sewer|jason|g": "Jason Gantt", "Sewer|nick|e": "Nick Elam", "Sewer|tylor|h": "Tylor Hughes", "Sewer|austin|j": "Austin Johnson", "Sewer|mason|k": "Mason Kephart", "Sewer|kevin|j": "Kevin Jones", "Sewer|robert|r": "Robert Reynolds", "Sewer|reese|g": "Reese Gassert", "Plumbing|bill|p": "William Price", "Sewer|bill|p": "William Price", "Plumbing|josh|r": "Joshua Rosario", "Sewer|josh|r": "Joshua Rosario"};
 
 const DEPT_COLOR = {Plumbing:'#2B4EE6', Sewer:'#1E9E5A', HVAC:'#F3770C', Electrical:'#8A4FE0'};
@@ -1037,8 +1038,63 @@ const KEY_MAP = {
   'lph-rat-teamroster': {file:'ridealong.json', field:'teamRoster'},
   'lph-rat-superadmins': {file:'ridealong.json', field:'superAdmins'},
   'lph-rat-emailconfig': {file:'ridealong.json', field:'emailConfig'},
-  'lph-rat-oneonones': {file:'ridealong.json', field:'oneOnOnes'}
+  'lph-rat-oneonones': {file:'ridealong.json', field:'oneOnOnes'},
+  'lph-rat-training': {file:'ridealong.json', field:'trainingSessions'}
 };
+
+// ---- Concurrent-save protection ----------------------------------------------------
+// Several people save to the SAME shared file (ridealong.json) from different devices.
+// The naive approach — fetch, overwrite the whole array with this device's local copy,
+// write — silently erases anyone else's entry that isn't also in this device's local
+// copy (e.g. added on another phone/tablet since this device last loaded the page, or
+// while this save was retrying after a conflict). SHARED_BASELINE remembers what this
+// device last knew to be true for each id-keyed array, so saveShared() can tell "brand
+// new entry someone else just added" apart from "entry I intentionally deleted," and
+// merge by id against the freshest remote copy instead of blindly overwriting it.
+const SHARED_BASELINE = {};
+function deepClone(x){ return x===undefined ? x : JSON.parse(JSON.stringify(x)); }
+function mergeKeyForField(field){
+  if(['rideAlongs','evaluations','attendance','oneOnOnes','trainingSessions'].includes(field)) return 'id';
+  if(['teamRoster','superAdmins'].includes(field)) return 'name';
+  return null;
+}
+function mergeArraysByKey(baseline, local, remote, key){
+  const baseMap = new Map((baseline||[]).map(x=>[x[key], x]));
+  const localMap = new Map((local||[]).map(x=>[x[key], x]));
+  const remoteMap = new Map((remote||[]).map(x=>[x[key], x]));
+  const ids = new Set([...localMap.keys(), ...remoteMap.keys()]);
+  const result = [];
+  ids.forEach(id=>{
+    const inLocal = localMap.has(id), inRemote = remoteMap.has(id), inBase = baseMap.has(id);
+    if(inLocal && inRemote){
+      const localItem = localMap.get(id), remoteItem = remoteMap.get(id), baseItem = baseMap.get(id);
+      const localUnchanged = inBase && JSON.stringify(localItem)===JSON.stringify(baseItem);
+      const remoteChanged = !inBase || JSON.stringify(remoteItem)!==JSON.stringify(baseItem);
+      // If this device never touched the entry but someone else did, take their edit.
+      // Otherwise this device's copy (its own edit, or matching remote) wins.
+      result.push(localUnchanged && remoteChanged ? remoteItem : localItem);
+    } else if(inLocal && !inRemote){
+      // Missing from remote: either brand-new locally (keep it), or this device deleted
+      // an entry that was already there at baseline (honor the deletion, drop it).
+      if(!inBase) result.push(localMap.get(id));
+    } else if(!inLocal && inRemote){
+      const remoteItem = remoteMap.get(id);
+      if(!inBase){
+        // Never seen locally at all — someone else added it since this device last
+        // loaded. This is the entry that used to get silently wiped out — keep it.
+        result.push(remoteItem);
+      } else {
+        const baseItem = baseMap.get(id);
+        const remoteChanged = JSON.stringify(remoteItem)!==JSON.stringify(baseItem);
+        // If remote still matches what this device last saw, this device's deletion
+        // is honored (drop it). If someone else edited it since, keep their edit
+        // rather than let this device's stale delete erase it.
+        if(remoteChanged) result.push(remoteItem);
+      }
+    }
+  });
+  return result;
+}
 
 let storageAvailable = true;
 let lastSaveError = '';
@@ -1072,14 +1128,21 @@ async function saveShared(storageKey, value){
   const map = KEY_MAP[storageKey];
   if(!map) return false;
   if(!ghToken()){ storageAvailable = false; lastSaveError = 'no-key'; _wasSaveFailing = true; showSyncToast(friendlySaveError(), true); return false; }
+  const mergeKey = mergeKeyForField(map.field);
   return withFileLock(map.file, async ()=>{
     try{
       for(let attempt=0; attempt<4; attempt++){
         const {json, sha} = await ghGetForWrite('data/'+map.file);
-        const merged = Object.assign({}, json||{}, {[map.field]: value});
+        const remoteValue = json ? json[map.field] : undefined;
+        let toWrite = value;
+        if(mergeKey && Array.isArray(value) && Array.isArray(remoteValue)){
+          toWrite = mergeArraysByKey(SHARED_BASELINE[map.field], value, remoteValue, mergeKey);
+        }
+        const merged = Object.assign({}, json||{}, {[map.field]: toWrite});
         const put = await ghPutFile('data/'+map.file, merged, sha, `Update ${map.field} from dashboard`);
         if(put.ok){
           storageAvailable = true; lastSaveError='';
+          if(mergeKey){ DATA[map.field] = toWrite; SHARED_BASELINE[map.field] = deepClone(toWrite); }
           if(_wasSaveFailing){ showSyncToast('Saved — back in sync.', false); _wasSaveFailing = false; }
           return true;
         }
@@ -1107,7 +1170,9 @@ async function loadAllShared(){
       if(Array.isArray(ra.superAdmins) && ra.superAdmins.length) DATA.superAdmins = ra.superAdmins;
       if(ra.emailConfig && typeof ra.emailConfig==='object') DATA.emailConfig = ra.emailConfig;
       if(Array.isArray(ra.oneOnOnes)) DATA.oneOnOnes = ra.oneOnOnes;
+      if(Array.isArray(ra.trainingSessions)) DATA.trainingSessions = ra.trainingSessions;
     }
+    ['rideAlongs','evaluations','attendance','teamRoster','superAdmins','oneOnOnes','trainingSessions'].forEach(f=>{ SHARED_BASELINE[f] = deepClone(DATA[f]); });
     storageAvailable = true;
   }catch(e){
     storageAvailable = false;
@@ -1134,6 +1199,8 @@ let adminSubtab = 'scorecards', adminDeptFilter = 'All';
 let ooFilterTech = '';
 let ooCalYear = new Date().getFullYear(), ooCalMonth = new Date().getMonth()+1;
 const OO_HOURS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
+let ttCalYear = new Date().getFullYear(), ttCalMonth = new Date().getMonth()+1;
+let ttLogDeptFilter = '';
 let evalDraft = null, scorecardFilterYear = new Date(LATEST_DATE).getFullYear(), scorecardFilterTech = '';
 let editingTechName = null;
 
@@ -1773,6 +1840,279 @@ function openOneOnOneHistory(name){
     </div>`;
 }
 
+/* ---- Technical Training (monthly department training + attendance confirmation) ----
+   A session (DATA.trainingSessions entry) is created with a topic, date/time, department,
+   and a checklist of attendees, each starting status:'pending'. It only counts toward that
+   department's monthly coverage once a manager opens it and confirms attendance, which sets
+   confirmed:true and locks in each attendee's final status:'attended'|'absent'. Unlike the
+   1:1 Meeting Room, there's no shared-resource conflict check here -- different departments
+   train in their own space and can run sessions at the same time. */
+function ttAttendeeChecklist(dept, checkedNames){
+  const roster = DATA.teamRoster.filter(t=>t.active && t.department===dept).sort((a,b)=> a.name.localeCompare(b.name));
+  if(!roster.length) return `<div style="font-size:12px;color:var(--text-mute);">No active employees in this department.</div>`;
+  return roster.map(r=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;">
+    <input type="checkbox" class="tt-attendee-cb" value="${r.name}" ${(!checkedNames || checkedNames.includes(r.name))?'checked':''}> ${r.name}
+  </label>`).join('');
+}
+function trainingStatusForDept(dept){
+  const today = todayIso();
+  const now = new Date();
+  const monthPrefix = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const sessions = DATA.trainingSessions.filter(s=>s.department===dept);
+  const doneThisMonth = sessions.filter(s=> s.confirmed && s.date.slice(0,7)===monthPrefix).sort((a,b)=> b.date.localeCompare(a.date));
+  const needsConfirm = sessions.filter(s=> !s.confirmed && s.date<today).sort((a,b)=> a.date.localeCompare(b.date));
+  const upcoming = sessions.filter(s=> s.date>=today).sort((a,b)=> a.date.localeCompare(b.date));
+  if(doneThisMonth.length) return {status:'done', label:'Done &mdash; '+doneThisMonth[0].topic+' ('+fmtDate(doneThisMonth[0].date)+')', entry:doneThisMonth[0]};
+  if(needsConfirm.length) return {status:'needs-confirm', label:'Needs Attendance Confirmed', entry:needsConfirm[0]};
+  if(upcoming.length) return {status:'scheduled', label:'Scheduled &mdash; '+upcoming[0].topic+' ('+fmtDate(upcoming[0].date)+')', entry:upcoming[0]};
+  if(now.getDate() > 15) return {status:'overdue', label:'Overdue &mdash; Not Scheduled', entry:null};
+  return {status:'due', label:'Not Yet Scheduled', entry:null};
+}
+function ttStatusPill(st){
+  if(st.status==='done') return `<span class="badge2 badge2-ok">${st.label}</span>`;
+  if(st.status==='needs-confirm') return `<span class="badge2 badge2-warn">${st.label}</span>`;
+  if(st.status==='overdue') return `<span class="badge2 badge2-err">${st.label}</span>`;
+  if(st.status==='scheduled') return `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:#2B4EE61A;color:#2B4EE6;border:1px solid #2B4EE666;">${st.label}</span>`;
+  return `<span style="font-size:11.5px;color:var(--text-mute);">${st.label}</span>`;
+}
+function ttCalShift(delta){ ttCalMonth += delta; if(ttCalMonth<1){ttCalMonth=12; ttCalYear--;} if(ttCalMonth>12){ttCalMonth=1; ttCalYear++;} document.getElementById('content').innerHTML = renderTechnicalTraining(); wireTrainingEvents(); }
+function ttCalPickDate(iso){ const el = document.getElementById('tt_date'); if(!el) return; el.value = iso; if(el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus(); }
+function ttStatusColor(s){
+  if(s.confirmed) return 'var(--green)';
+  if(s.date < todayIso()) return 'var(--orange)';
+  return '#2B4EE6';
+}
+function renderTrainingCalendar(){
+  const firstOfMonth = new Date(ttCalYear, ttCalMonth-1, 1);
+  const startDow = firstOfMonth.getDay();
+  const daysInMonth = new Date(ttCalYear, ttCalMonth, 0).getDate();
+  const today = todayIso();
+  const byDate = {};
+  DATA.trainingSessions.forEach(s=> { (byDate[s.date]=byDate[s.date]||[]).push(s); });
+  Object.values(byDate).forEach(list=> list.sort((a,b)=> a.startTime.localeCompare(b.startTime)));
+  let cells = '';
+  for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = `${ttCalYear}-${String(ttCalMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entries = byDate[iso] || [];
+    cells += `<div class="cal-cell ${iso===today?'today':''}" onclick="ttCalPickDate('${iso}')" style="cursor:pointer;">
+      <div class="cal-date">${d}</div>
+      ${entries.map(s=>{
+        const c = ttStatusColor(s);
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px solid ${c}66;" onclick="event.stopPropagation(); openTrainingDetail('${s.id}')" title="${s.topic} &mdash; ${s.department} &mdash; ${fmtHour12(s.startTime)}">${s.department}: ${s.topic}</div>`;
+      }).join('')}
+    </div>`;
+  }
+  return `
+    <div class="cal-head">
+      <button class="cal-nav" onclick="ttCalShift(-1)">&larr;</button>
+      <div class="cal-month-label">${new Date(ttCalYear,ttCalMonth-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+      <button class="cal-nav" onclick="ttCalShift(1)">&rarr;</button>
+    </div>
+    <div class="cal-grid">
+      ${DOW_NAMES2.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>
+    <div style="font-size:11.5px;color:var(--text-mute);margin-top:10px;">Blue = scheduled &middot; green = attendance confirmed &middot; amber = time's passed, still needs attendance confirmed &middot; click a day to set that date below, click a training to open it</div>`;
+}
+function renderTechnicalTraining(){
+  const today = todayIso();
+  const depts = oneOnOneDepts();
+  const deptStatuses = depts.map(d=> ({department:d, st: trainingStatusForDept(d)}));
+  const doneCount = deptStatuses.filter(s=>s.st.status==='done').length;
+  const needsConfirmList = DATA.trainingSessions.filter(s=> !s.confirmed && s.date<today).sort((a,b)=> a.date.localeCompare(b.date));
+  const upcoming = DATA.trainingSessions.filter(s=> s.date>=today).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  const allSessions = DATA.trainingSessions.filter(s=> !ttLogDeptFilter || s.department===ttLogDeptFilter).slice().sort((a,b)=> b.date.localeCompare(a.date));
+  const defaultDept = depts[0] || '';
+
+  return `
+    <div class="cards2">
+      <div class="card2"><div class="n">${doneCount}/${depts.length}</div><div class="l">Departments Covered This Month</div></div>
+      <div class="card2"><div class="n">${upcoming.length}</div><div class="l">Scheduled, Upcoming</div></div>
+      <div class="card2"><div class="n">${needsConfirmList.length}</div><div class="l">Needs Attendance Confirmed</div></div>
+    </div>
+
+    <div class="panel"><div class="panel-title">Calendar</div>${renderTrainingCalendar()}</div>
+
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:4px;">Schedule a Technical Training</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:14px;">Pick a topic, date, and time, then choose who's attending. Come back afterward to confirm who actually showed up.</div>
+      <div class="field2"><label>Topic</label><input id="tt_topic" type="text" placeholder="e.g. Proper PPE for Confined Space Entry"></div>
+      <div class="row2">
+        <div class="field2"><label>Date</label><input id="tt_date" type="date" value="${today}"></div>
+        <div class="field2"><label>Department</label><select id="tt_dept">${depts.map(d=>`<option ${d===defaultDept?'selected':''}>${d}</option>`).join('')}</select></div>
+      </div>
+      <div class="row2">
+        <div class="field2"><label>Start Time</label><input id="tt_start" type="time" value="08:00"></div>
+        <div class="field2"><label>End Time</label><input id="tt_end" type="time" value="09:00"></div>
+      </div>
+      <div class="field2"><label>Manager</label><select id="tt_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}">${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
+      <div class="field2"><label>Attendees</label><div id="tt_attendeesBox">${ttAttendeeChecklist(defaultDept)}</div></div>
+      <div class="field2"><label>Notes (optional)</label><textarea id="tt_notes" placeholder="Anything worth noting for next time"></textarea></div>
+      <div id="tt_saveErr" style="display:none;color:var(--red);font-size:12px;margin:-4px 0 10px;"></div>
+      <button class="btn-primary" onclick="saveTrainingSession()">Schedule Training</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Upcoming (${upcoming.length})</div>
+      ${upcoming.length===0 ? `<div style="padding:20px;color:var(--text-mute);">Nothing scheduled yet.</div>` : `
+      <table><thead><tr><th>Date</th><th>Time</th><th>Topic</th><th>Dept</th><th>Attendees</th><th>Manager</th><th></th></tr></thead>
+      <tbody>${upcoming.map(s=>`<tr>
+        <td>${fmtDate(s.date)}</td><td>${fmtHour12(s.startTime)}</td>
+        <td>${s.topic}</td><td>${s.department}</td><td>${s.attendees.length}</td>
+        <td>${s.manager?raInitials(s.manager):'&mdash;'}</td>
+        <td><button class="btn-ghost btn-sm" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
+      </tr>`).join('')}</tbody></table>`}
+    </div>
+
+    ${needsConfirmList.length ? `
+    <div class="panel">
+      <div class="panel-title">Needs Attendance Confirmed (${needsConfirmList.length})</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin:4px 0 12px;">These trainings already happened &mdash; open one to check off who attended.</div>
+      <table><thead><tr><th>Date</th><th>Topic</th><th>Dept</th><th>Manager</th><th></th></tr></thead>
+      <tbody>${needsConfirmList.map(s=>`<tr>
+        <td>${fmtDate(s.date)}</td><td>${s.topic}</td><td>${s.department}</td>
+        <td>${s.manager?raInitials(s.manager):'&mdash;'}</td>
+        <td><button class="btn-ghost btn-sm" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
+      </tr>`).join('')}</tbody></table>
+    </div>` : ''}
+
+    <div class="panel">
+      <div class="panel-title">Monthly Coverage by Department</div>
+      <table><thead><tr><th>Department</th><th>Status</th></tr></thead>
+      <tbody>${deptStatuses.map(s=>`<tr>
+        <td>${s.department}</td>
+        <td>${ttStatusPill(s.st)}</td>
+      </tr>`).join('')}</tbody></table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><div class="panel-title">Training Log &mdash; All Sessions</div>
+        <select id="ttLogFilter" style="max-width:220px;"><option value="">All departments</option>${depts.map(d=>`<option ${ttLogDeptFilter===d?'selected':''}>${d}</option>`).join('')}</select>
+      </div>
+      ${allSessions.length===0 ? `<div style="padding:20px;color:var(--text-mute);">No technical trainings logged yet.</div>` : `
+      <table><thead><tr><th>Date</th><th>Topic</th><th>Dept</th><th>Attendees</th><th>Status</th><th></th></tr></thead>
+      <tbody>${allSessions.map(s=>`<tr>
+        <td>${fmtDate(s.date)}</td><td>${s.topic}</td><td>${s.department}</td>
+        <td>${s.attendees.map(a=>`<button class="tech-btn" onclick="openTrainingHistory('${a.name}')" style="margin:1px;">${a.name}</button>`).join('')}</td>
+        <td>${s.confirmed ? `<span class="badge2 badge2-ok">Confirmed</span>` : (s.date<today ? `<span class="badge2 badge2-warn">Needs Confirm</span>` : `<span style="font-size:11px;color:var(--text-mute);">Scheduled</span>`)}</td>
+        <td><button class="btn-ghost btn-sm" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
+      </tr>`).join('')}</tbody></table>`}
+    </div>`;
+}
+function wireTrainingEvents(){
+  const deptSel = document.getElementById('tt_dept');
+  if(deptSel) deptSel.onchange = ()=>{ document.getElementById('tt_attendeesBox').innerHTML = ttAttendeeChecklist(deptSel.value); };
+  const logFilter = document.getElementById('ttLogFilter');
+  if(logFilter) logFilter.onchange = ()=>{ ttLogDeptFilter = logFilter.value; document.getElementById('content').innerHTML = renderTechnicalTraining(); wireTrainingEvents(); };
+}
+async function saveTrainingSession(){
+  const topic = document.getElementById('tt_topic').value.trim();
+  const date = document.getElementById('tt_date').value;
+  const startTime = document.getElementById('tt_start').value;
+  const endTime = document.getElementById('tt_end').value;
+  const department = document.getElementById('tt_dept').value;
+  const manager = document.getElementById('tt_manager').value;
+  const notes = document.getElementById('tt_notes').value.trim();
+  const errEl = document.getElementById('tt_saveErr');
+  const checked = [...document.querySelectorAll('.tt-attendee-cb:checked')].map(cb=>cb.value);
+  if(!topic || !date || !startTime || !endTime || !department){ if(errEl){errEl.textContent='Topic, date, time, and department are required.'; errEl.style.display='block';} return; }
+  if(endTime <= startTime){ if(errEl){errEl.textContent="End time must be after start time."; errEl.style.display='block';} return; }
+  if(checked.length===0){ if(errEl){errEl.textContent='Select at least one attendee.'; errEl.style.display='block';} return; }
+  if(errEl) errEl.style.display='none';
+  DATA.trainingSessions.push({
+    id: 'TT-'+Date.now(), topic, date, startTime, endTime, department, manager,
+    attendees: checked.map(name=>({name, status:'pending'})),
+    notes, confirmed:false, confirmedBy:null, confirmedAt:null,
+    createdAt: new Date().toISOString()
+  });
+  await saveShared('lph-rat-training', DATA.trainingSessions);
+  document.getElementById('content').innerHTML = renderTechnicalTraining();
+  wireTrainingEvents();
+}
+function openTrainingDetail(id){
+  const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  const rows = s.attendees.map(a=>`
+    <div class="tt-att-row" data-name="${a.name}" data-status="${a.status}" style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+      <button class="tech-btn" onclick="closeModal(); openTrainingHistory('${a.name}')">${avatar(a.name)} ${a.name}</button>
+      <div class="tt-att-toggle" style="display:flex;gap:6px;">
+        <button type="button" class="tt-mark" onclick="ttSetAttendeeStatus(this,'attended')" style="border:1px solid var(--border);background:${a.status==='attended'?'var(--green)':'#fff'};color:${a.status==='attended'?'#fff':'inherit'};border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Attended</button>
+        <button type="button" class="tt-mark" onclick="ttSetAttendeeStatus(this,'absent')" style="border:1px solid var(--border);background:${a.status==='absent'?'var(--red)':'#fff'};color:${a.status==='absent'?'#fff':'inherit'};border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Absent</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal-card" style="max-width:520px;">
+        <div class="modal-head"><div><div class="name">${s.topic}</div><div class="title">${fmtDate(s.date)} &middot; ${fmtHour12(s.startTime)}&ndash;${fmtHour12(s.endTime)} &middot; ${s.department}${s.manager?' &middot; w/ '+s.manager:''}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-body">
+          ${s.notes ? `<div class="modal-section"><div class="modal-section-title">Notes</div><div style="font-size:12.5px;line-height:1.5;">${s.notes}</div></div>` : ''}
+          <div class="modal-section">
+            <div class="modal-section-title">Attendance ${s.confirmed?`<span class="badge2 badge2-ok" style="margin-left:6px;">Confirmed</span>`:''}</div>
+            <div style="font-size:11px;color:var(--text-mute);margin-bottom:6px;">Anyone left unmarked is recorded as absent when you confirm.</div>
+            <div id="tt_attRows">${rows}</div>
+            ${s.confirmed ? `<div style="font-size:11px;color:var(--text-mute);margin-top:10px;">Confirmed by ${s.confirmedBy||'&mdash;'} on ${fmtDate((s.confirmedAt||'').slice(0,10))}</div>` : ''}
+          </div>
+          <div class="modal-section">
+            <button class="btn-primary" onclick="confirmTrainingAttendance('${s.id}')">${s.confirmed ? 'Update Attendance' : 'Confirm Attendance'}</button>
+            <button class="btn-ghost" onclick="deleteTrainingSession('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Delete session</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+function ttSetAttendeeStatus(btn, status){
+  const row = btn.closest('.tt-att-row'); if(!row) return;
+  row.dataset.status = status;
+  row.querySelectorAll('.tt-mark').forEach(b=>{ b.style.background = '#fff'; b.style.color='inherit'; });
+  btn.style.background = status==='attended' ? 'var(--green)' : 'var(--red)';
+  btn.style.color = '#fff';
+}
+async function confirmTrainingAttendance(id){
+  const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  const rows = document.querySelectorAll('#tt_attRows .tt-att-row');
+  rows.forEach(row=>{
+    const name = row.dataset.name;
+    const status = row.dataset.status==='pending' ? 'absent' : row.dataset.status;
+    const a = s.attendees.find(x=>x.name===name);
+    if(a) a.status = status;
+  });
+  s.confirmed = true;
+  s.confirmedBy = currentAdminName || (DATA.superAdmins[0] && DATA.superAdmins[0].name) || '';
+  s.confirmedAt = new Date().toISOString();
+  await saveShared('lph-rat-training', DATA.trainingSessions);
+  closeModal();
+  document.getElementById('content').innerHTML = renderTechnicalTraining();
+  wireTrainingEvents();
+}
+async function deleteTrainingSession(id){
+  DATA.trainingSessions = DATA.trainingSessions.filter(s=>s.id!==id);
+  await saveShared('lph-rat-training', DATA.trainingSessions);
+  closeModal();
+  document.getElementById('content').innerHTML = renderTechnicalTraining();
+  wireTrainingEvents();
+}
+function openTrainingHistory(name){
+  const sessions = DATA.trainingSessions.filter(s=> s.attendees.some(a=>a.name===name)).sort((a,b)=> b.date.localeCompare(a.date));
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal-card" style="max-width:520px;">
+        <div class="modal-head">${avatar(name,'lg')}<div><div class="name">${name}</div><div class="title">Technical Training History</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-body">
+          ${sessions.length===0 ? `<div class="modal-section"><div style="font-size:12.5px;color:var(--text-mute);">No technical trainings on file yet.</div></div>` : sessions.map(s=>{
+            const a = s.attendees.find(x=>x.name===name);
+            const statusLabel = !s.confirmed ? 'Not yet confirmed' : (a.status==='attended' ? 'Attended' : 'Absent');
+            const color = !s.confirmed ? 'var(--text-mute)' : (a.status==='attended' ? 'var(--green)' : 'var(--red)');
+            return `<div class="modal-section" style="cursor:pointer;" onclick="closeModal(); openTrainingDetail('${s.id}')">
+              <div class="modal-section-title">${s.topic}</div>
+              <div style="font-size:12px;color:var(--text-mute);">${fmtDate(s.date)} &middot; ${s.department}${s.manager?' &middot; w/ '+s.manager:''}</div>
+              <div style="font-size:12px;font-weight:700;color:${color};margin-top:3px;">${statusLabel}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
 /* ---- Admin ---- */
 function initEvalDraft(){ evalDraft = { tech:'', date: LATEST_DATE, department:'Plumbing', scores:{}, notes:'', manager: currentAdminName || (DATA.superAdmins[0] && DATA.superAdmins[0].name) || '' }; }
 function goToEvaluation(tech){ initEvalDraft(); evalDraft.tech = tech; evalDraft.department = techDept(tech) || 'Plumbing'; switchView('evaluate'); }
@@ -2268,7 +2608,7 @@ function switchView(view){
   currentView = view;
   destroyCharts();
   document.querySelectorAll('.nav-item').forEach(el=> el.classList.toggle('active', el.dataset.view===view));
-  document.getElementById('rangeBar').style.display = (view==='upload'||view==='ridealongs'||view==='oneonones'||view==='admin'||view==='evaluate') ? 'none' : 'flex';
+  document.getElementById('rangeBar').style.display = (view==='upload'||view==='ridealongs'||view==='oneonones'||view==='training'||view==='admin'||view==='evaluate') ? 'none' : 'flex';
   if(view==='overview'){
     document.getElementById('pageTitle').textContent = 'Company Overview';
     document.getElementById('pageSub').textContent = 'All departments, selected range';
@@ -2287,6 +2627,11 @@ function switchView(view){
     document.getElementById('pageSub').textContent = 'Book the meeting room and track monthly one-on-ones';
     document.getElementById('content').innerHTML = renderOneOnOnes();
     wireOneOnOneEvents();
+  } else if(view==='training'){
+    document.getElementById('pageTitle').textContent = 'Technical Training';
+    document.getElementById('pageSub').textContent = 'Plan monthly department trainings and confirm attendance';
+    document.getElementById('content').innerHTML = renderTechnicalTraining();
+    wireTrainingEvents();
   } else if(view==='admin'){
     adminUnlocked = false; currentAdminName = null;
     document.getElementById('pageTitle').textContent = 'Admin';
