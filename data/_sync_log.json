@@ -1,1 +1,1 @@
-{"time":"2026-09-25T17:48:01.582Z","stage":"done","detail":"Sync completed successfully","run_context":"manual","confirmed_max_date":"2026-09-24","confirmed_row_counts":{"dd":834,"td":4186,"install":973},"report_revenue_reconciled":true}
+{"time":"2026-09-25T18:12:04.221Z","stage":"started","detail":"Parsing /root/work/report_manual_210pm.txt","run_context":"manual"}
