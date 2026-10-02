@@ -1239,6 +1239,87 @@ let currentSessionUser = null;
 let appDataReady = false;
 let ooFilterTech = '';
 let ooDeptPick = '';
+let raMgrPick = '', ooMgrPick = '';   // manager filter from the legend chips (Ride-Alongs / 1:1s)
+
+// Clickable manager legend chips. kind = 'ra' | 'oo'. Click a name to show only that manager's entries; click again to clear.
+function mgrLegendChips(kind){
+  const active = kind==='ra' ? raMgrPick : ooMgrPick;
+  return DATA.superAdmins.map(a=>{
+    const c = adminColorByName(a.name);
+    const on = active===a.name, dim = active && !on;
+    const safe = a.name.replace(/'/g,"\\'");
+    return `<span onclick="setMgrPick('${kind}','${safe}')" title="${on?'Show everyone again':'Show only '+a.name+"'s"}" style="cursor:pointer;user-select:none;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${on?c:c+'1A'};color:${on?'#fff':c};border:1px solid ${c}${on?'':'66'};opacity:${dim?'.45':'1'};">${raInitials(a.name)} &mdash; ${a.name}</span>`;
+  }).join('');
+}
+function mgrFilterBar(kind){
+  const name = kind==='ra' ? raMgrPick : ooMgrPick;
+  const what = kind==='ra' ? 'ride-alongs' : '1:1 meetings';
+  const hint = `<div style="font-size:11.5px;color:var(--text-mute);margin-top:8px;">Tip: click a manager's name to see only their ${what} &mdash; handy for sharing with dispatch.</div>`;
+  if(!name) return hint;
+  const c = adminColorByName(name);
+  const btn = 'border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;';
+  return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border-radius:8px;background:${c}12;border:1px solid ${c}55;">
+    <span style="font-size:12.5px;font-weight:700;color:${c};">Showing only ${name}'s ${what}</span>
+    <span style="flex:1"></span>
+    <button style="${btn}" onclick="mgrShare('${kind}','print')">&#128424; Print / PDF for dispatch</button>
+    <button style="${btn}" onclick="mgrShare('${kind}','copy')">&#128203; Copy list</button>
+    <button style="${btn}" onclick="setMgrPick('${kind}','${name.replace(/'/g,"\\'")}')">Show everyone</button>
+  </div><div id="mgrCopyMsg_${kind}" style="display:none;font-size:12px;color:var(--green);font-weight:700;margin-top:6px;">Copied &mdash; paste it into a text, email or Teams message.</div>`;
+}
+function setMgrPick(kind, name){
+  if(kind==='ra'){ raMgrPick = (raMgrPick===name) ? '' : name; renderRideAlongsInto(); }
+  else { ooMgrPick = (ooMgrPick===name) ? '' : name; document.getElementById('content').innerHTML = renderOneOnOnes(); wireOneOnOneEvents(); }
+}
+// Upcoming (today forward) entries for the picked manager, as rows for dispatch.
+function mgrShareRows(kind){
+  const today = todayIso();
+  if(kind==='ra'){
+    return DATA.rideAlongs.filter(e=> e.manager===raMgrPick && e.date>=today)
+      .sort((a,b)=> a.date.localeCompare(b.date) || a.tech.localeCompare(b.tech))
+      .map(e=> ({date:e.date, time:'', who:e.tech, dept:e.department||'', extra:e.focus||''}));
+  }
+  const scope = sessionDeptScope();
+  return DATA.oneOnOnes.filter(o=> o.manager===ooMgrPick && o.status==='booked' && o.date>=today && (!scope || techDept(o.employeeName)===scope))
+    .sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+    .map(o=> ({date:o.date, time:`${fmtHour12(o.startTime)} \u2013 ${fmtHour12(o.endTime||ooEndTime(o.startTime))}`, who:o.employeeName, dept:o.department||'', extra:o.reserveRoom?'Meeting room':'Manager\u2019s office'}));
+}
+function mgrShareDow(iso){ const [y,m,d] = iso.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric', year:'numeric'}); }
+function mgrShare(kind, mode){
+  const name = kind==='ra' ? raMgrPick : ooMgrPick; if(!name) return;
+  const rows = mgrShareRows(kind);
+  const title = kind==='ra' ? `${name} \u2014 Upcoming Ride-Alongs` : `${name} \u2014 Upcoming 1:1 Meetings`;
+  if(mode==='copy'){
+    const lines = [title, ''];
+    if(!rows.length) lines.push('Nothing scheduled from today forward.');
+    rows.forEach(r=> lines.push(kind==='ra'
+      ? `${mgrShareDow(r.date)} \u2014 ${r.who} (${r.dept})${r.extra?' \u2014 '+r.extra:''}`
+      : `${mgrShareDow(r.date)}, ${r.time} \u2014 ${r.who} (${r.dept}) \u2014 ${r.extra}`));
+    const text = lines.join('\n');
+    const done = ()=>{ const m = document.getElementById('mgrCopyMsg_'+kind); if(m){ m.style.display='block'; setTimeout(()=>{ m.style.display='none'; }, 3000); } };
+    const fallback = ()=>{ const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove(); done(); };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    return;
+  }
+  const esc = v=> String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const head = kind==='ra' ? '<th>Date</th><th>Technician</th><th>Dept</th><th>Focus</th>' : '<th>Date</th><th>Time</th><th>Employee</th><th>Dept</th><th>Where</th>';
+  const body = rows.length ? rows.map(r=> kind==='ra'
+      ? `<tr><td>${esc(mgrShareDow(r.date))}</td><td>${esc(r.who)}</td><td>${esc(r.dept)}</td><td>${esc(r.extra)}</td></tr>`
+      : `<tr><td>${esc(mgrShareDow(r.date))}</td><td>${esc(r.time)}</td><td>${esc(r.who)}</td><td>${esc(r.dept)}</td><td>${esc(r.extra)}</td></tr>`).join('')
+    : `<tr><td colspan="5" style="color:#777;padding:14px;">Nothing scheduled from today forward.</td></tr>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+    body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:32px;} h1{font-size:20px;margin:0 0 4px;} .sub{color:#666;font-size:12px;margin-bottom:18px;}
+    table{border-collapse:collapse;width:100%;font-size:13px;} th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;} th{background:#f2f2f2;}
+    .bar{margin-bottom:16px;} .bar button{font-size:13px;padding:6px 14px;cursor:pointer;} @media print{.bar{display:none;} body{margin:0;}}
+  </style></head><body>
+    <div class="bar"><button onclick="window.print()">Print / Save as PDF</button></div>
+    <h1>${esc(title)}</h1><div class="sub">LPH Plumbing &amp; Sewer &middot; ${rows.length} scheduled &middot; as of ${esc(mgrShareDow(todayIso()))}</div>
+    <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+  </body></html>`;
+  const w = window.open('', '_blank');
+  if(!w){ alert('Your browser blocked the pop-up. Allow pop-ups for this site and try again.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 300);
+}
 let ooCalYear = new Date().getFullYear(), ooCalMonth = new Date().getMonth()+1;
 const OO_HOURS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 let ttCalYear = new Date().getFullYear(), ttCalMonth = new Date().getMonth()+1;
@@ -1551,7 +1632,7 @@ function renderCalendar(){
   const daysInMonth = new Date(calYear, calMonth, 0).getDate();
   const todayIso = LATEST_DATE;
   const entriesByDate = {};
-  DATA.rideAlongs.forEach(e=>{ (entriesByDate[e.date]=entriesByDate[e.date]||[]).push(e); });
+  DATA.rideAlongs.filter(e=> !raMgrPick || e.manager===raMgrPick).forEach(e=>{ (entriesByDate[e.date]=entriesByDate[e.date]||[]).push(e); });
   let cells = '';
   for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
   for(let d=1; d<=daysInMonth; d++){
@@ -1578,12 +1659,13 @@ function renderCalendar(){
     </div>
     <div style="font-size:11.5px;color:var(--text-mute);margin-top:10px;">Color = which manager did it &middot; dashed border = scheduled (future) &middot; solid border = completed &middot; click an entry to open it</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
-      ${DATA.superAdmins.map(a=>`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${adminColorByName(a.name)}1A;color:${adminColorByName(a.name)};border:1px solid ${adminColorByName(a.name)}66;">${raInitials(a.name)} &mdash; ${a.name}</span>`).join('')}
-    </div>`;
+      ${mgrLegendChips('ra')}
+    </div>
+    ${mgrFilterBar('ra')}`;
 }
 
 function renderRideAlongs(){
-  const entries = [...DATA.rideAlongs].filter(r=> !rlFilterTech || r.tech===rlFilterTech).sort((a,b)=>b.date.localeCompare(a.date));
+  const entries = [...DATA.rideAlongs].filter(r=> (!rlFilterTech || r.tech===rlFilterTech) && (!raMgrPick || r.manager===raMgrPick)).sort((a,b)=>b.date.localeCompare(a.date));
   const allTechs = allKnownTechs();
   const activeList = activeTechs();
   let summary = rideAlongSummary().map(s=>({...s, ds: daysSince(s.lastDate)}));
@@ -1642,7 +1724,7 @@ function renderRideAlongs(){
     </div>
 
     <div class="panel">
-      <div class="panel-head"><div class="panel-title">History (${entries.length})</div>
+      <div class="panel-head"><div class="panel-title">History (${entries.length})${raMgrPick?` &mdash; <span style="color:${adminColorByName(raMgrPick)};">${raMgrPick} only</span>`:''}</div>
         <select id="rlFilter" style="max-width:220px;"><option value="">All technicians</option>${allTechs.map(t=>`<option ${rlFilterTech===t?'selected':''}>${t}</option>`).join('')}</select>
       </div>
       ${entries.length===0 ? `<div style="padding:20px;color:var(--text-mute);">No ride-alongs logged yet.</div>` : `
@@ -1795,7 +1877,7 @@ function renderOneOnOneCalendar(){
   const today = todayIso();
   const scope = sessionDeptScope();
   const byDate = {};
-  DATA.oneOnOnes.filter(o=> !scope || techDept(o.employeeName)===scope).forEach(o=> { (byDate[o.date]=byDate[o.date]||[]).push(o); });
+  DATA.oneOnOnes.filter(o=> (!scope || techDept(o.employeeName)===scope) && (!ooMgrPick || o.manager===ooMgrPick)).forEach(o=> { (byDate[o.date]=byDate[o.date]||[]).push(o); });
   Object.values(byDate).forEach(list=> list.sort((a,b)=> a.startTime.localeCompare(b.startTime)));
   let cells = '';
   for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
@@ -1824,8 +1906,9 @@ function renderOneOnOneCalendar(){
     </div>
     <div style="font-size:11.5px;color:var(--text-mute);margin-top:10px;">Color = which manager is holding it &middot; dashed border = scheduled &middot; solid border = recap completed &middot; &#9888; = time's passed, still needs a recap &middot; click a day to set that date in the booking form below, click a booking to open it</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
-      ${DATA.superAdmins.map(a=>`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${adminColorByName(a.name)}1A;color:${adminColorByName(a.name)};border:1px solid ${adminColorByName(a.name)}66;">${raInitials(a.name)} &mdash; ${a.name}</span>`).join('')}
-    </div>`;
+      ${mgrLegendChips('oo')}
+    </div>
+    ${mgrFilterBar('oo')}`;
 }
 // Department buttons under the booking form: pick a department to see everyone in it and where
 // they stand for this month, with a one-click "Schedule" that fills them into the form above.
@@ -1879,8 +1962,8 @@ function renderOneOnOnes(){
   const doneCount = statuses.filter(s=>s.st.status==='done').length;
   const overdueCount = statuses.filter(s=>s.st.status==='overdue' || s.st.status==='needs-recap').length;
   const scheduledCount = statuses.filter(s=>s.st.status==='scheduled').length;
-  const upcoming = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date>=today && (!scope || techDept(o.employeeName)===scope)).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-  const needsRecapList = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date<today && (!scope || techDept(o.employeeName)===scope)).sort((a,b)=> a.date.localeCompare(b.date));
+  const upcoming = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date>=today && (!scope || techDept(o.employeeName)===scope) && (!ooMgrPick || o.manager===ooMgrPick)).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  const needsRecapList = DATA.oneOnOnes.filter(o=>o.status==='booked' && o.date<today && (!scope || techDept(o.employeeName)===scope) && (!ooMgrPick || o.manager===ooMgrPick)).sort((a,b)=> a.date.localeCompare(b.date));
 
   return `
     <div class="cards2">
@@ -1913,7 +1996,7 @@ function renderOneOnOnes(){
     ${renderOneOnOneDeptPicker(statuses, depts)}
 
     <div class="panel">
-      <div class="panel-title">Upcoming (${upcoming.length})</div>
+      <div class="panel-title">Upcoming (${upcoming.length})${ooMgrPick?` &mdash; <span style="color:${adminColorByName(ooMgrPick)};">${ooMgrPick} only</span>`:''}</div>
       ${upcoming.length===0 ? `<div style="padding:20px;color:var(--text-mute);">Nothing booked yet.</div>` : `
       <table><thead><tr><th>Date</th><th>Time</th><th>Employee</th><th>Dept</th><th>Manager</th><th>Room</th><th></th></tr></thead>
       <tbody>${upcoming.map(o=>`<tr>
