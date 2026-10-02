@@ -2022,14 +2022,41 @@ function openOneOnOneHistory(name){
    1:1 Meeting Room, there's no shared-resource conflict check here -- different departments
    train in their own space and can run sessions at the same time. Each department is expected
    to hold one confirmed session per calendar week (Sun-Sat). */
-function ttAttendeeChecklist(dept, checkedNames){
-  const roster = DATA.teamRoster.filter(t=>t.active && t.department===dept).sort((a,b)=> a.name.localeCompare(b.name));
-  if(!roster.length) return `<div style="font-size:12px;color:var(--text-mute);">No active employees in this department.</div>`;
-  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 14px;border:1px solid var(--border);border-radius:7px;padding:10px 12px;">
-    ${roster.map(r=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;cursor:pointer;min-width:0;">
-      <input type="checkbox" class="tt-attendee-cb" value="${r.name}" style="width:15px;height:15px;flex:none;padding:0;border-radius:3px;margin:0;" ${(!checkedNames || checkedNames.includes(r.name))?'checked':''}> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name}</span>
-    </label>`).join('')}
-  </div>`;
+// A session can now cover several departments (cross-training). New sessions store
+// departments:[...] plus department:<display label>; older sessions only have department:<one dept>,
+// so everything reads through ttSessionDepts() to handle both.
+function ttSessionDepts(s){
+  if(Array.isArray(s.departments) && s.departments.length) return s.departments;
+  return s.department ? [s.department] : [];
+}
+function ttSessionCovers(s, dept){ return ttSessionDepts(s).includes(dept); }
+function ttDeptsLabel(list){
+  const all = oneOnOneDepts();
+  if(list.length>1 && all.length && all.every(d=>list.includes(d))) return 'All Departments';
+  return list.join(', ');
+}
+function ttDeptLabel(s){ return ttDeptsLabel(ttSessionDepts(s)); }
+function ttAttendeeChecklist(depts, uncheckedNames){
+  const list = Array.isArray(depts) ? depts : [depts];
+  if(!list.length) return `<div style="font-size:12px;color:var(--text-mute);">Pick at least one department above.</div>`;
+  const unchecked = new Set(uncheckedNames || []);
+  const cb = r=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;cursor:pointer;min-width:0;">
+      <input type="checkbox" class="tt-attendee-cb" value="${r.name}" style="width:15px;height:15px;flex:none;padding:0;border-radius:3px;margin:0;" ${unchecked.has(r.name)?'':'checked'}> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name}</span>
+    </label>`;
+  const groups = list.map(d=>{
+    const roster = DATA.teamRoster.filter(t=>t.active && t.department===d).sort((a,b)=> a.name.localeCompare(b.name));
+    if(!roster.length) return list.length>1 ? '' : `<div style="font-size:12px;color:var(--text-mute);">No active employees in this department.</div>`;
+    return `${list.length>1?`<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--navy);font-weight:800;margin:8px 0 2px;">${d}</div>`:''}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 14px;">${roster.map(cb).join('')}</div>`;
+  }).join('');
+  return `<div style="border:1px solid var(--border);border-radius:7px;padding:6px 12px 10px;">${groups}</div>`;
+}
+function ttSelectedFormDepts(){
+  return [...document.querySelectorAll('.tt-dept-cb:checked')].map(cb=>cb.value);
+}
+function ttRefreshAttendeesBox(){
+  const unchecked = [...document.querySelectorAll('.tt-attendee-cb:not(:checked)')].map(cb=>cb.value);
+  document.getElementById('tt_attendeesBox').innerHTML = ttAttendeeChecklist(ttSelectedFormDepts(), unchecked);
 }
 function ttAllActiveGroupedOptions(excludeNames){
   const exclude = new Set(excludeNames || []);
@@ -2052,7 +2079,7 @@ function trainingStatusForDept(dept){
   const today = todayIso();
   const now = new Date();
   const {start:weekStart, end:weekEnd} = weekBoundsIso(now);
-  const sessions = DATA.trainingSessions.filter(s=>s.department===dept);
+  const sessions = DATA.trainingSessions.filter(s=>ttSessionCovers(s, dept));
   const doneThisWeek = sessions.filter(s=> s.confirmed && s.date>=weekStart && s.date<=weekEnd).sort((a,b)=> b.date.localeCompare(a.date));
   const needsConfirm = sessions.filter(s=> !s.confirmed && s.date<today).sort((a,b)=> a.date.localeCompare(b.date));
   const upcomingThisWeek = sessions.filter(s=> s.date>=today && s.date<=weekEnd).sort((a,b)=> a.date.localeCompare(b.date));
@@ -2083,7 +2110,7 @@ function renderTrainingCalendar(){
   const today = todayIso();
   const scope = sessionDeptScope();
   const byDate = {};
-  DATA.trainingSessions.filter(s=> !scope || s.department===scope).forEach(s=> { (byDate[s.date]=byDate[s.date]||[]).push(s); });
+  DATA.trainingSessions.filter(s=> !scope || ttSessionCovers(s, scope)).forEach(s=> { (byDate[s.date]=byDate[s.date]||[]).push(s); });
   Object.values(byDate).forEach(list=> list.sort((a,b)=> a.startTime.localeCompare(b.startTime)));
   let cells = '';
   for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
@@ -2094,7 +2121,7 @@ function renderTrainingCalendar(){
       <div class="cal-date">${d}</div>
       ${entries.map(s=>{
         const c = ttStatusColor(s);
-        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px solid ${c}66;" onclick="event.stopPropagation(); openTrainingDetail('${s.id}')" title="${s.topic} &mdash; ${s.department} &mdash; ${fmtHour12(s.startTime)}">${s.department}: ${s.topic}</div>`;
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px solid ${c}66;" onclick="event.stopPropagation(); openTrainingDetail('${s.id}')" title="${s.topic} &mdash; ${ttDeptLabel(s)} &mdash; ${fmtHour12(s.startTime)}">${ttDeptLabel(s)}: ${s.topic}</div>`;
       }).join('')}
     </div>`;
   }
@@ -2116,9 +2143,9 @@ function renderTechnicalTraining(){
   const depts = scope ? [scope] : oneOnOneDepts();
   const deptStatuses = depts.map(d=> ({department:d, st: trainingStatusForDept(d)}));
   const doneCount = deptStatuses.filter(s=>s.st.status==='done').length;
-  const needsConfirmList = DATA.trainingSessions.filter(s=> !s.confirmed && s.date<today && (!scope || s.department===scope)).sort((a,b)=> a.date.localeCompare(b.date));
-  const upcoming = DATA.trainingSessions.filter(s=> s.date>=today && (!scope || s.department===scope)).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
-  const allSessions = DATA.trainingSessions.filter(s=> (!scope || s.department===scope) && (!ttLogDeptFilter || s.department===ttLogDeptFilter)).slice().sort((a,b)=> b.date.localeCompare(a.date));
+  const needsConfirmList = DATA.trainingSessions.filter(s=> !s.confirmed && s.date<today && (!scope || ttSessionCovers(s, scope))).sort((a,b)=> a.date.localeCompare(b.date));
+  const upcoming = DATA.trainingSessions.filter(s=> s.date>=today && (!scope || ttSessionCovers(s, scope))).sort((a,b)=> a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  const allSessions = DATA.trainingSessions.filter(s=> (!scope || ttSessionCovers(s, scope)) && (!ttLogDeptFilter || ttSessionCovers(s, ttLogDeptFilter))).slice().sort((a,b)=> b.date.localeCompare(a.date));
   const defaultDept = depts[0] || '';
 
   return `
@@ -2136,7 +2163,13 @@ function renderTechnicalTraining(){
       <div class="field2"><label>Topic</label><input id="tt_topic" type="text" placeholder="e.g. Proper PPE for Confined Space Entry"></div>
       <div class="row2">
         <div class="field2"><label>Date</label><input id="tt_date" type="date" value="${today}"></div>
-        <div class="field2"><label>Department</label><select id="tt_dept">${depts.map(d=>`<option ${d===defaultDept?'selected':''}>${d}</option>`).join('')}</select></div>
+        <div class="field2"></div>
+      </div>
+      <div class="field2"><label>Department(s) &mdash; pick more than one for cross-training</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;border:1px solid var(--border);border-radius:7px;padding:9px 12px;">
+          ${depts.length>1 ? `<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="tt_dept_all" style="width:15px;height:15px;padding:0;margin:0;"> All Departments</label>` : ''}
+          ${depts.map(d=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;"><input type="checkbox" class="tt-dept-cb" value="${d}" style="width:15px;height:15px;padding:0;margin:0;" ${d===defaultDept?'checked':''}> ${d}</label>`).join('')}
+        </div>
       </div>
       <div class="row2">
         <div class="field2"><label>Start Time</label><input id="tt_start" type="time" value="08:00"></div>
@@ -2145,7 +2178,7 @@ function renderTechnicalTraining(){
       <div class="field2"><label>Manager</label><select id="tt_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}" ${currentSessionUser && a.name===currentSessionUser.name ? 'selected':''}>${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
       <div style="margin-bottom:12px;">
         <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-mute);font-weight:700;margin-bottom:4px;">Attendees</label>
-        <div id="tt_attendeesBox">${ttAttendeeChecklist(defaultDept)}</div>
+        <div id="tt_attendeesBox">${ttAttendeeChecklist([defaultDept])}</div>
       </div>
       <div class="field2"><label>Notes (optional)</label><textarea id="tt_notes" placeholder="Anything worth noting for next time"></textarea></div>
       <div id="tt_saveErr" style="display:none;color:var(--red);font-size:12px;margin:-4px 0 10px;"></div>
@@ -2158,7 +2191,7 @@ function renderTechnicalTraining(){
       <table><thead><tr><th>Date</th><th>Time</th><th>Topic</th><th>Dept</th><th>Attendees</th><th>Manager</th><th></th></tr></thead>
       <tbody>${upcoming.map(s=>`<tr>
         <td>${fmtDate(s.date)}</td><td>${fmtHour12(s.startTime)}</td>
-        <td>${s.topic}</td><td>${s.department}</td><td>${s.attendees.length}</td>
+        <td>${s.topic}</td><td>${ttDeptLabel(s)}</td><td>${s.attendees.length}</td>
         <td>${s.manager?raInitials(s.manager):'&mdash;'}</td>
         <td><button class="btn-ghost btn-sm" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
       </tr>`).join('')}</tbody></table>`}
@@ -2170,7 +2203,7 @@ function renderTechnicalTraining(){
       <div style="font-size:11.5px;color:var(--text-mute);margin:4px 0 12px;">These trainings already happened &mdash; open one to check off who attended.</div>
       <table><thead><tr><th>Date</th><th>Topic</th><th>Dept</th><th>Manager</th><th></th></tr></thead>
       <tbody>${needsConfirmList.map(s=>`<tr>
-        <td>${fmtDate(s.date)}</td><td>${s.topic}</td><td>${s.department}</td>
+        <td>${fmtDate(s.date)}</td><td>${s.topic}</td><td>${ttDeptLabel(s)}</td>
         <td>${s.manager?raInitials(s.manager):'&mdash;'}</td>
         <td><button class="btn-ghost btn-sm" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
       </tr>`).join('')}</tbody></table>
@@ -2192,7 +2225,7 @@ function renderTechnicalTraining(){
       ${allSessions.length===0 ? `<div style="padding:20px;color:var(--text-mute);">No technical trainings logged yet.</div>` : `
       <table><thead><tr><th>Date</th><th>Topic</th><th>Dept</th><th>Attendees</th><th>Status</th><th></th></tr></thead>
       <tbody>${allSessions.map(s=>`<tr>
-        <td>${fmtDate(s.date)}</td><td>${s.topic}</td><td>${s.department}</td>
+        <td>${fmtDate(s.date)}</td><td>${s.topic}</td><td>${ttDeptLabel(s)}</td>
         <td>${s.attendees.map(a=>`<button class="tech-btn" onclick="openTrainingHistory('${a.name}')" style="margin:1px;white-space:nowrap;display:inline-block;">${a.name}</button>`).join(', ')}</td>
         <td>${s.confirmed ? `<span class="badge2 badge2-ok">Confirmed</span>` : (s.date<today ? `<span class="badge2 badge2-warn">Needs Confirm</span>` : `<span style="font-size:11px;color:var(--text-mute);">Scheduled</span>`)}</td>
         <td><button class="btn-ghost btn-sm" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">Open</button></td>
@@ -2200,8 +2233,11 @@ function renderTechnicalTraining(){
     </div>`;
 }
 function wireTrainingEvents(){
-  const deptSel = document.getElementById('tt_dept');
-  if(deptSel) deptSel.onchange = ()=>{ document.getElementById('tt_attendeesBox').innerHTML = ttAttendeeChecklist(deptSel.value); };
+  const deptCbs = [...document.querySelectorAll('.tt-dept-cb')];
+  const allCb = document.getElementById('tt_dept_all');
+  const syncAll = ()=>{ if(allCb) allCb.checked = deptCbs.length>0 && deptCbs.every(cb=>cb.checked); };
+  deptCbs.forEach(cb=> cb.onchange = ()=>{ syncAll(); ttRefreshAttendeesBox(); });
+  if(allCb) allCb.onchange = ()=>{ deptCbs.forEach(cb=> cb.checked = allCb.checked); ttRefreshAttendeesBox(); };
   const logFilter = document.getElementById('ttLogFilter');
   if(logFilter) logFilter.onchange = ()=>{ ttLogDeptFilter = logFilter.value; document.getElementById('content').innerHTML = renderTechnicalTraining(); wireTrainingEvents(); };
 }
@@ -2210,18 +2246,19 @@ async function saveTrainingSession(){
   const date = document.getElementById('tt_date').value;
   const startTime = document.getElementById('tt_start').value;
   const endTime = document.getElementById('tt_end').value;
-  const department = document.getElementById('tt_dept').value;
+  const departments = ttSelectedFormDepts();
+  const department = ttDeptsLabel(departments);
   const manager = document.getElementById('tt_manager').value;
   const notes = document.getElementById('tt_notes').value.trim();
   const errEl = document.getElementById('tt_saveErr');
   const checked = [...document.querySelectorAll('.tt-attendee-cb:checked')].map(cb=>cb.value);
-  if(!topic || !date || !startTime || !endTime || !department){ if(errEl){errEl.textContent='Topic, date, time, and department are required.'; errEl.style.display='block';} return; }
+  if(!topic || !date || !startTime || !endTime || !departments.length){ if(errEl){errEl.textContent='Topic, date, time, and at least one department are required.'; errEl.style.display='block';} return; }
   if(endTime <= startTime){ if(errEl){errEl.textContent="End time must be after start time."; errEl.style.display='block';} return; }
   if(checked.length===0){ if(errEl){errEl.textContent='Select at least one attendee.'; errEl.style.display='block';} return; }
   if(errEl) errEl.style.display='none';
   DATA.trainingSessions.push({
-    id: 'TT-'+Date.now(), topic, date, startTime, endTime, department, manager,
-    attendees: checked.map(name=>({name, status:'pending', department: techDept(name) || department})),
+    id: 'TT-'+Date.now(), topic, date, startTime, endTime, department, departments, manager,
+    attendees: checked.map(name=>({name, status:'pending', department: techDept(name) || departments[0]})),
     notes, confirmed:false, confirmedBy:null, confirmedAt:null,
     createdAt: new Date().toISOString()
   });
@@ -2234,7 +2271,7 @@ function openTrainingDetail(id){
   const editable = !s.confirmed;
   const rows = s.attendees.map(a=>`
     <div class="tt-att-row" data-name="${a.name}" data-status="${a.status}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">
-      <button class="tech-btn" onclick="closeModal(); openTrainingHistory('${a.name}')" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;">${avatar(a.name)} ${a.name}${(a.department && a.department!==s.department) ? ` <span style="font-weight:400;color:var(--text-mute);">(${a.department})</span>` : ''}</button>
+      <button class="tech-btn" onclick="closeModal(); openTrainingHistory('${a.name}')" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;">${avatar(a.name)} ${a.name}${(a.department && (ttSessionDepts(s).length>1 || !ttSessionCovers(s, a.department))) ? ` <span style="font-weight:400;color:var(--text-mute);">(${a.department})</span>` : ''}</button>
       <div style="display:flex;gap:6px;flex:none;">
         ${editable ? `
         <button type="button" class="tt-mark" onclick="ttSetAttendeeStatus(this,'${a.status==='attended'?'pending':'attended'}')" style="border:1px solid var(--border);background:${a.status==='attended'?'var(--green)':'#fff'};color:${a.status==='attended'?'#fff':'inherit'};border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;">Attended</button>
@@ -2246,7 +2283,7 @@ function openTrainingDetail(id){
   document.getElementById('modalRoot').innerHTML = `
     <div class="overlay" onclick="if(event.target===this) closeModal()">
       <div class="modal-card" style="max-width:520px;">
-        <div class="modal-head"><div><div class="name">${s.topic}</div><div class="title">${fmtDate(s.date)} &middot; ${fmtHour12(s.startTime)}&ndash;${fmtHour12(s.endTime)} &middot; ${s.department}${s.manager?' &middot; w/ '+s.manager:''}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-head"><div><div class="name">${s.topic}</div><div class="title">${fmtDate(s.date)} &middot; ${fmtHour12(s.startTime)}&ndash;${fmtHour12(s.endTime)} &middot; ${ttDeptLabel(s)}${s.manager?' &middot; w/ '+s.manager:''}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
         <div class="modal-body">
           ${s.notes ? `<div class="modal-section"><div class="modal-section-title">Notes</div><div style="font-size:12.5px;line-height:1.5;">${s.notes}</div></div>` : ''}
           <div class="modal-section">
@@ -2259,7 +2296,7 @@ function openTrainingDetail(id){
           <div class="modal-section">
             <div class="modal-section-title">Roster Changed?</div>
             <div style="font-size:11px;color:var(--text-mute);margin-bottom:8px;">New hire, transfer, or someone left the department since this was scheduled &mdash; bring the list up to date, or pull in someone from another department just for this session.</div>
-            <button class="btn-ghost" onclick="syncTrainingAttendeesToRoster('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;margin-bottom:10px;">&#8635; Update to Current ${s.department} Roster</button>
+            <button class="btn-ghost" onclick="syncTrainingAttendeesToRoster('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;margin-bottom:10px;">&#8635; Update to Current ${ttDeptLabel(s)} Roster</button>
             <div style="display:flex;gap:8px;">
               <select id="tt_addAttendee" style="flex:1;">${addOptions || '<option value="">Everyone active is already on this list</option>'}</select>
               <button class="btn-ghost" onclick="addTrainingAttendee('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;white-space:nowrap;">+ Add</button>
@@ -2284,7 +2321,7 @@ async function addTrainingAttendee(id){
   const sel = document.getElementById('tt_addAttendee');
   const name = sel && sel.value;
   if(!name || s.attendees.some(a=>a.name===name)) return;
-  s.attendees.push({name, status:'pending', department: techDept(name) || s.department});
+  s.attendees.push({name, status:'pending', department: techDept(name) || ttSessionDepts(s)[0]});
   await saveShared('lph-rat-training', DATA.trainingSessions);
   document.getElementById('content').innerHTML = renderTechnicalTraining();
   wireTrainingEvents();
@@ -2300,14 +2337,16 @@ async function removeTrainingAttendee(id, name){
 }
 async function syncTrainingAttendeesToRoster(id){
   const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
-  const currentDeptActive = DATA.teamRoster.filter(t=>t.active && t.department===s.department).map(t=>t.name).sort((a,b)=>a.localeCompare(b));
-  // Anyone pulled in from a different department is a deliberate one-off addition -- leave them alone.
-  const keptOutsiders = s.attendees.filter(a=> (a.department || s.department) !== s.department);
-  // Rebuild this session's own-department attendees from who's active there right now, keeping
-  // the existing status for anyone who's still on the roster so a sync doesn't wipe check-ins.
-  const rebuiltNative = currentDeptActive.map(name=>{
-    const existing = s.attendees.find(a=> a.name===name && (a.department || s.department)===s.department);
-    return existing || {name, status:'pending', department: s.department};
+  const sDepts = ttSessionDepts(s);
+  const isNative = a=> sDepts.includes(a.department || sDepts[0]);
+  const currentDeptActive = DATA.teamRoster.filter(t=>t.active && sDepts.includes(t.department)).sort((a,b)=>a.name.localeCompare(b.name));
+  // Anyone pulled in from a department outside this session is a deliberate one-off addition -- leave them alone.
+  const keptOutsiders = s.attendees.filter(a=> !isNative(a));
+  // Rebuild this session's own-department attendees (across every department it covers) from who's
+  // active there right now, keeping existing status for anyone still on the roster so a sync doesn't wipe check-ins.
+  const rebuiltNative = currentDeptActive.map(t=>{
+    const existing = s.attendees.find(a=> a.name===t.name && isNative(a));
+    return existing || {name:t.name, status:'pending', department: t.department};
   });
   s.attendees = [...rebuiltNative, ...keptOutsiders];
   await saveShared('lph-rat-training', DATA.trainingSessions);
@@ -2352,7 +2391,7 @@ function openTrainingHistory(name){
             const color = !s.confirmed ? 'var(--text-mute)' : (a.status==='attended' ? 'var(--green)' : 'var(--red)');
             return `<div class="modal-section" style="cursor:pointer;" onclick="closeModal(); openTrainingDetail('${s.id}')">
               <div class="modal-section-title">${s.topic}</div>
-              <div style="font-size:12px;color:var(--text-mute);">${fmtDate(s.date)} &middot; ${s.department}${s.manager?' &middot; w/ '+s.manager:''}</div>
+              <div style="font-size:12px;color:var(--text-mute);">${fmtDate(s.date)} &middot; ${ttDeptLabel(s)}${s.manager?' &middot; w/ '+s.manager:''}</div>
               <div style="font-size:12px;font-weight:700;color:${color};margin-top:3px;">${statusLabel}</div>
             </div>`;
           }).join('')}
