@@ -1238,6 +1238,7 @@ let adminSubtab = 'scorecards', adminDeptFilter = 'All';
 let currentSessionUser = null;
 let appDataReady = false;
 let ooFilterTech = '';
+let ooDeptPick = '';
 let ooCalYear = new Date().getFullYear(), ooCalMonth = new Date().getMonth()+1;
 const OO_HOURS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 let ttCalYear = new Date().getFullYear(), ttCalMonth = new Date().getMonth()+1;
@@ -1804,8 +1805,10 @@ function renderOneOnOneCalendar(){
     cells += `<div class="cal-cell ${iso===today?'today':''}" onclick="ooCalPickDate('${iso}')" style="cursor:pointer;">
       <div class="cal-date">${d}</div>
       ${entries.map(o=>{
-        const c = ooStatusColor(o);
-        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px solid ${c}66;" onclick="event.stopPropagation(); openOneOnOneDetail('${o.id}')" title="${o.employeeName} &mdash; ${fmtHour12(o.startTime)}${o.manager?' w/ '+o.manager:''}${o.reserveRoom?' (meeting room reserved)':''}">${fmtHour12(o.startTime).replace(' AM','a').replace(' PM','p')} ${o.employeeName}${o.reserveRoom?' &middot; Room':''}</div>`;
+        const c = adminColorByName(o.manager);
+        const done = o.status==='completed';
+        const needsRecap = !done && o.date < today;
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px ${done?'solid':'dashed'} ${c}${done?'66':'99'};" onclick="event.stopPropagation(); openOneOnOneDetail('${o.id}')" title="${o.employeeName} &mdash; ${fmtHour12(o.startTime)}${o.manager?' w/ '+o.manager:''}${o.reserveRoom?' (meeting room reserved)':''}${needsRecap?' &mdash; needs a recap':''}">${needsRecap?'&#9888; ':''}${fmtHour12(o.startTime).replace(' AM','a').replace(' PM','p')} ${o.employeeName}${o.reserveRoom?' &middot; Room':''}</div>`;
       }).join('')}
     </div>`;
   }
@@ -1819,7 +1822,53 @@ function renderOneOnOneCalendar(){
       ${DOW_NAMES2.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
       ${cells}
     </div>
-    <div style="font-size:11.5px;color:var(--text-mute);margin-top:10px;">Blue = scheduled &middot; green = recap completed &middot; amber = time's passed, still needs a recap &middot; click a day to set that date in the booking form below, click a booking to open it</div>`;
+    <div style="font-size:11.5px;color:var(--text-mute);margin-top:10px;">Color = which manager is holding it &middot; dashed border = scheduled &middot; solid border = recap completed &middot; &#9888; = time's passed, still needs a recap &middot; click a day to set that date in the booking form below, click a booking to open it</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+      ${DATA.superAdmins.map(a=>`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${adminColorByName(a.name)}1A;color:${adminColorByName(a.name)};border:1px solid ${adminColorByName(a.name)}66;">${raInitials(a.name)} &mdash; ${a.name}</span>`).join('')}
+    </div>`;
+}
+// Department buttons under the booking form: pick a department to see everyone in it and where
+// they stand for this month, with a one-click "Schedule" that fills them into the form above.
+function renderOneOnOneDeptPicker(statuses, depts){
+  const needsBooking = st=> st.status==='due' || st.status==='overdue';
+  const btns = depts.map(d=>{
+    const left = statuses.filter(s=> s.department===d && needsBooking(s.st)).length;
+    return `<button class="preset-btn ${ooDeptPick===d?'active':''}" onclick="ooSetDeptPick('${d}')">${d}${left?` <span style="font-weight:800;color:${ooDeptPick===d?'#fff':'var(--orange)'};">(${left} to schedule)</span>`:' &#10003;'}</button>`;
+  }).join('');
+  let body = '';
+  if(ooDeptPick){
+    const rank = st=> st.status==='overdue'?0 : st.status==='due'?1 : st.status==='needs-recap'?2 : st.status==='scheduled'?3 : 4;
+    const people = statuses.filter(s=> s.department===ooDeptPick).sort((a,b)=> rank(a.st)-rank(b.st) || a.name.localeCompare(b.name));
+    body = people.length===0 ? `<div style="padding:16px;color:var(--text-mute);">No active employees in ${ooDeptPick}.</div>` : `
+      <table style="margin-top:12px;"><thead><tr><th>Employee</th><th>Title</th><th>This Month</th><th></th></tr></thead>
+      <tbody>${people.map(p=>`<tr>
+        <td><button class="tech-btn" onclick="openOneOnOneHistory('${p.name}')">${avatar(p.name)} ${p.name}</button></td>
+        <td>${p.title||'&mdash;'}</td>
+        <td>${ooStatusPill(p.st)}</td>
+        <td>${needsBooking(p.st) ? `<button class="btn-primary" style="padding:6px 12px;font-size:12px;" onclick="ooPickEmployee('${p.name}')">Schedule</button>` : ''}</td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+  return `
+    <div class="panel" id="ooDeptPanel">
+      <div class="panel-title" style="margin-bottom:4px;">Who Still Needs a 1:1?</div>
+      <div style="font-size:11.5px;color:var(--text-mute);margin-bottom:12px;">Pick a department to see everyone in it and where they stand this month. Click <b>Schedule</b> to drop that person into the form above.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">${btns}</div>
+      ${body}
+    </div>`;
+}
+function ooSetDeptPick(d){
+  ooDeptPick = (ooDeptPick===d) ? '' : d;
+  document.getElementById('content').innerHTML = renderOneOnOnes();
+  wireOneOnOneEvents();
+  const panel = document.getElementById('ooDeptPanel'); if(panel && panel.scrollIntoView) panel.scrollIntoView({block:'start'});
+}
+function ooPickEmployee(name){
+  const sel = document.getElementById('oo_emp'); if(!sel) return;
+  sel.value = name;
+  const dateEl = document.getElementById('oo_date');
+  if(dateEl && dateEl.scrollIntoView) dateEl.scrollIntoView({behavior:'smooth', block:'center'});
+  sel.style.outline = '2px solid var(--orange)';
+  setTimeout(()=>{ sel.style.outline = ''; }, 1500);
 }
 function renderOneOnOnes(){
   const today = todayIso();
@@ -1860,6 +1909,8 @@ function renderOneOnOnes(){
       <div id="oo_bookErr" style="display:none;color:var(--red);font-size:12px;margin:-4px 0 10px;">The meeting room is already reserved for that time &mdash; pick a different time.</div>
       <button class="btn-primary" onclick="saveOneOnOneBooking()">Schedule It</button>
     </div>
+
+    ${renderOneOnOneDeptPicker(statuses, depts)}
 
     <div class="panel">
       <div class="panel-title">Upcoming (${upcoming.length})</div>
