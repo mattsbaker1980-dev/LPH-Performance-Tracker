@@ -2304,11 +2304,94 @@ function openTrainingDetail(id){
           </div>` : ''}
           <div class="modal-section">
             <button class="btn-primary" onclick="confirmTrainingAttendance('${s.id}')">${s.confirmed ? 'Update Attendance' : 'Confirm Attendance'}</button>
+            <button class="btn-ghost" onclick="openTrainingEdit('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">&#9998; Edit details</button>
             <button class="btn-ghost" onclick="deleteTrainingSession('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Delete session</button>
           </div>
         </div>
       </div>
     </div>`;
+}
+/* Edit an existing session's topic, date/time, manager, notes, and departments without deleting it.
+   Changing departments adds the active roster of any newly-included department (as pending) and
+   drops attendees who belonged to a department that was removed. Anyone hand-added from a
+   department outside the session is left alone, and everyone else keeps their check-in status.
+   Once attendance is confirmed, departments are locked so the confirmed record stays accurate. */
+function openTrainingEdit(id){
+  const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  const scope = sessionDeptScope();
+  const depts = scope ? [scope] : oneOnOneDepts();
+  const current = ttSessionDepts(s);
+  // Keep any department this session already covers selectable, even if it has no active staff now.
+  current.forEach(d=>{ if(!depts.includes(d)) depts.push(d); });
+  const locked = !!s.confirmed;
+  const esc = v=> String(v||'').replace(/"/g,'&quot;');
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this) closeModal()">
+      <div class="modal-card" style="max-width:520px;">
+        <div class="modal-head"><div><div class="name">Edit Training</div><div class="title">${s.topic}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+        <div class="modal-body">
+          <div class="modal-section">
+            <div class="field2"><label>Topic</label><input id="tte_topic" type="text" value="${esc(s.topic)}"></div>
+            <div class="row2">
+              <div class="field2"><label>Date</label><input id="tte_date" type="date" value="${s.date}"></div>
+              <div class="field2"><label>Manager</label><select id="tte_manager">${DATA.superAdmins.map(a=>`<option value="${a.name}" ${a.name===s.manager?'selected':''}>${raInitials(a.name)} &mdash; ${a.name}</option>`).join('')}</select></div>
+            </div>
+            <div class="row2">
+              <div class="field2"><label>Start Time</label><input id="tte_start" type="time" value="${s.startTime}"></div>
+              <div class="field2"><label>End Time</label><input id="tte_end" type="time" value="${s.endTime}"></div>
+            </div>
+            <div class="field2"><label>Department(s)</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px 16px;border:1px solid var(--border);border-radius:7px;padding:9px 12px;${locked?'opacity:.6;':''}">
+                ${depts.length>1 ? `<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="tte_dept_all" style="width:15px;height:15px;padding:0;margin:0;" ${depts.every(d=>current.includes(d))?'checked':''} ${locked?'disabled':''}> All Departments</label>` : ''}
+                ${depts.map(d=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;"><input type="checkbox" class="tte-dept-cb" value="${d}" style="width:15px;height:15px;padding:0;margin:0;" ${current.includes(d)?'checked':''} ${locked?'disabled':''}> ${d}</label>`).join('')}
+              </div>
+              <div style="font-size:11px;color:var(--text-mute);margin-top:5px;">${locked ? 'Attendance is already confirmed, so departments are locked.' : 'Adding a department adds its current team to the attendee list; removing one takes its people off. Everyone else keeps their check-in.'}</div>
+            </div>
+            <div class="field2"><label>Notes</label><textarea id="tte_notes">${s.notes||''}</textarea></div>
+            <div id="tte_err" style="display:none;color:var(--red);font-size:12px;margin:-4px 0 10px;"></div>
+            <button class="btn-primary" onclick="saveTrainingEdit('${s.id}')">Save Changes</button>
+            <button class="btn-ghost" onclick="openTrainingDetail('${s.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  const cbs = [...document.querySelectorAll('.tte-dept-cb')];
+  const all = document.getElementById('tte_dept_all');
+  cbs.forEach(cb=> cb.onchange = ()=>{ if(all) all.checked = cbs.every(c=>c.checked); });
+  if(all) all.onchange = ()=>{ cbs.forEach(c=> c.checked = all.checked); };
+}
+async function saveTrainingEdit(id){
+  const s = DATA.trainingSessions.find(x=>x.id===id); if(!s) return;
+  const topic = document.getElementById('tte_topic').value.trim();
+  const date = document.getElementById('tte_date').value;
+  const startTime = document.getElementById('tte_start').value;
+  const endTime = document.getElementById('tte_end').value;
+  const manager = document.getElementById('tte_manager').value;
+  const notes = document.getElementById('tte_notes').value.trim();
+  const newDepts = [...document.querySelectorAll('.tte-dept-cb:checked')].map(cb=>cb.value);
+  const errEl = document.getElementById('tte_err');
+  const fail = msg=>{ errEl.textContent = msg; errEl.style.display='block'; };
+  if(!topic || !date || !startTime || !endTime) return fail('Topic, date, and time are required.');
+  if(endTime <= startTime) return fail('End time must be after start time.');
+  if(!s.confirmed && !newDepts.length) return fail('Pick at least one department.');
+  if(!s.confirmed){
+    const oldDepts = ttSessionDepts(s);
+    const removed = oldDepts.filter(d=> !newDepts.includes(d));
+    const added = newDepts.filter(d=> !oldDepts.includes(d));
+    if(removed.length) s.attendees = s.attendees.filter(a=> !removed.includes(a.department || oldDepts[0]));
+    added.forEach(d=>{
+      DATA.teamRoster.filter(t=>t.active && t.department===d).forEach(t=>{
+        if(!s.attendees.some(a=>a.name===t.name)) s.attendees.push({name:t.name, status:'pending', department:d});
+      });
+    });
+    s.departments = newDepts;
+    s.department = ttDeptsLabel(newDepts);
+  }
+  Object.assign(s, {topic, date, startTime, endTime, manager, notes});
+  await saveShared('lph-rat-training', DATA.trainingSessions);
+  document.getElementById('content').innerHTML = renderTechnicalTraining();
+  wireTrainingEvents();
+  openTrainingDetail(id);
 }
 function ttSetAttendeeStatus(btn, status){
   const row = btn.closest('.tt-att-row'); if(!row) return;
