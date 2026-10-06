@@ -1,6 +1,6 @@
 {
-  "time": "2026-10-06T12:23:58.000Z",
-  "stage": "failed",
-  "detail": "Step 1 (Daily Job Report email check) found no ServiceTitan emails at all received 2026-10-06, as of 12:23 UTC. Searched sender onservicetitan.com with afterDateTime=today and afterDateTime=2026-10-06T00:00:00 (explicit ISO) -- both returned zero results. Yesterday (2026-10-05) the full batch of ~6 ServiceTitan scheduled reports, including Daily Job Report, all arrived between 12:01 and 12:08 UTC. Today, over 20 minutes past that window, nothing has arrived -- likely a delayed or failed ServiceTitan scheduled export, or a mail delivery issue. Stopping per Step 1 instructions without attempting daily_sync.js. Watchdog should re-check for the email in ~25 minutes and run the sync if it has since arrived.",
-  "run_context": "scheduled"
+  "time": "2026-10-06T12:48:47.283Z",
+  "stage": "email_not_found",
+  "detail": "Watchdog (25 min after primary) re-checked for Daily Job Report email from onservicetitan.com dated today (2026-10-06). Still zero results via outlook_email_search (sender=onservicetitan.com, afterDateTime=today and explicit ISO 2026-10-06T00:00:00). Confirmed connector itself works: a broad sender-only search returns 110 total ServiceTitan emails, newest batch dated 2026-10-05 ~12:01-12:08 UTC (6 reports incl. Daily Job Report). Nothing has arrived yet today as of this check. Primary sync (run_context=scheduled) independently found the same thing at 2026-10-06T12:23:58Z and stopped without writing data. Stopping per Step 1 instructions without running daily_sync.js -- no email means no data to sync, and reconciliation cannot be attempted. Likely a delayed/failed ServiceTitan scheduled export, or a mail delivery issue upstream of this account.",
+  "run_context": "watchdog"
 }
