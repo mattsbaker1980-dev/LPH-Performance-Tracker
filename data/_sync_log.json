@@ -1,1 +1,6 @@
-{"time":"2026-10-05T12:29:44.470Z","stage":"done","detail":"Sync completed successfully","run_context":"scheduled","confirmed_max_date":"2026-10-04","confirmed_row_counts":{"dd":861,"td":4330,"install":1000},"report_revenue_reconciled":true}
+{
+  "time": "2026-10-06T12:23:58.000Z",
+  "stage": "failed",
+  "detail": "Step 1 (Daily Job Report email check) found no ServiceTitan emails at all received 2026-10-06, as of 12:23 UTC. Searched sender onservicetitan.com with afterDateTime=today and afterDateTime=2026-10-06T00:00:00 (explicit ISO) -- both returned zero results. Yesterday (2026-10-05) the full batch of ~6 ServiceTitan scheduled reports, including Daily Job Report, all arrived between 12:01 and 12:08 UTC. Today, over 20 minutes past that window, nothing has arrived -- likely a delayed or failed ServiceTitan scheduled export, or a mail delivery issue. Stopping per Step 1 instructions without attempting daily_sync.js. Watchdog should re-check for the email in ~25 minutes and run the sync if it has since arrived.",
+  "run_context": "scheduled"
+}
