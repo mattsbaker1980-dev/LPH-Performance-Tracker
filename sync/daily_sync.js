@@ -138,7 +138,10 @@ const METRIC_FIELDS = ['rev','calls','money_calls','tasks','hours_paid','on_job'
   'demand_rev','demand_calls','demand_money','demand_tasks',
   'spp_rev','spp_calls','spp_money','spp_tasks',
   'cod_rev','cod_calls','cod_money','cod_tasks',
-  'warranty','callbacks','service_agreements','spp_missed'];
+  'warranty','callbacks','service_agreements','spp_missed',
+  // Sold opportunities (ServiceTitan "Converted" flag) -- added Oct 2026 so Demand vs System Check conversion
+  // matches ServiceTitan. opp_tracked=1 marks rows built after this was added (older rows don't have these).
+  'sold_calls','demand_sold','spp_sold','cod_sold','opp_tracked'];
 
 function emptyMetrics() { const m = {}; METRIC_FIELDS.forEach(f => m[f] = 0); return m; }
 function round2(n) { return Math.round((n || 0) * 100) / 100; }
@@ -262,20 +265,25 @@ function parseDump(dumpPath) {
     t.rev += revenue; t.sold += soldHrs;
     if (isCall) { t.calls += 1; d.calls += 1; }
     if (isMoney) { t.money_calls += 1; d.money_calls += 1; }
+    const isSold = isCall && isConverted;
+    if (isSold) { t.sold_calls += 1; d.sold_calls += 1; }
     if (cat === 'Demand') {
       t.demand_rev += revenue; d.demand_rev += revenue;
       if (isCall) { t.demand_calls += 1; d.demand_calls += 1; }
       if (isMoney) { t.demand_money += 1; d.demand_money += 1; }
+      if (isSold) { t.demand_sold += 1; d.demand_sold += 1; }
     }
     if (cat === 'SystemCheck') {
       t.spp_rev += revenue; d.spp_rev += revenue;
       if (isCall) { t.spp_calls += 1; d.spp_calls += 1; }
       if (isMoney) { t.spp_money += 1; d.spp_money += 1; }
+      if (isSold) { t.spp_sold += 1; d.spp_sold += 1; }
     }
     if (cat === 'COD') {
       t.cod_rev += revenue; d.cod_rev += revenue;
       if (isCall) { t.cod_calls += 1; d.cod_calls += 1; }
       if (isMoney) { t.cod_money += 1; d.cod_money += 1; }
+      if (isSold) { t.cod_sold += 1; d.cod_sold += 1; }
     }
     d.rev += revenue; d.sold += soldHrs;
     d.warranty += isWarranty ? 1 : 0;
@@ -290,6 +298,9 @@ function parseDump(dumpPath) {
     deptDay[ddKey].hours_paid += t.hours_paid;
     deptDay[ddKey].on_job += t.on_job;
   }
+
+  Object.values(techDay).forEach(t => { t.opp_tracked = 1; });
+  Object.values(deptDay).forEach(d => { d.opp_tracked = 1; });
 
   const installRows = Object.entries(installDay).map(([k, rev]) => {
     const [dept, tech, dt] = k.split('|');
@@ -347,6 +358,17 @@ async function mergeAndPush(parsed, runContext) {
     const { json, sha } = await ghGet('data/td.json');
     const td = json && json.td ? json.td : [];
     const before = td.length;
+    // A job whose tech was changed in ServiceTitan after an earlier sync must not stay credited to the
+    // old tech: for every dept+day this report covers, drop tech rows the report no longer has, so the
+    // leaderboard always adds up to the department total.
+    const covered = new Set(parsed.deptDay.map(d => d.dept + '|' + d.date));
+    const keep = new Set(parsed.techDay.map(nr => nr.dept + '|' + nr.tech + '|' + nr.date));
+    const beforeClean = td.length;
+    for (let i = td.length - 1; i >= 0; i--) {
+      const r = td[i];
+      if (covered.has(r[TD_DEPT] + '|' + r[TD_DATE]) && !keep.has(r[TD_DEPT] + '|' + r[TD_TECH] + '|' + r[TD_DATE])) td.splice(i, 1);
+    }
+    const removed = beforeClean - td.length;
     const idx = {}; td.forEach((r, i) => { idx[r[TD_DEPT] + '|' + r[TD_TECH] + '|' + r[TD_DATE]] = i; });
     let updated = 0, added = 0;
     parsed.techDay.forEach(nr => {
@@ -356,7 +378,7 @@ async function mergeAndPush(parsed, runContext) {
     });
     const merged = Object.assign({}, json || {}, { td });
     await ghPut('data/td.json', merged, sha, `Daily sync (${runContext}): update td.json`);
-    summary.td = { before, after: td.length, updated, added };
+    summary.td = { before, after: td.length, updated, added, removed };
   }
   await writeLog('wrote_td', JSON.stringify(summary.td), runContext);
 

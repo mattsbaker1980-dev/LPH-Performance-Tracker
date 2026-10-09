@@ -344,13 +344,15 @@ const DD = {dept:0,date:1,rev:2,calls:3,money_calls:4,tasks:5,hours_paid:6,on_jo
   demand_rev:9,demand_calls:10,demand_money:11,demand_tasks:12,
   spp_rev:13,spp_calls:14,spp_money:15,spp_tasks:16,
   cod_rev:17,cod_calls:18,cod_money:19,cod_tasks:20,
-  warranty:21,callbacks:22,service_agreements:23,spp_missed:24};
+  warranty:21,callbacks:22,service_agreements:23,spp_missed:24,
+  sold_calls:25,demand_sold:26,spp_sold:27,cod_sold:28,opp_tracked:29};
 // td: dept,tech,date,src, ...same metric fields as dd...
 const TD = {dept:0,tech:1,date:2,src:3,rev:4,calls:5,money_calls:6,tasks:7,hours_paid:8,on_job:9,sold:10,
   demand_rev:11,demand_calls:12,demand_money:13,demand_tasks:14,
   spp_rev:15,spp_calls:16,spp_money:17,spp_tasks:18,
   cod_rev:19,cod_calls:20,cod_money:21,cod_tasks:22,
-  warranty:23,callbacks:24,service_agreements:25,spp_missed:26};
+  warranty:23,callbacks:24,service_agreements:25,spp_missed:26,
+  sold_calls:27,demand_sold:28,spp_sold:29,cod_sold:30,opp_tracked:31};
 // install: dept, tech, date, rev
 const INST = {dept:0,tech:1,date:2,rev:3};
 
@@ -358,7 +360,10 @@ const METRIC_FIELDS = ['rev','calls','money_calls','tasks','hours_paid','on_job'
   'demand_rev','demand_calls','demand_money','demand_tasks',
   'spp_rev','spp_calls','spp_money','spp_tasks',
   'cod_rev','cod_calls','cod_money','cod_tasks',
-  'warranty','callbacks','service_agreements','spp_missed'];
+  'warranty','callbacks','service_agreements','spp_missed',
+  // Sold opportunities (ServiceTitan "Converted" flag) -- added Oct 2026 so Demand vs System Check conversion
+  // matches ServiceTitan. opp_tracked=1 marks rows built after this was added (older rows don't have these).
+  'sold_calls','demand_sold','spp_sold','cod_sold','opp_tracked'];
 
 const centerTextPlugin = {
   id:'centerText',
@@ -426,6 +431,7 @@ function computeTotals(dept, tech, mode){
   const ds = dailySeries(dept, tech), is = installSeries(dept, tech);
   const t = emptyMetrics();
   Object.values(ds).forEach(v=> METRIC_FIELDS.forEach(f=> t[f]+=v[f]));
+  addOppCoverage(t, ds);
   let install = 0; Object.values(is).forEach(v=> install+=v);
   t.baseRev = t.rev;
   t.install = install;
@@ -438,6 +444,7 @@ function computeCompanyTotals(mode){
   const ds = dailySeries(null, null);
   const t = emptyMetrics();
   Object.values(ds).forEach(v=> METRIC_FIELDS.forEach(f=> t[f]+=v[f]));
+  addOppCoverage(t, ds);
   let install = 0;
   installDeptsPresent().forEach(dept=>{ install += installTotalFor(dept, null); });
   t.baseRev = t.rev;
@@ -446,6 +453,29 @@ function computeCompanyTotals(mode){
   else if(mode==='combined') t.rev = t.baseRev + install;
   t.hasOperational = mode!=='install';
   return t;
+}
+
+// Sold-opportunity counts only exist on days synced after they were added (Oct 2026), so conversion
+// by category is figured over just those days: opportunities that day, and how many ServiceTitan marked sold.
+function addOppCoverage(t, ds){
+  const o = {days:0, trackedDays:0, since:null, demand_calls:0, demand_sold:0, spp_calls:0, spp_sold:0, calls:0, sold:0};
+  Object.keys(ds).sort().forEach(d=>{
+    const v = ds[d];
+    if(v.calls>0) o.days++;
+    if(!(v.opp_tracked>0)) return;
+    if(v.calls>0){ o.trackedDays++; if(!o.since) o.since = d; }
+    o.demand_calls += v.demand_calls; o.demand_sold += v.demand_sold;
+    o.spp_calls += v.spp_calls; o.spp_sold += v.spp_sold;
+    o.calls += v.calls; o.sold += v.sold_calls;
+  });
+  t.opp = o;
+}
+// "42.10%" or a dash when there's nothing to figure it from.
+function oppRate(sold, calls){ return calls>0 ? sold/calls : null; }
+function oppCoverageNote(o){
+  if(!o || o.trackedDays===0) return 'no sold-opportunity data in this range yet';
+  if(o.trackedDays < o.days) return 'based on '+o.trackedDays+' of '+o.days+' days (data since '+fmtDate(o.since)+')';
+  return '';
 }
 
 function destroyCharts(){ chartRefs.forEach(c=>c.destroy()); chartRefs=[]; }
@@ -478,6 +508,9 @@ function renderKPIRowFromTotals(t){
     <div class="kpi-card"><div class="kpi-label">Completed Revenue</div><div class="kpi-value">${fmtMoney(t.rev)}</div><div class="kpi-sub">${fmtMoneyFull(t.rev)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Total Calls</div><div class="kpi-value">${na?'&mdash;':t.calls.toLocaleString()}</div><div class="kpi-sub">${na?'not tracked for install jobs':t.money_calls.toLocaleString()+' converted'}</div></div>
     <div class="kpi-card"><div class="kpi-label">Conversion Rate</div><div class="kpi-value">${na?'&mdash;':fmtPct(conv)}</div><div class="kpi-sub">money calls / total calls</div></div>
+    ${na ? '' : (()=>{ const o=t.opp, dr=oppRate(o.demand_sold,o.demand_calls), sr=oppRate(o.spp_sold,o.spp_calls), note=oppCoverageNote(o);
+      return `<div class="kpi-card"><div class="kpi-label">Demand Conversion</div><div class="kpi-value">${dr===null?'&mdash;':fmtPct(dr)}</div><div class="kpi-sub">${o.trackedDays===0?'':`${o.demand_sold} sold / ${o.demand_calls} demand opportunities`}${note?(o.trackedDays?'<br>':'')+note:''}</div></div>
+    <div class="kpi-card"><div class="kpi-label">System Check Conversion</div><div class="kpi-value">${sr===null?'&mdash;':fmtPct(sr)}</div><div class="kpi-sub">${o.trackedDays===0?'':`${o.spp_sold} sold / ${o.spp_calls} system check opportunities`}${note?(o.trackedDays?'<br>':'')+note:''}</div></div>`; })()}
     <div class="kpi-card"><div class="kpi-label">Avg Sale</div><div class="kpi-value">${na?'&mdash;':fmtMoney(avgSale)}</div><div class="kpi-sub">per converted call</div></div>
     <div class="kpi-card"><div class="kpi-label">Sold Hour Efficiency</div><div class="kpi-value">${na?'&mdash;':fmtPct(eff)}</div><div class="kpi-sub">${na?'not tracked for install jobs':'sold hrs / hours paid'}</div></div>
   </div>`;
@@ -650,6 +683,8 @@ function renderDept(dept){
       <th data-sort="rev">Revenue</th>
       <th data-sort="calls">Calls</th>
       <th data-sort="conv">Conv. Rate</th>
+      <th data-sort="demand_conv" title="Sold demand opportunities / demand opportunities (ServiceTitan's formula)">Demand Conv.</th>
+      <th data-sort="spp_conv" title="Sold system check opportunities / system check opportunities (ServiceTitan's formula)">Sys Check Conv.</th>
       <th data-sort="hours_paid">Hours Paid</th>
       <th data-sort="on_job">On-Job Hrs</th>
       <th data-sort="sold">Sold Hrs</th>
@@ -708,7 +743,10 @@ function renderLeaderboard(dept){
 
   let list = [...techNames].map(tech=>{
     const t = computeTotals(dept, tech, installMode);
+    const dc = oppRate(t.opp.demand_sold, t.opp.demand_calls), sc = oppRate(t.opp.spp_sold, t.opp.spp_calls);
     return {tech, rev:t.rev, calls:t.calls, conv: t.calls>0? t.money_calls/t.calls : 0,
+      demand_conv: dc===null?-1:dc, spp_conv: sc===null?-1:sc, demand_txt: dc===null?'&mdash;':fmtPct(dc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.demand_sold}/${t.opp.demand_calls}</span>`,
+      spp_txt: sc===null?'&mdash;':fmtPct(sc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.spp_sold}/${t.opp.spp_calls}</span>`,
       hours_paid:t.hours_paid, on_job:t.on_job, sold:t.sold, warranty:t.warranty, callbacks:t.callbacks, na: !t.hasOperational};
   });
 
@@ -724,13 +762,15 @@ function renderLeaderboard(dept){
       <td class="money">${fmtMoneyFull(t.rev)}</td>
       <td>${t.na?'&mdash;':Math.round(t.calls).toLocaleString()}</td>
       <td>${t.na?'&mdash;':fmtPct(t.conv)}</td>
+      <td>${t.na?'&mdash;':t.demand_txt}</td>
+      <td>${t.na?'&mdash;':t.spp_txt}</td>
       <td>${t.na?'&mdash;':t.hours_paid.toFixed(2)}</td>
       <td>${t.na?'&mdash;':t.on_job.toFixed(2)}</td>
       <td>${t.na?'&mdash;':t.sold.toFixed(2)}</td>
       <td>${t.na?'&mdash;':t.warranty}</td>
       <td>${t.na?'&mdash;':t.callbacks}</td>
     </tr>`).join('');
-  document.getElementById('leaderBody').innerHTML = body || '<tr><td colspan="10" style="color:var(--text-mute);padding:20px;">No activity in this range.</td></tr>';
+  document.getElementById('leaderBody').innerHTML = body || '<tr><td colspan="12" style="color:var(--text-mute);padding:20px;">No activity in this range.</td></tr>';
 
   document.querySelectorAll('.tech-name[data-tech]').forEach(el=>{
     el.addEventListener('click', ()=>{
@@ -795,6 +835,11 @@ function ddRowFromMetrics(dept, date, m){
 }
 
 function mergeTechDay(list){
+  // Drop tech rows for every dept+day in this upload that the upload no longer credits to that tech
+  // (job reassigned in ServiceTitan), so the leaderboard always adds up to the department total.
+  const covered = new Set(list.map(nr=> nr.dept+'|'+nr.date));
+  const keep = new Set(list.map(nr=> nr.dept+'|'+nr.tech+'|'+nr.date));
+  DATA.td = DATA.td.filter(r=> !covered.has(r[TD.dept]+'|'+r[TD.date]) || keep.has(r[TD.dept]+'|'+r[TD.tech]+'|'+r[TD.date]));
   const idx = {};
   DATA.td.forEach((r,i)=>{ idx[r[TD.dept]+'|'+r[TD.tech]+'|'+r[TD.date]] = i; });
   list.forEach(nr=>{
@@ -827,7 +872,7 @@ function parseJobDetailRows(rows){
   for(let i=1;i<rows.length;i++){
     const r = rows[i];
     if(!r || r.length===0) continue;
-    const bu=r[5], status=r[6], opp=r[7], compDateRaw=r[10], warrantyFlag=r[14], recallFlag=r[15], convertedFlag=r[16], primaryTech=r[18],
+    const bu=r[5], status=r[6], opp=r[7], compDateRaw=r[10], warrantyFlag=r[14], recallFlag=r[15], convertedFlag=r[16], zeroDollarFlag=r[17], primaryTech=r[18],
           soldHrs=Number(r[19])||0, paidTime=Number(r[20])||0, hoursWorked=Number(r[21])||0, revenue=Number(r[28])||0;
     if(!bu || !primaryTech) continue;
     const compDate = toISODate(compDateRaw);
@@ -836,11 +881,17 @@ function parseJobDetailRows(rows){
     if(!dept || !cat) continue;
     const tech = resolveTech(dept, primaryTech);
     const isCompleted = (status==='Completed');
-    const isMoney = isCompleted && revenue>0;
+    const isZeroDollar = zeroDollarFlag===true || zeroDollarFlag==='TRUE';
     const isWarranty = warrantyFlag===true || warrantyFlag==='TRUE';
     const isRecall = recallFlag===true || recallFlag==='TRUE';
     const isConverted = convertedFlag===true || convertedFlag==='TRUE';
     const isOpportunity = opp===true || opp==='TRUE';
+    // Same "counts as a call" rule as sync/daily_sync.js (the daily sync), so a manual upload and the
+    // daily sync agree: completed + flagged as a sales opportunity; a $0 Demand job counts only if it sold.
+    let isCall = isCompleted && isOpportunity;
+    if(cat==='Demand' && isCall) isCall = !isZeroDollar || isConverted;
+    const isMoney = isCall && revenue>0;
+    const isSold = isCall && isConverted;
 
     if(cat==='Installs' || cat==='InstallSales' || cat==='Service'){
       // Captured directly as Install revenue -- same report, no separate upload needed going forward.
@@ -864,11 +915,12 @@ function parseJobDetailRows(rows){
     if(!deptDay[ddKey]) deptDay[ddKey] = {dept,date:compDate,...emptyMetrics()};
     const d = deptDay[ddKey];
     t.rev += revenue; t.sold += soldHrs;
-    if(isCompleted){ t.calls += 1; d.calls += 1; }
+    if(isCall){ t.calls += 1; d.calls += 1; }
     if(isMoney){ t.money_calls += 1; d.money_calls += 1; }
-    if(cat==='Demand'){ t.demand_rev+=revenue; d.demand_rev+=revenue; if(isCompleted){t.demand_calls+=1;d.demand_calls+=1;} if(isMoney){t.demand_money+=1;d.demand_money+=1;} }
-    if(cat==='SystemCheck'){ t.spp_rev+=revenue; d.spp_rev+=revenue; if(isCompleted){t.spp_calls+=1;d.spp_calls+=1;} if(isMoney){t.spp_money+=1;d.spp_money+=1;} }
-    if(cat==='COD'){ t.cod_rev+=revenue; d.cod_rev+=revenue; if(isCompleted){t.cod_calls+=1;d.cod_calls+=1;} if(isMoney){t.cod_money+=1;d.cod_money+=1;} }
+    if(isSold){ t.sold_calls += 1; d.sold_calls += 1; }
+    if(cat==='Demand'){ t.demand_rev+=revenue; d.demand_rev+=revenue; if(isCall){t.demand_calls+=1;d.demand_calls+=1;} if(isMoney){t.demand_money+=1;d.demand_money+=1;} if(isSold){t.demand_sold+=1;d.demand_sold+=1;} }
+    if(cat==='SystemCheck'){ t.spp_rev+=revenue; d.spp_rev+=revenue; if(isCall){t.spp_calls+=1;d.spp_calls+=1;} if(isMoney){t.spp_money+=1;d.spp_money+=1;} if(isSold){t.spp_sold+=1;d.spp_sold+=1;} }
+    if(cat==='COD'){ t.cod_rev+=revenue; d.cod_rev+=revenue; if(isCall){t.cod_calls+=1;d.cod_calls+=1;} if(isMoney){t.cod_money+=1;d.cod_money+=1;} if(isSold){t.cod_sold+=1;d.cod_sold+=1;} }
     d.rev += revenue; d.sold += soldHrs;
     d.warranty += isWarranty?1:0; d.callbacks += isRecall?1:0;
     if(cat==='SystemCheck' && isOpportunity && !isConverted) d.spp_missed += 1;
@@ -879,6 +931,8 @@ function parseJobDetailRows(rows){
     deptDay[ddKey].hours_paid += t.hours_paid;
     deptDay[ddKey].on_job += t.on_job;
   });
+  Object.values(techDay).forEach(t=>{ t.opp_tracked = 1; });
+  Object.values(deptDay).forEach(d=>{ d.opp_tracked = 1; });
   const installRows = Object.entries(installDay).map(([k,rev])=>{
     const [dept,tech,date] = k.split('|');
     return [dept, tech, date, round2(rev)];
