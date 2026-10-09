@@ -499,19 +499,20 @@ function updateLatestDate(){
 }
 
 function renderKPIRowFromTotals(t){
-  const conv = t.calls>0 ? t.money_calls/t.calls : 0;
-  const avgSale = t.money_calls>0 ? t.rev/t.money_calls : 0;
+  // ServiceTitan's formulas: conversion = sold opportunities / opportunities; avg sale = revenue / sold opportunities.
+  const conv = t.calls>0 ? t.sold_calls/t.calls : 0;
+  const avgSale = t.sold_calls>0 ? t.rev/t.sold_calls : 0;
   const eff = t.hours_paid>0 ? t.sold/t.hours_paid : 0;
   const na = !t.hasOperational;
   return `
   <div class="kpi-row">
     <div class="kpi-card"><div class="kpi-label">Completed Revenue</div><div class="kpi-value">${fmtMoney(t.rev)}</div><div class="kpi-sub">${fmtMoneyFull(t.rev)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Total Calls</div><div class="kpi-value">${na?'&mdash;':t.calls.toLocaleString()}</div><div class="kpi-sub">${na?'not tracked for install jobs':t.money_calls.toLocaleString()+' converted'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Conversion Rate</div><div class="kpi-value">${na?'&mdash;':fmtPct(conv)}</div><div class="kpi-sub">money calls / total calls</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Calls</div><div class="kpi-value">${na?'&mdash;':t.calls.toLocaleString()}</div><div class="kpi-sub">${na?'not tracked for install jobs':t.sold_calls.toLocaleString()+' sold'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Conversion Rate</div><div class="kpi-value">${na?'&mdash;':fmtPct(conv)}</div><div class="kpi-sub">sold opportunities / opportunities</div></div>
     ${na ? '' : (()=>{ const o=t.opp, dr=oppRate(o.demand_sold,o.demand_calls), sr=oppRate(o.spp_sold,o.spp_calls), note=oppCoverageNote(o);
       return `<div class="kpi-card"><div class="kpi-label">Demand Conversion</div><div class="kpi-value">${dr===null?'&mdash;':fmtPct(dr)}</div><div class="kpi-sub">${o.trackedDays===0?'':`${o.demand_sold} sold / ${o.demand_calls} demand opportunities`}${note?(o.trackedDays?'<br>':'')+note:''}</div></div>
     <div class="kpi-card"><div class="kpi-label">System Check Conversion</div><div class="kpi-value">${sr===null?'&mdash;':fmtPct(sr)}</div><div class="kpi-sub">${o.trackedDays===0?'':`${o.spp_sold} sold / ${o.spp_calls} system check opportunities`}${note?(o.trackedDays?'<br>':'')+note:''}</div></div>`; })()}
-    <div class="kpi-card"><div class="kpi-label">Avg Sale</div><div class="kpi-value">${na?'&mdash;':fmtMoney(avgSale)}</div><div class="kpi-sub">per converted call</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Sale</div><div class="kpi-value">${na?'&mdash;':fmtMoney(avgSale)}</div><div class="kpi-sub">per sold opportunity</div></div>
     <div class="kpi-card"><div class="kpi-label">Sold Hour Efficiency</div><div class="kpi-value">${na?'&mdash;':fmtPct(eff)}</div><div class="kpi-sub">${na?'not tracked for install jobs':'sold hrs / hours paid'}</div></div>
   </div>`;
 }
@@ -540,7 +541,7 @@ function renderOverview(){
   html += `<div class="section-title">By Department</div><div class="dept-grid">`;
   DEPTS.forEach(dept=>{
     const t = computeTotals(dept, null, installMode);
-    const conv = t.calls>0? t.money_calls/t.calls:0;
+    const conv = t.calls>0? t.sold_calls/t.calls:0;
     html += `
     <div class="dept-card" style="--dept-color:${DEPT_COLOR[dept]}" data-goto="${dept}">
       <div class="dept-card-name">${dept}</div>
@@ -614,11 +615,11 @@ function renderPerformanceSummary(dept, tech){
   <div class="panel" style="margin-bottom:20px;">
     <div class="panel-title">Individual Performance Summary &mdash; ${tech}</div>
     <table>
-      <thead><tr><th>Category</th><th>Revenue</th><th>Calls</th><th>Money Calls</th><th>Conv. Rate</th><th>Avg Sale</th><th>Tasks</th></tr></thead>
+      <thead><tr><th>Category</th><th>Revenue</th><th>Opportunities</th><th>Sold</th><th>Conv. Rate</th><th>Avg Sale</th><th>Tasks</th></tr></thead>
       <tbody>
-        ${catRow('Demand','#2B4EE6', t.demand_rev, t.demand_calls, t.demand_money, t.demand_tasks, !hasCTSource)}
-        ${catRow('SPP','#F3770C', t.spp_rev, t.spp_calls, t.spp_money, t.spp_tasks, !hasCTSource)}
-        ${catRow('COD','#1E9E5A', t.cod_rev, t.cod_calls, t.cod_money, t.cod_tasks, !hasCTSource)}
+        ${catRow('Demand','#2B4EE6', t.demand_rev, t.demand_calls, t.demand_sold, t.demand_tasks, !hasCTSource)}
+        ${catRow('SPP','#F3770C', t.spp_rev, t.spp_calls, t.spp_sold, t.spp_tasks, !hasCTSource)}
+        ${catRow('COD','#1E9E5A', t.cod_rev, t.cod_calls, t.cod_sold, t.cod_tasks, !hasCTSource)}
       </tbody>
     </table>
     <div class="kpi-row" style="margin-top:16px;margin-bottom:0;">
@@ -682,7 +683,7 @@ function renderDept(dept){
       <th>Tech</th>
       <th data-sort="rev">Revenue</th>
       <th data-sort="calls">Calls</th>
-      <th data-sort="conv">Conv. Rate</th>
+      <th data-sort="conv" title="Sold opportunities / opportunities (ServiceTitan's formula)">Conv. Rate</th>
       <th data-sort="demand_conv" title="Sold demand opportunities / demand opportunities (ServiceTitan's formula)">Demand Conv.</th>
       <th data-sort="spp_conv" title="Sold system check opportunities / system check opportunities (ServiceTitan's formula)">Sys Check Conv.</th>
       <th data-sort="hours_paid">Hours Paid</th>
@@ -725,9 +726,9 @@ function renderDept(dept){
   }});
   chartRefs.push(c2);
 
-  const conv = totals.hasOperational && totals.calls>0 ? totals.money_calls/totals.calls : null;
-  const c3 = new Chart(document.getElementById('deptConv'), {type:'doughnut', data:{labels:['Converted','Not Converted'],
-    datasets:[{data: conv===null?[1]:[totals.money_calls, totals.calls-totals.money_calls], backgroundColor: conv===null?['#E4E7F0']:['#082971','#E4E7F0'], borderWidth:0}]},
+  const conv = totals.hasOperational && totals.calls>0 ? totals.sold_calls/totals.calls : null;
+  const c3 = new Chart(document.getElementById('deptConv'), {type:'doughnut', data:{labels:['Sold','Not Sold'],
+    datasets:[{data: conv===null?[1]:[totals.sold_calls, totals.calls-totals.sold_calls], backgroundColor: conv===null?['#E4E7F0']:['#082971','#E4E7F0'], borderWidth:0}]},
     options:{maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{enabled:conv!==null}}, cutout:'70%'}});
   c3.centerText = conv===null ? 'N/A' : fmtPct(conv);
   c3.update();
@@ -744,7 +745,7 @@ function renderLeaderboard(dept){
   let list = [...techNames].map(tech=>{
     const t = computeTotals(dept, tech, installMode);
     const dc = oppRate(t.opp.demand_sold, t.opp.demand_calls), sc = oppRate(t.opp.spp_sold, t.opp.spp_calls);
-    return {tech, rev:t.rev, calls:t.calls, conv: t.calls>0? t.money_calls/t.calls : 0,
+    return {tech, rev:t.rev, calls:t.calls, conv: t.calls>0? t.sold_calls/t.calls : 0,
       demand_conv: dc===null?-1:dc, spp_conv: sc===null?-1:sc, demand_txt: dc===null?'&mdash;':fmtPct(dc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.demand_sold}/${t.opp.demand_calls}</span>`,
       spp_txt: sc===null?'&mdash;':fmtPct(sc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.spp_sold}/${t.opp.spp_calls}</span>`,
       hours_paid:t.hours_paid, on_job:t.on_job, sold:t.sold, warranty:t.warranty, callbacks:t.callbacks, na: !t.hasOperational};
@@ -977,16 +978,17 @@ function showResult(elId, msg, ok){
   el.style.display = 'block';
 }
 
+let lastUpload = null;   // last upload result, kept so it survives a page redraw
 function renderUpload(){
   const html = `
   <div class="upload-card" style="max-width:640px;">
     <h3>Daily Job Detail Report</h3>
     <p>The only file you need. The ServiceTitan "Daily Job Detail" export (.xlsx) populates C&amp;T (Demand/SPP/COD) and Install revenue together, for every department, in one upload. Note: Tasks and Service Agreements aren't in this report, so those show as &mdash; for any day loaded this way. A date already in the dashboard gets replaced; a new date gets added. ${storageAvailable ? 'This saves for everyone viewing the published link automatically.' : ''}</p>
-    <label class="file-drop">
+    <label class="file-drop" id="jobDetailDrop">
       <input type="file" id="jobDetailFile" accept=".xlsx">
-      <div class="file-drop-label">Click to choose a Job Detail .xlsx file</div>
+      <div class="file-drop-label" id="jobDetailLabel">Click to choose a Job Detail .xlsx file</div>
     </label>
-    <div class="upload-result" id="jobDetailResult" style="display:none;"></div>
+    <div class="upload-result ${lastUpload?(lastUpload.ok?'ok':'err'):''}" id="jobDetailResult" style="display:${lastUpload?'block':'none'};white-space:pre-line;">${lastUpload?lastUpload.msg:''}</div>
   </div>
   <div class="download-row">
     <div>
@@ -997,23 +999,38 @@ function renderUpload(){
   </div>`;
   document.getElementById('content').innerHTML = html;
 
-  document.getElementById('jobDetailFile').addEventListener('change', e=>{
+  const fileInput = document.getElementById('jobDetailFile');
+  fileInput.addEventListener('change', e=>{
     const file = e.target.files[0]; if(!file) return;
+    const label = document.getElementById('jobDetailLabel'), drop = document.getElementById('jobDetailDrop');
+    const el = document.getElementById('jobDetailResult');
+    const working = msg=>{ el.className = 'upload-result'; el.style.display = 'block'; el.style.background = '#EEF2FF'; el.style.color = 'var(--navy)'; el.textContent = msg; };
+    const status = (msg, ok)=>{ lastUpload = {msg, ok}; el.style.background = ''; el.style.color = ''; showResult('jobDetailResult', msg, ok); };
+    const busy = on=>{ fileInput.disabled = on; if(drop){ drop.style.opacity = on ? '.55' : ''; drop.style.pointerEvents = on ? 'none' : ''; } };
+    label.textContent = file.name;
+    busy(true);
+    working('\u23F3 Reading ' + file.name + '\u2026');
     readWorkbook(file, async (err, rows)=>{
-      if(err) return showResult('jobDetailResult', 'Could not read that file: '+err.message, false);
+      if(err){ busy(false); return status('\u2716 Could not read that file: '+err.message, false); }
       const {techDay, deptDay, installRows} = parseJobDetailRows(rows);
-      if(techDay.length===0 && installRows.length===0) return showResult('jobDetailResult', 'No recognizable rows found. Is this a Daily Job Detail export?', false);
+      if(techDay.length===0 && installRows.length===0){ busy(false); return status('\u2716 No recognizable rows found. Is this a Daily Job Detail export?', false); }
+      working('\u23F3 Saving to the shared site \u2014 this can take up to a minute. Leave this page open\u2026');
       mergeTechDay(techDay); mergeDeptDay(deptDay); mergeInstall(installRows); updateLatestDate();
       const saveResults = await Promise.all([
         saveShared('lph-rat-dd', DATA.dd), saveShared('lph-rat-td', DATA.td), saveShared('lph-rat-install', DATA.install)
       ]);
+      busy(false);
       const saved = saveResults.every(Boolean);
-      const dayCount = new Set([...techDay.map(t=>t.date), ...installRows.map(r=>r[2])]).size;
-      let msg = saved
-        ? `Loaded ${techDay.length} C&T tech-day record(s) and ${installRows.length} install record(s) across ${dayCount} day(s) &mdash; saved for everyone.`
-        : `Loaded ${techDay.length} C&T tech-day record(s) and ${installRows.length} install record(s) locally, but couldn't save to the shared site (${!ghToken() ? 'no Sync Key set on this device — add one in Admin > Access' : 'connection problem — try again'}).`;
-      showResult('jobDetailResult', msg, saved);
-      switchView(currentView);
+      const dates = [...new Set([...techDay.map(t=>t.date), ...installRows.map(r=>r[2])])].sort();
+      const rev = deptDay.reduce((a,d)=>a+d.rev,0) + installRows.reduce((a,r)=>a+r[3],0);
+      const when = new Date().toLocaleTimeString('en-US',{hour:'numeric', minute:'2-digit'});
+      const range = dates.length ? fmtDate(dates[0]) + ' \u2013 ' + fmtDate(dates[dates.length-1]) : '';
+      const msg = saved
+        ? `\u2714 Uploaded and saved for everyone at ${when}.\n${file.name}\n${range} \u00B7 ${dates.length} day(s) \u00B7 ${fmtMoneyFull(rev)} in revenue. Days already in the dashboard were replaced with this file's numbers.`
+        : `\u26A0 Read ${file.name} (${range}), but couldn't save it to the shared site (${!ghToken() ? 'no Sync Key set on this device \u2014 add one in Admin > Access' : 'connection problem \u2014 try again'}). It only shows on this device for now.`;
+      status(msg, saved);
+      fileInput.value = '';
+      label.textContent = 'Click to choose another Job Detail .xlsx file';
     });
   });
 
@@ -1490,8 +1507,8 @@ function daysSince(dateStr){
 }
 function combinedTechPerf(tech){
   const dept = techDept(tech);
-  const t = dept ? computeTotals(dept, tech, 'ct') : {rev:0,calls:0,money_calls:0};
-  return { revenue:t.rev, calls:t.calls, convRate: t.calls>0? t.money_calls/t.calls:0, avgSale: t.money_calls>0? t.rev/t.money_calls:0 };
+  const t = dept ? computeTotals(dept, tech, 'ct') : {rev:0,calls:0,sold_calls:0};
+  return { revenue:t.rev, calls:t.calls, convRate: t.calls>0? t.sold_calls/t.calls:0, avgSale: t.sold_calls>0? t.rev/t.sold_calls:0 };
 }
 // Last-14-days vs prior-14-days, for the Conv Rate / Avg Sale trend arrows on Coverage & Performance.
 function twoWeekTrend(tech){
@@ -1505,7 +1522,7 @@ function twoWeekTrend(tech){
   const rows = DATA.td.filter(r=> r[TD.dept]===dept && r[TD.tech]===tech);
   const agg = (fromIso, toIso) => {
     let rev=0, calls=0, money=0;
-    rows.forEach(r=>{ if(r[TD.date]>=fromIso && r[TD.date]<=toIso){ rev+=r[TD.rev]; calls+=r[TD.calls]; money+=r[TD.money_calls]; } });
+    rows.forEach(r=>{ if(r[TD.date]>=fromIso && r[TD.date]<=toIso){ rev+=r[TD.rev]; calls+=r[TD.calls]; money+=(r[TD.sold_calls]||0); } });
     return { conv: calls>0? money/calls:null, avgSale: money>0? rev/money:null };
   };
   const recent = agg(iso(d14), LATEST_DATE);
