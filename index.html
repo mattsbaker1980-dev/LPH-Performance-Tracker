@@ -737,10 +737,16 @@ function renderDept(dept){
   renderLeaderboard(dept);
 }
 
+const LEADERBOARD_HIDE = ['Joshua Rosario','Josh R.','William Price','Bill Price','Bill P.','Ben L.'];
+const LEADERBOARD_HIDE_DEPTS = ['Plumbing','Sewer'];
 function renderLeaderboard(dept){
   const rows = filteredTD(dept);
   const techNames = new Set(rows.map(r=>r[TD.tech]));
   if(installMode!=='ct') filteredInstall(dept).forEach(r=> techNames.add(r[INST.tech]));
+
+  // Installers and apprentices aren't ranked on the Plumbing/Sewer sales leaderboard (Matt, Oct 2026).
+  // Department totals and charts still include their revenue; only the ranking rows are hidden.
+  if(LEADERBOARD_HIDE_DEPTS.includes(dept)) LEADERBOARD_HIDE.forEach(n=> techNames.delete(n));
 
   let list = [...techNames].map(tech=>{
     const t = computeTotals(dept, tech, installMode);
