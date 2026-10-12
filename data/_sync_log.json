@@ -1,1 +1,1 @@
-{"time":"2026-10-12T12:33:34.504Z","stage":"wrote_td","detail":"{\"before\":4420,\"after\":4421,\"updated\":105,\"added\":1,\"removed\":0}","run_context":"scheduled"}
+{"time":"2026-10-12T12:33:36.625Z","stage":"wrote_install","detail":"{\"before\":1030,\"after\":1030,\"updated\":17,\"added\":0}","run_context":"scheduled"}
