@@ -737,6 +737,12 @@ function renderDept(dept){
   renderLeaderboard(dept);
 }
 
+// Revenue behind each conversion column, so one big job is easy to spot (avg per sale on hover).
+function catRev(rev, sold){
+  const r = Math.round(rev||0);
+  const tip = sold>0 ? `Avg per sale: ${fmtMoneyFull(r/sold)}` : 'No sales in this category';
+  return ` <span title="${tip}" style="color:var(--navy);font-weight:600;font-size:10.5px;margin-left:2px;">&middot; $${r.toLocaleString()}</span>`;
+}
 const LEADERBOARD_HIDE = ['Joshua Rosario','Josh R.','William Price','Bill Price','Bill P.','Ben L.'];
 const LEADERBOARD_HIDE_DEPTS = ['Plumbing','Sewer'];
 function renderLeaderboard(dept){
@@ -752,8 +758,8 @@ function renderLeaderboard(dept){
     const t = computeTotals(dept, tech, installMode);
     const dc = oppRate(t.opp.demand_sold, t.opp.demand_calls), sc = oppRate(t.opp.spp_sold, t.opp.spp_calls);
     return {tech, rev:t.rev, calls:t.calls, conv: t.calls>0? t.sold_calls/t.calls : 0,
-      demand_conv: dc===null?-1:dc, spp_conv: sc===null?-1:sc, demand_txt: dc===null?'&mdash;':fmtPct(dc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.demand_sold}/${t.opp.demand_calls}</span>`,
-      spp_txt: sc===null?'&mdash;':fmtPct(sc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.spp_sold}/${t.opp.spp_calls}</span>`,
+      demand_conv: dc===null?-1:dc, spp_conv: sc===null?-1:sc, demand_txt: dc===null?'&mdash;':fmtPct(dc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.demand_sold}/${t.opp.demand_calls}</span>`+catRev(t.demand_rev, t.opp.demand_sold),
+      spp_txt: sc===null?'&mdash;':fmtPct(sc)+` <span style="color:var(--text-mute);font-size:10.5px;">${t.opp.spp_sold}/${t.opp.spp_calls}</span>`+catRev(t.spp_rev, t.opp.spp_sold),
       hours_paid:t.hours_paid, on_job:t.on_job, sold:t.sold, warranty:t.warranty, callbacks:t.callbacks, na: !t.hasOperational};
   });
 
