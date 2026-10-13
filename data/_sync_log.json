@@ -1,6 +1,1 @@
-{
-  "time": "2026-10-13T12:24:40.685Z",
-  "stage": "failed",
-  "detail": "Step 1 could not run: the Microsoft 365 connector (Outlook) needed for outlook_email_search is not available in this session (needs_reconnect / disconnected at the account level). No email search was attempted and daily_sync.js was never invoked. The user's Microsoft 365 connector needs to be reconnected before the next scheduled or manual run.",
-  "run_context": "scheduled"
-}
+{"time":"2026-10-13T12:49:54.281Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/75be5d15-3717-5e15-a973-f3cc1a94187d/tool-results/mcp-Microsoft_365-read_resource-1791895773465.txt","run_context":"watchdog"}
