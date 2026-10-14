@@ -1,1 +1,1 @@
-{"time":"2026-10-14T12:22:34.038Z","stage":"reconciled_ok","detail":"captured=195839.43 excluded=195839.43 total=391678.86","run_context":"scheduled"}
+{"time":"2026-10-14T12:22:36.468Z","stage":"wrote_dd","detail":"{\"before\":887,\"after\":891,\"updated\":17,\"added\":4}","run_context":"scheduled"}
