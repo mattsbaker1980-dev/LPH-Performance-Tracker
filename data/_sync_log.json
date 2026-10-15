@@ -1,1 +1,1 @@
-{"time":"2026-10-14T12:22:43.174Z","stage":"done","detail":"Sync completed successfully","run_context":"scheduled","confirmed_max_date":"2026-10-13","confirmed_row_counts":{"dd":891,"td":4467,"install":1037},"report_revenue_reconciled":true}
+{"time":"2026-10-15T12:20:16.040Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/9dc651fa-194d-5c06-93e9-15453454600c/tool-results/mcp-Microsoft_365-read_resource-1792066795931.txt","run_context":"scheduled"}
