@@ -1,1 +1,6 @@
-{"time":"2026-10-16T12:07:34.221Z","stage":"done","detail":"Sync completed successfully","run_context":"scheduled","confirmed_max_date":"2026-10-15","confirmed_row_counts":{"dd":899,"td":4512,"install":1044},"report_revenue_reconciled":true}
+{
+  "time": "2026-10-17T12:07:01.377Z",
+  "stage": "failed",
+  "detail": "Step 1: outlook_email_search for sender onservicetitan.com, afterDateTime=today (2026-10-17), order=newest returned 6 ServiceTitan report emails today, but none with subject \"Daily Job Report\" (subjects seen: Employee Time x2, All Estimates - Daily, Daily Sold Estimates Report, Daily Materials Vs. Invoice Report, Daily Invoice Line Items with Description Report). The expected Daily Job Report email (with Daily Job Detail_Dated... .xlsx attachment) was not found. Stopped before running daily_sync.js per instructions.",
+  "run_context": "scheduled"
+}
