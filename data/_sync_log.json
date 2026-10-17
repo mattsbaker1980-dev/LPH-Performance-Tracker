@@ -1,6 +1,1 @@
-{
-  "time": "2026-10-17T12:07:01.377Z",
-  "stage": "failed",
-  "detail": "Step 1: outlook_email_search for sender onservicetitan.com, afterDateTime=today (2026-10-17), order=newest returned 6 ServiceTitan report emails today, but none with subject \"Daily Job Report\" (subjects seen: Employee Time x2, All Estimates - Daily, Daily Sold Estimates Report, Daily Materials Vs. Invoice Report, Daily Invoice Line Items with Description Report). The expected Daily Job Report email (with Daily Job Detail_Dated... .xlsx attachment) was not found. Stopped before running daily_sync.js per instructions.",
-  "run_context": "scheduled"
-}
+{"time":"2026-10-17T12:48:26.465Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/6f774881-038f-56d0-bdef-c4ddc4b8c36f/tool-results/mcp-Microsoft_365-read_resource-1792241292429.txt","run_context":"watchdog"}
