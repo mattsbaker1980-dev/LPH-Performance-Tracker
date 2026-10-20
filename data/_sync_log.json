@@ -1,1 +1,6 @@
-{"time":"2026-10-19T12:12:21.783Z","stage":"done","detail":"Sync completed successfully","run_context":"scheduled","confirmed_max_date":"2026-10-18","confirmed_row_counts":{"dd":907,"td":4539,"install":1048},"report_revenue_reconciled":true}
+{
+  "time": "2026-10-20T12:08:33.079Z",
+  "stage": "failed",
+  "detail": "Step 1: No \"Daily Job Report\" email from onservicetitan.com found in Outlook received today (2026-10-20, searched afterDateTime=2026-10-20T00:00:00 and also with literal 'today'). Most recent email with that subject from that sender was received 2026-10-19T12:07:23Z (yesterday). Per task instructions, stopping without guessing. Possible that report is simply delayed past this run's fire time (12:07:42 UTC) rather than truly missing -- watchdog should recheck in ~25 min.",
+  "run_context": "scheduled"
+}
