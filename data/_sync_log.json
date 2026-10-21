@@ -1,1 +1,1 @@
-{"time":"2026-10-21T12:07:31.333Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/048ed020-3140-5d77-b570-606fa32f4101/tool-results/mcp-Microsoft_365-read_resource-1792584437464.txt","run_context":"scheduled"}
+{"time":"2026-10-21T12:07:32.836Z","stage":"reconciled_ok","detail":"captured=227667.99 excluded=227667.99 total=455335.98","run_context":"scheduled"}
