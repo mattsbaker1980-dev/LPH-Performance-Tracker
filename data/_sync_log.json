@@ -1,1 +1,6 @@
-{"time":"2026-10-21T12:07:43.726Z","stage":"done","detail":"Sync completed successfully","run_context":"scheduled","confirmed_max_date":"2026-10-20","confirmed_row_counts":{"dd":914,"td":4586,"install":1060},"report_revenue_reconciled":true}
+{
+  "time": "2026-10-22T12:07:17.306Z",
+  "stage": "failed",
+  "detail": "Step 1 found the expected 'Daily Job Report' email (received 2026-10-22T12:06:37Z), but its only attachment was a Microsoft Defender Safe Attachments placeholder ('Safe Attachments Scan In Progress', size 87667 bytes, contentType null) instead of the expected .xlsx named like 'Daily Job Detail_Dated ...'. This does not match expectations, so the run stopped before invoking daily_sync.js rather than guessing. The real attachment is likely still being scanned and may appear later; the watchdog run (or next scheduled run) should re-check this email's attachments.",
+  "run_context": "scheduled"
+}
