@@ -1,1 +1,6 @@
-{"time":"2026-10-28T12:20:59.292Z","stage":"failed","detail":"Step 1 failed: no email found today from onservicetitan.com with subject \"Daily Job Report\". Search (sender=onservicetitan.com, afterDateTime=today, order=newest) returned 4 emails today, none matching: \"Todays Sold Jobs\" (12:13 UTC), \"Daily Sold Estimates Report\" (12:13 UTC), \"Employee Time\" (12:12 UTC), \"Daily Invoice Line Items with Description Report\" (12:10 UTC). Stopped per instructions without attempting sync.","run_context":"scheduled"}
+{
+  "time": "2026-10-28T12:46:41.379Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
+}
