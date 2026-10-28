@@ -1,6 +1,1 @@
-{
-  "time": "2026-10-28T12:46:41.379Z",
-  "stage": "email_not_found",
-  "detail": "",
-  "run_context": "watchdog"
-}
+{"time":"2026-10-28T13:32:21.608Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/f3ce35b7-e8f2-525e-8db6-bc38d27d14e9/tool-results/mcp-Microsoft_365-read_resource-1793194327136.txt","run_context":"watchdog2"}
