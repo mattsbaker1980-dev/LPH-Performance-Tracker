@@ -1,1 +1,6 @@
-{"time":"2026-10-29T12:39:45.357Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog","confirmed_max_date":"2026-10-28","confirmed_row_counts":{"dd":942,"td":4733,"install":1082},"report_revenue_reconciled":true}
+{
+  "time": "2026-10-30T12:09:07.397Z",
+  "stage": "failed",
+  "detail": "Step 1: No 'Daily Job Report' email from onservicetitan.com found for today (2026-10-30) as of 12:08 UTC run time. Checked via outlook_email_search (sender filter and query='Daily Job Report' with afterDateTime=2026-10-30), both empty. Most recent such email on file is from 2026-10-29 (received 12:12:19Z). Likely the report for today simply hasn't arrived yet (prior two days' reports arrived ~12:08-12:13Z) and this run fired at 12:07:28Z, just ahead of that window. Not proceeding past Step 1 per instructions; leaving this for the watchdog run ~25 min later to retry.",
+  "run_context": "scheduled"
+}
