@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-01T13:07:51.894Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog 2 (fires ~13:05 UTC) searched Outlook for sender onservicetitan.com, afterDateTime=today, order=newest. Only 1 result: subject \"Action Required: You have overdue tasks\" (noreply@onservicetitan.com, received 2026-11-01T13:00:53Z, no attachment) -- not the Daily Job Report email. No message with subject \"Daily Job Report\" / xlsx attachment found as of this check. Primary and Watchdog 1 both already logged email_not_found today with DST analysis: todays fall-back means the report (normally ~8:08 AM ET) is expected ~13:08-13:13 UTC, which may be only minutes after this watchdog ran. No fallback sync executed -- recommend Watchdog 3 (~14:05 UTC) catch it, or convert sync crons to CRON_TZ=America/New_York to avoid this drift next year.",
-  "run_context": "watchdog2"
-}
+{"time":"2026-11-01T14:07:32.395Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/b00837e8-f0b2-5707-8f56-d20f94f1116e/tool-results/mcp-Microsoft_365-read_resource-1793542038554.txt","run_context":"watchdog3"}
