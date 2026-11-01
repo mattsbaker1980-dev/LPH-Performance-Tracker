@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-01T12:36:25.305Z",
+  "time": "2026-11-01T13:07:51.894Z",
   "stage": "email_not_found",
-  "detail": "Watchdog 1 (fires ~12:30 UTC) ran its own search: no 'Daily Job Report' email from onservicetitan.com received today as of this check. Newest matching email in inbox is still from 2026-10-31 12:12 UTC (8:08 AM EDT). Primary already logged the same email_not_found condition for today at 2026-11-01T12:14:16Z with detailed DST analysis: today is the US DST fall-back day, so the sync crons (fixed UTC) now run about an hour earlier relative to the report's local 8:08 AM ET send time than they did yesterday. The report is expected around 13:08-13:13 UTC today, which is after this watchdog's run. No fallback sync was executed. Recommend Watchdog 2 (13:05 UTC) or Watchdog 3 (14:05 UTC) catch it, or convert all sync crons to CRON_TZ=America/New_York.",
-  "run_context": "watchdog"
+  "detail": "Watchdog 2 (fires ~13:05 UTC) searched Outlook for sender onservicetitan.com, afterDateTime=today, order=newest. Only 1 result: subject \"Action Required: You have overdue tasks\" (noreply@onservicetitan.com, received 2026-11-01T13:00:53Z, no attachment) -- not the Daily Job Report email. No message with subject \"Daily Job Report\" / xlsx attachment found as of this check. Primary and Watchdog 1 both already logged email_not_found today with DST analysis: todays fall-back means the report (normally ~8:08 AM ET) is expected ~13:08-13:13 UTC, which may be only minutes after this watchdog ran. No fallback sync executed -- recommend Watchdog 3 (~14:05 UTC) catch it, or convert sync crons to CRON_TZ=America/New_York to avoid this drift next year.",
+  "run_context": "watchdog2"
 }
