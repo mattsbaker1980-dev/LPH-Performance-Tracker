@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-02T12:44:38.767Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog run at 2026-11-02T12:43:56Z found no \"Daily Job Report\" email from onservicetitan.com dated today (2026-11-02). Most recent Daily Job Report in mailbox is dated 2026-11-01T13:12:21Z (as of 11/1/2026 8:08 AM). This confirms the primary sync failure log: the report send time shifted from ~12:08 UTC to ~13:08 UTC after the 2026-11-01 US DST change, and both the primary run (12:15 UTC) and this watchdog run (12:43 UTC) fire too early to catch it. Expected arrival ~13:08-13:12 UTC. No data was parsed or written; data/dd.json, data/td.json, data/install.json, data/ridealong.json, and index.html untouched.",
-  "run_context": "watchdog"
-}
+{"time":"2026-11-02T13:18:58.059Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/71d36657-b0ee-5fa8-a67f-a837639f7938/tool-results/mcp-Microsoft_365-read_resource-1793625507837.txt","run_context":"watchdog2"}
