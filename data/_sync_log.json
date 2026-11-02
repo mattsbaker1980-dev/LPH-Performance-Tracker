@@ -1,1 +1,6 @@
-{"time":"2026-11-01T14:07:43.726Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog3","confirmed_max_date":"2026-10-31","confirmed_row_counts":{"dd":951,"td":4779,"install":1088},"report_revenue_reconciled":true}
+{
+  "time": "2026-11-02T12:15:49.000Z",
+  "stage": "failed",
+  "detail": "No 'Daily Job Report' email from onservicetitan.com found for today (2026-11-02) as of this scheduled run (12:13 UTC). Most recent Daily Job Report in mailbox is dated 2026-11-01T13:12:21Z. Likely cause: US DST ended 2026-11-01, shifting the report's send time from ~12:08 UTC to ~13:08 UTC (same 8:08 AM local clock time, now EST instead of EDT), but this scheduled task still fires at ~12:05 UTC -- about an hour before the report is now sent. Corroborating evidence: last successful sync in this log was run_context=watchdog3 at 2026-11-01T14:07:43Z for confirmed_max_date=2026-10-31, meaning yesterday's primary run (and likely the first watchdog retry) also failed to find the email for the same timing reason, and only a later watchdog attempt succeeded once the shifted email had arrived. Recommend shifting this scheduled task's cron time later (e.g. to ~13:30 UTC) to stay in sync with the new report delivery time, or confirming the watchdog task's schedule is far enough after 13:08 UTC to catch it reliably. No data was parsed or written; data/dd.json, data/td.json, data/install.json untouched.",
+  "run_context": "scheduled"
+}
