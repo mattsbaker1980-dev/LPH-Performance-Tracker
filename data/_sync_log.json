@@ -1,1 +1,6 @@
-{"time":"2026-11-04T12:09:36.001Z","stage":"failed","detail":"Step 1: no \"Daily Job Report\" email found from onservicetitan.com for today (2026-11-04, local calendar date). Broadest sender search (no date filter, order=newest) returned only 3 results, all subject \"Action Required: You have overdue tasks\" dated 2026-11-01 through 2026-11-02 -- no Daily Job Report email exists in the mailbox at all currently. Stopping per LOGGING FAILURE instructions; did not run daily_sync.js. Watchdog should retry the email search in ~25 minutes in case the report email arrives late.","run_context":"scheduled"}
+{
+  "time": "2026-11-04T12:36:50.426Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
+}
