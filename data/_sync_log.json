@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-05T12:07:39.331Z",
-  "stage": "failed",
-  "detail": "Step 1: No 'Daily Job Report' email found for today's local calendar date (2026-11-05). Latest Daily Job Report email in inbox is dated 2026-11-04T13:05:25Z (data as of 11/4/2026 8:03 AM); no report has arrived yet for 11/5. Also note: newest email from onservicetitan.com overall is an unrelated 'Action Required: You have overdue tasks' notice from 2026-11-02, confirming no report email landed today. Stopped before Step 2/3 per task instructions; did not guess or publish anything.",
-  "run_context": "scheduled"
+  "time": "2026-11-05T12:36:10.727Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
 }
