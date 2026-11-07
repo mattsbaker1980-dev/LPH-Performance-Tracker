@@ -1,1 +1,6 @@
-{"time":"2026-11-06T13:15:53.425Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog2","confirmed_max_date":"2026-11-05","confirmed_row_counts":{"dd":967,"td":4870,"install":1107},"report_revenue_reconciled":true}
+{
+  "time": "2026-11-07T12:06:25.380Z",
+  "stage": "failed",
+  "detail": "Step 1 (daily email check) found no 'Daily Job Report' email from onservicetitan.com received today (2026-11-07, local calendar date). Searched sender=onservicetitan.com with afterDateTime=today: zero results. Broadened search (no date filter, limit 5) confirms the three most recent emails from onservicetitan.com are all 'Action Required: You have overdue tasks' notifications (newest received 2026-11-02T13:00:53Z) -- no Daily Job Report email has arrived recently. Stopping per LOGGING FAILURE; did not attempt daily_sync.js since there is no report attachment to pass it. Watchdog should investigate whether the ServiceTitan report email is delayed, failing to send, or landing in a different mailbox/folder.",
+  "run_context": "scheduled"
+}
