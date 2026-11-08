@@ -1,1 +1,6 @@
-{"time":"2026-11-08T12:06:31.165Z","stage":"failed","detail":"Step 1: no \"Daily Job Report\" email from onservicetitan.com found for today (2026-11-08 local). Most recent email from that sender is subject \"Action Required: You have overdue tasks\" received 2026-11-02; no Daily Job Report / xlsx attachment present in any recent search. Stopped before running daily_sync.js.","run_context":"scheduled"}
+{
+  "time": "2026-11-08T12:36:06.062Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
+}
