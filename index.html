@@ -1879,21 +1879,13 @@ function openRideAlongDetail(id){
             </div>
             ${e.notes?`<div style="font-size:12.5px;color:var(--text-mute);margin-top:10px;">${e.notes}</div>`:''}
           </div>
-          ${isFuture ? `
-          <div class="modal-section"><div style="font-size:12.5px;color:var(--text-mute);margin-bottom:8px;">This hasn't happened yet. If it falls through, cancel it here.</div>
-            <button class="btn-primary" style="background:var(--red);" onclick="cancelRideAlong('${e.id}')">Cancel this ride-along</button></div>
-          ` : isPending ? `
-          <div class="modal-section"><div style="font-size:12.5px;color:var(--text-mute);margin-bottom:8px;">How'd it go?</div>
-            <div class="row2">
-              <div class="field2"><label>Rating</label><select id="ra_detail_rating"><option>Excellent</option><option>Good</option><option>Needs Improvement</option><option>Coaching Required</option></select></div>
-              <div class="field2"><label>Follow-up needed?</label><select id="ra_detail_followup"><option>No</option><option>Yes</option></select></div>
-            </div>
-            <div class="field2"><label>Notes</label><textarea id="ra_detail_notes"></textarea></div>
-            <button class="btn-primary" onclick="completeRideAlong('${e.id}')">Save details</button>
-            <button class="btn-ghost" onclick="cancelRideAlong('${e.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Didn't happen</button>
+          ${(isFuture || isPending) ? `
+          <div class="modal-section">
+            <button class="btn-primary" onclick="closeModal(); goToEvaluation('${e.tech}', '${e.id}')">Complete Ride-Along Evaluation</button>
+            <button class="btn-ghost" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;" onclick="cancelRideAlong('${e.id}')">Delete Scheduled Ride-Along</button>
           </div>` : `
           <div class="modal-section">
-            <button class="btn-primary" onclick="closeModal(); goToEvaluation('${e.tech}')">Open evaluation</button>
+            <button class="btn-primary" onclick="closeModal(); goToEvaluation('${e.tech}', '${e.id}')">Open evaluation</button>
             <button class="btn-ghost" onclick="cancelRideAlong('${e.id}')" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:11px 18px;cursor:pointer;">Delete entry</button>
           </div>`}
         </div>
@@ -2701,8 +2693,9 @@ function openTrainingHistory(name){
 }
 
 /* ---- Admin ---- */
-function initEvalDraft(){ evalDraft = { tech:'', date: LATEST_DATE, department:'Plumbing', scores:{}, notes:'', manager: currentAdminName || (DATA.superAdmins[0] && DATA.superAdmins[0].name) || '' }; }
-function goToEvaluation(tech){ initEvalDraft(); evalDraft.tech = tech; evalDraft.department = techDept(tech) || 'Plumbing'; switchView('evaluate'); }
+function initEvalDraft(){ evalDraft = { tech:'', date: LATEST_DATE, department:'Plumbing', scores:{}, notes:'', manager: currentAdminName || (DATA.superAdmins[0] && DATA.superAdmins[0].name) || '', linkedRideAlongId: null }; }
+function ratingFromScore(score){ if(score==null) return 'Pending'; if(score>=4.5) return 'Excellent'; if(score>=3.5) return 'Good'; if(score>=2.5) return 'Needs Improvement'; return 'Coaching Required'; }
+function goToEvaluation(tech, rideAlongId){ initEvalDraft(); evalDraft.tech = tech; evalDraft.department = techDept(tech) || 'Plumbing'; evalDraft.linkedRideAlongId = rideAlongId || null; switchView('evaluate'); }
 function backFromEvaluation(){ evalDraft = null; switchView('ridealongs'); }
 function checkAdminPassword(){
   const val = document.getElementById('admin_pw').value;
@@ -3078,6 +3071,14 @@ async function saveEvaluation(){
     scores:{...evalDraft.scores}, overallScore:overall, stepScores, notes: evalDraft.notes||'', manager: evalDraft.manager||'' };
   DATA.evaluations.push(evRecord);
   await saveShared('lph-rat-evaluations', DATA.evaluations);
+  if(evalDraft.linkedRideAlongId){
+    const ra = DATA.rideAlongs.find(r=>r.id===evalDraft.linkedRideAlongId);
+    if(ra){
+      ra.rating = ratingFromScore(overall);
+      ra.notes = ra.notes || 'Completed via Ride-Along Evaluation.';
+      await saveShared('lph-rat-ridealongs', DATA.rideAlongs);
+    }
+  }
   sendEvaluationEmail(evRecord).then(r=>{
     if(!r.sent){
       const msg = r.reason==='no-email' ? `Evaluation saved. Email NOT sent — no email on file for ${evRecord.tech} (Admin → Team).`
@@ -3142,9 +3143,9 @@ function openEvalDetail(id){
   const e = DATA.evaluations.find(x=>x.id===id); if(!e) return;
   document.getElementById('modalRoot').innerHTML = `
     <div class="overlay" onclick="if(event.target===this) closeModal()">
-      <div class="modal-card" style="max-width:640px;">
+      <div class="modal-card" style="max-width:1100px;width:95vw;max-height:92vh;">
         <div class="modal-head">${avatar(e.tech,'lg')}<div><div class="name">${e.tech}</div><div class="title">${fmtDate(e.date)} &middot; ${e.department}${e.manager?' &middot; Evaluated by '+e.manager:''}</div></div><button class="modal-close" onclick="closeModal()">&times;</button></div>
-        <div class="modal-body">${buildEvalEmailHtml(e)}</div>
+        <div class="modal-body" style="display:flex;justify-content:center;">${buildEvalEmailHtml(e)}</div>
       </div>
     </div>`;
 }
@@ -3232,8 +3233,8 @@ function openReportCard(tech){
           </div>
           <div class="modal-section"><div class="modal-section-title">Evaluation Scorecard &mdash; ${thisYear}</div>
             ${evals.length===0?`<div style="font-size:12px;color:var(--text-mute);">No evaluations yet for ${thisYear}.</div>`:`
-            <table><thead><tr><th>Date</th><th>Overall</th><th>Notes</th></tr></thead><tbody>
-              ${evals.slice(0,5).map(e=>`<tr><td>${fmtDate(e.date)}</td><td>${e.overallScore.toFixed(1)} / 5</td><td style="white-space:normal;max-width:240px;">${e.notes||''}</td></tr>`).join('')}
+            <table><thead><tr><th>Date</th><th>Overall</th><th>Notes</th><th></th></tr></thead><tbody>
+              ${evals.slice(0,5).map(e=>`<tr style="cursor:pointer;" onclick="openEvalDetail('${e.id}')" title="Click to view the original evaluation"><td>${fmtDate(e.date)}</td><td>${e.overallScore.toFixed(1)} / 5</td><td style="white-space:normal;max-width:240px;">${e.notes||''}</td><td><button onclick="event.stopPropagation();openEvalDetail('${e.id}')" style="border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;">View</button></td></tr>`).join('')}
             </tbody></table>`}
           </div>
         </div>
