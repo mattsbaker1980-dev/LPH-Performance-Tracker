@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-09T12:36:22.879Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog run: no 'Daily Job Report' email from onservicetitan.com found for today (2026-11-09) as of this check. Broader sender search confirms the most recent 'Daily Job Report' email is still from 2026-11-08T13:07:20Z. Primary's earlier check (12:08 UTC) found the same. Current time ~12:35 UTC is still before the typical 13:00-13:12 UTC arrival window for this report, so the email likely has not been sent yet rather than being missing. Stopping per instructions rather than guessing or retrying.",
-  "run_context": "watchdog"
-}
+{"time":"2026-11-09T13:12:20.856Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/6d315fd6-986b-54ec-96a5-26982ea09036/tool-results/mcp-Microsoft_365-read_resource-1794229929244.txt","run_context":"watchdog2"}
