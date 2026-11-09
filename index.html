@@ -1726,7 +1726,8 @@ function renderCalendar(){
       <div class="cal-date">${d}</div>
       ${entries.map(e=>{
         const c = adminColorByName(e.manager);
-        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px ${isFuture?'dashed':'solid'} ${c}66;" onclick="openRideAlongDetail('${e.id}')" title="${e.tech} w/ ${e.manager||'?'} &mdash; ${e.focus}">${e.tech}${e.manager?` w/ ${raInitials(e.manager)}`:''}</div>`;
+        const raDone = !isFuture && e.rating!=='Pending';
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px ${isFuture?'dashed':'solid'} ${c}66;" onclick="openRideAlongDetail('${e.id}')" title="${e.tech} w/ ${e.manager||'?'} &mdash; ${e.focus}${raDone?' &mdash; evaluation complete':''}">${raDone?'<span style="color:#1a7f37;font-weight:800;">&#10003; </span>':''}${e.tech}${e.manager?` w/ ${raInitials(e.manager)}`:''}</div>`;
       }).join('')}
     </div>`;
   }
@@ -1962,7 +1963,7 @@ function renderOneOnOneCalendar(){
         const c = adminColorByName(o.manager);
         const done = o.status==='completed';
         const needsRecap = !done && o.date < today;
-        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px ${done?'solid':'dashed'} ${c}${done?'66':'99'};" onclick="event.stopPropagation(); openOneOnOneDetail('${o.id}')" title="${o.employeeName} &mdash; ${fmtHour12(o.startTime)}${o.manager?' w/ '+o.manager:''}${o.reserveRoom?' (meeting room reserved)':''}${needsRecap?' &mdash; needs a recap':''}">${needsRecap?'&#9888; ':''}${fmtHour12(o.startTime).replace(' AM','a').replace(' PM','p')} ${o.employeeName}${o.reserveRoom?' &middot; Room':''}</div>`;
+        return `<div class="cal-entry" style="background:${c}1A;color:${c};border:1px ${done?'solid':'dashed'} ${c}${done?'66':'99'};" onclick="event.stopPropagation(); openOneOnOneDetail('${o.id}')" title="${o.employeeName} &mdash; ${fmtHour12(o.startTime)}${o.manager?' w/ '+o.manager:''}${o.reserveRoom?' (meeting room reserved)':''}${done?' &mdash; recap complete':needsRecap?' &mdash; needs a recap':''}">${done?'<span style="color:#1a7f37;font-weight:800;">&#10003; </span>':needsRecap?'&#9888; ':''}${fmtHour12(o.startTime).replace(' AM','a').replace(' PM','p')} ${o.employeeName}${o.reserveRoom?' &middot; Room':''}</div>`;
       }).join('')}
     </div>`;
   }
@@ -2692,6 +2693,21 @@ function openTrainingHistory(name){
 /* ---- Admin ---- */
 function initEvalDraft(){ evalDraft = { tech:'', date: LATEST_DATE, department:'Plumbing', scores:{}, notes:'', manager: currentAdminName || (DATA.superAdmins[0] && DATA.superAdmins[0].name) || '', linkedRideAlongId: null }; }
 function ratingFromScore(score){ if(score==null) return 'Pending'; if(score>=4.5) return 'Excellent'; if(score>=3.5) return 'Good'; if(score>=2.5) return 'Needs Improvement'; return 'Coaching Required'; }
+// One-time, on-demand cleanup (triggered by the "Clean Up Pending Ride-Alongs" button in Admin ->
+// Scorecards, not run automatically on load): for every still-Pending, already-happened ride-along,
+// look for that tech's earliest evaluation dated on/after the ride-along and mark it complete from
+// that score -- same rule saveEvaluation() applies going forward, just run retroactively over what's
+// already in the data.
+async function reconcilePendingRideAlongs(){
+  const stuck = DATA.rideAlongs.filter(r=> r.rating==='Pending' && r.date<=LATEST_DATE);
+  let updated = 0;
+  stuck.forEach(ra=>{
+    const match = DATA.evaluations.filter(e=> e.tech===ra.tech && e.date>=ra.date).sort((a,b)=> a.date.localeCompare(b.date))[0];
+    if(match){ ra.rating = ratingFromScore(match.overallScore); ra.notes = ra.notes || 'Completed via Ride-Along Evaluation.'; updated++; }
+  });
+  if(updated){ await saveShared('lph-rat-ridealongs', DATA.rideAlongs); renderAdminInto(); }
+  showSyncToast(updated ? `Cleaned up ${updated} Pending ride-along${updated===1?'':'s'} that already had a matching evaluation.` : 'No Pending ride-alongs had a matching evaluation — nothing to clean up.', false);
+}
 function goToEvaluation(tech, rideAlongId){ initEvalDraft(); evalDraft.tech = tech; evalDraft.department = techDept(tech) || 'Plumbing'; evalDraft.linkedRideAlongId = rideAlongId || null; switchView('evaluate'); }
 function backFromEvaluation(){ evalDraft = null; switchView('ridealongs'); }
 function checkAdminPassword(){
@@ -3068,11 +3084,20 @@ async function saveEvaluation(){
     scores:{...evalDraft.scores}, overallScore:overall, stepScores, notes: evalDraft.notes||'', manager: evalDraft.manager||'' };
   DATA.evaluations.push(evRecord);
   await saveShared('lph-rat-evaluations', DATA.evaluations);
-  if(evalDraft.linkedRideAlongId){
-    const ra = DATA.rideAlongs.find(r=>r.id===evalDraft.linkedRideAlongId);
-    if(ra){
-      ra.rating = ratingFromScore(overall);
-      ra.notes = ra.notes || 'Completed via Ride-Along Evaluation.';
+  {
+    // Most evaluations don't come in through a specific calendar entry (e.g. clicking a name in
+    // Coverage & Performance) -- evalDraft.linkedRideAlongId is only set when they do. Either way,
+    // this evaluation should clear out that tech's backlog of already-happened-but-still-Pending
+    // ride-alongs, so Pending status doesn't just sit there forever once real work has been logged.
+    let toComplete = [];
+    if(evalDraft.linkedRideAlongId){
+      const ra = DATA.rideAlongs.find(r=>r.id===evalDraft.linkedRideAlongId);
+      if(ra) toComplete = [ra];
+    } else {
+      toComplete = DATA.rideAlongs.filter(r=> r.tech===evRecord.tech && r.rating==='Pending' && r.date<=evRecord.date);
+    }
+    if(toComplete.length){
+      toComplete.forEach(ra=>{ ra.rating = ratingFromScore(overall); ra.notes = ra.notes || 'Completed via Ride-Along Evaluation.'; });
       await saveShared('lph-rat-ridealongs', DATA.rideAlongs);
     }
   }
@@ -3105,7 +3130,10 @@ function renderScorecards(){
   const summary = Object.entries(byTech).map(([tech,list])=>({tech, count:list.length, avg:list.reduce((s,e)=>s+e.overallScore,0)/list.length,
     last:list.sort((a,b)=>b.date.localeCompare(a.date))[0], callOffs:callOffsByTech[tech]||0})).sort((a,b)=>b.avg-a.avg);
   return `
-    <div style="display:flex;gap:6px;margin-bottom:14px;">${years.map(y=>`<button class="year-chip preset-btn ${scorecardFilterYear===y?'active':''}" data-year="${y}">${y}</button>`).join('')}</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+      <div style="display:flex;gap:6px;">${years.map(y=>`<button class="year-chip preset-btn ${scorecardFilterYear===y?'active':''}" data-year="${y}">${y}</button>`).join('')}</div>
+      <button class="btn-ghost" style="border:1px solid var(--border);background:#fff;border-radius:9px;padding:8px 14px;font-size:12.5px;cursor:pointer;margin-left:auto;" onclick="reconcilePendingRideAlongs()" title="One-time cleanup: for every Pending ride-along, check for a matching evaluation (same tech, dated on or after the ride-along) and mark it complete.">Clean Up Pending Ride-Alongs</button>
+    </div>
     <div class="panel"><div class="panel-title" style="margin-bottom:8px;">Scorecard Summary &mdash; ${scorecardFilterYear}${adminDeptFilter!=='All'?' &mdash; '+adminDeptFilter:''}</div>
       ${summary.length===0?`<div style="padding:20px;color:var(--text-mute);">No evaluations logged for ${scorecardFilterYear}.</div>`:`
       <table><thead><tr><th>Tech</th><th>Title</th><th># Evals</th><th>Avg Score</th><th>Call-Offs</th><th>Last Eval</th></tr></thead><tbody>
