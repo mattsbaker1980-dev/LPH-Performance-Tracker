@@ -1,1 +1,6 @@
-{"time":"2026-11-08T13:10:04.344Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog2","confirmed_max_date":"2026-11-07","confirmed_row_counts":{"dd":972,"td":4893,"install":1111},"report_revenue_reconciled":true}
+{
+  "time": "2026-11-09T12:09:27.000Z",
+  "stage": "failed",
+  "detail": "Step 1: No 'Daily Job Report' email found for today (2026-11-09). outlook_email_search with sender=onservicetitan.com + afterDateTime=today returned 0 results. A broader search (no date filter) confirms the most recent 'Daily Job Report' email is from 2026-11-08T13:07:20Z -- nothing yet for 11-09. Pattern over the last ~10 days shows ServiceTitan sends this report ~13:00-13:12 UTC (~7:00-8:08 AM local), but this scheduled run fired at 12:08 UTC, before the email is typically sent. Stopping per instructions rather than guessing or retrying. Note for a human: the watchdog (~25 min later, ~12:33 UTC) will likely also run before the email arrives based on this pattern -- the primary/watchdog schedule may need to be moved later (e.g. 13:30+ UTC) to reliably catch this email.",
+  "run_context": "scheduled"
+}
