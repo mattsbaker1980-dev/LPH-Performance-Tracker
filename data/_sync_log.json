@@ -1,1 +1,6 @@
-{"time":"2026-11-10T12:09:28.219Z","stage":"failed","detail":"No ServiceTitan \"Daily Job Report\" email found from onservicetitan.com for today (2026-11-10) at run time 12:07 UTC. Likely the primary sync cron (5 12 * * * UTC = 7:05 AM EST) now fires before the report typically arrives (~8:03-8:05 AM ET per yesterday pattern), since clocks fell back for DST on Nov 1 but the cron is stored in UTC. Deferring to the watchdog runs later today.","run_context":"scheduled"}
+{
+  "time": "2026-11-10T12:36:03.967Z",
+  "stage": "email_not_found",
+  "detail": "No ServiceTitan Daily Job Report email found from onservicetitan.com for today (2026-11-10) at watchdog run time.",
+  "run_context": "watchdog"
+}
