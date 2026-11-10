@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-10T12:36:03.967Z",
+  "time": "2026-11-10T13:10:45.600Z",
   "stage": "email_not_found",
-  "detail": "No ServiceTitan Daily Job Report email found from onservicetitan.com for today (2026-11-10) at watchdog run time.",
-  "run_context": "watchdog"
+  "detail": "No ServiceTitan Daily Job Report email found from onservicetitan.com for today (2026-11-10) at watchdog2 run time.",
+  "run_context": "watchdog2"
 }
