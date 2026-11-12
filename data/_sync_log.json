@@ -1,1 +1,6 @@
-{"time":"2026-11-11T14:08:38.875Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog3","confirmed_max_date":"2026-11-10","confirmed_row_counts":{"dd":983,"td":4942,"install":1121},"report_revenue_reconciled":true}
+{
+  "time": "2026-11-12T12:08:47.497Z",
+  "stage": "failed",
+  "detail": "Step 1: no ServiceTitan \"Daily Job Report\" email found for today (searched sender onservicetitan.com, afterDateTime=today). Newest matching email found is dated 2026-11-11 13:04 UTC (subject \"Daily Job Report\"). Current run time is ~12:xx UTC on 2026-11-12, which is before ServiceTitans typical ~13:03-13:04 UTC send time -- likely the report has not arrived yet rather than a real outage, but per Step 1 instructions this counts as a failure for the primary run. Watchdog should retry later.",
+  "run_context": "scheduled"
+}
