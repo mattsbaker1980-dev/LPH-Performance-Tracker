@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-12T12:36:13.804Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog run at 2026-11-12T12:36:13.804Z: searched Outlook for sender onservicetitan.com, afterDateTime=today -- no Daily Job Report email found yet today. ServiceTitan typically sends ~13:03-13:04 UTC; current run is earlier than that, so this is most likely a timing issue (report not yet arrived) rather than a true outage. No sync performed. Primary log at start of this run showed stage=failed for the same reason (same-day retry-later note).",
-  "run_context": "watchdog"
-}
+{"time":"2026-11-12T13:09:07.584Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/c684633f-07a0-55b2-9e42-0a82d9671f92/tool-results/mcp-Microsoft_365-read_resource-1794488933836.txt","run_context":"watchdog2"}
