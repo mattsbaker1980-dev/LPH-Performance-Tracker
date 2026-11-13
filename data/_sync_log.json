@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-13T12:36:39.573Z",
-  "stage": "email_not_found",
-  "detail": "No Daily Job Report email from onservicetitan.com found for today (2026-11-13) as of this watchdog run. Most recent such email on file is dated 2026-11-12 (received ~13:04 UTC). ServiceTitan typically sends the report around 13:03 UTC (~8:03am ET); this watchdog fired at 12:36 UTC, before the report email is expected to arrive.",
-  "run_context": "watchdog"
+  "time": "2026-11-13T14:36:23.969Z",
+  "stage": "blocked_m365_connector_unavailable",
+  "detail": "Watchdog3: Microsoft 365 connector failed to connect this session (502 SdkHttpError dialing api.anthropic.com MCP endpoint; RefreshMcpTools confirms connection state=failed, no re-dial possible). Could not run outlook_email_search to locate today Daily Job Report email. Prior sync_log stage as of this run was email_not_found (dated 2026-11-13T12:36:39.573Z), so no prior run today has succeeded. No sync attempted this run due to missing connector, not due to missing report email.",
+  "run_context": "watchdog3"
 }
