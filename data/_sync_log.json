@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-13T12:09:16.269Z",
-  "stage": "failed",
-  "detail": "Step 1: no Daily Job Report email found from onservicetitan.com for today (2026-11-13) as of this run. Most recent Daily Job Report email on file is dated 2026-11-12 (received 13:04 UTC). ServiceTitan typically sends the report around 13:03 UTC (~8:03am local); this run fired at 12:06 UTC, before the report email is expected to arrive. Consistent with prior days (see last log entry: primary run finds nothing, watchdog succeeds once the email has landed).",
-  "run_context": "scheduled"
+  "time": "2026-11-13T12:36:39.573Z",
+  "stage": "email_not_found",
+  "detail": "No Daily Job Report email from onservicetitan.com found for today (2026-11-13) as of this watchdog run. Most recent such email on file is dated 2026-11-12 (received ~13:04 UTC). ServiceTitan typically sends the report around 13:03 UTC (~8:03am ET); this watchdog fired at 12:36 UTC, before the report email is expected to arrive.",
+  "run_context": "watchdog"
 }
