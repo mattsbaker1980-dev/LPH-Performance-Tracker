@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-17T12:36:31.177Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog run: outlook_email_search for sender onservicetitan.com with afterDateTime=today found no Daily Job Report email. Most recent Daily Job Report found (via subject-text search across all folders) was from 2026-11-16T13:04:33Z. No .xlsx attachment to process; stopping per instructions rather than guessing. Likely cause: EST/DST drift -- this run fired around 7:3x AM ET, before the report typically lands (~8:03-8:05 AM ET).",
-  "run_context": "watchdog"
-}
+{"time":"2026-11-17T13:10:30.326Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/feae2869-ca4c-58ba-b4ef-cafbea202e41/tool-results/mcp-Microsoft_365-read_resource-1794921013175-j6vil9.txt","run_context":"watchdog2"}
