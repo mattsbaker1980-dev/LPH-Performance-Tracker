@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-18T12:09:07.167Z",
-  "stage": "failed",
-  "detail": "Step 1 (PRIMARY sync): No 'Daily Job Report' email from onservicetitan.com found for today's local calendar date. Most recent matching email in inbox is dated 2026-11-17T13:04:38Z; a search for emails after 'today' and after 2026-11-18T00:00:00Z returned zero results. Per task instructions, logging failure and stopping without guessing; expect the watchdog run (~25 min later) to retry.",
-  "run_context": "scheduled"
+  "time": "2026-11-18T12:36:30.986Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
 }
