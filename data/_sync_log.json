@@ -1,1 +1,6 @@
-{"time":"2026-11-19T12:08:34.886Z","stage":"failed","detail":"Step 1: no ServiceTitan \"Daily Job Report\" email found yet for today (local calendar date). Searched Outlook via sender=onservicetitan.com and query=\"Daily Job Report\" with afterDateTime=2026-11-19T00:00:00Z; zero results. Same search with afterDateTime=2026-11-18T00:00:00Z correctly returns the Nov 18 report, confirming the search mechanism works and the Nov 19 report simply has not arrived yet (it typically arrives ~13:03 UTC / 8:03 AM local; this run started ~12:06 UTC). Stopping without guessing; leaving this for the watchdog run to retry.","run_context":"scheduled"}
+{
+  "time": "2026-11-19T12:36:23.087Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
+}
