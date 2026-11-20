@@ -1,1 +1,1 @@
-{"time":"2026-11-20T13:09:15.954Z","stage":"wrote_install","detail":"{\"before\":1156,\"after\":1161,\"updated\":21,\"added\":5}","run_context":"watchdog2"}
+{"time":"2026-11-20T13:09:17.536Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog2","confirmed_max_date":"2026-11-19","confirmed_row_counts":{"dd":1012,"td":5100,"install":1161},"report_revenue_reconciled":true}
