@@ -1059,7 +1059,7 @@ function downloadUpdatedDashboard(){
   const dateEnd = html.indexOf("';", dateStart) + 1;
   html = html.slice(0,dateStart) + "let LATEST_DATE = '" + LATEST_DATE + "'" + html.slice(dateEnd);
 
-  const blob = new Blob([html], {type:'text/html'});
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'lph-performance-report.html';
@@ -1394,14 +1394,20 @@ function mgrShare(kind, mode){
     table{border-collapse:collapse;width:100%;font-size:13px;} th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;} th{background:#f2f2f2;}
     .bar{margin-bottom:16px;} .bar button{font-size:13px;padding:6px 14px;cursor:pointer;} @media print{.bar{display:none;} body{margin:0;}}
   </style></head><body>
-    <div class="bar"><button onclick="window.print()">Print / Save as PDF</button></div>
+    <div class="bar"><button onclick="window.print()">Print / Save as PDF</button> <span style="font-size:12px;color:#666;margin-left:8px;">Choose &ldquo;Save as PDF&rdquo; as the printer to make a PDF for dispatch.</span></div>
     <h1>${esc(title)}</h1><div class="sub">LPH Plumbing &amp; Sewer &middot; ${rows.length} scheduled &middot; as of ${esc(mgrShareDow(todayIso()))}</div>
     <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
   </body></html>`;
-  const w = window.open('', '_blank');
-  if(!w){ alert('Your browser blocked the pop-up. Allow pop-ups for this site and try again.'); return; }
-  w.document.open(); w.document.write(html); w.document.close();
-  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 300);
+  // Open as a real page (not a blank tab written into) and let the user click Print: Edge freezes when a
+  // blank pop-up is written into and print() is fired on it automatically (seen Nov 2026).
+  const url = URL.createObjectURL(new Blob([html], {type:'text/html;charset=utf-8'}));
+  const w = window.open(url, '_blank');
+  if(!w){
+    // Pop-up blocked: download the page instead; it opens in the browser with the same Print button.
+    const a = document.createElement('a'); a.href = url; a.download = title.replace(/[^\w\- ]+/g,'').trim() + '.html';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  setTimeout(()=> URL.revokeObjectURL(url), 60000);
 }
 let ooCalYear = new Date().getFullYear(), ooCalMonth = new Date().getMonth()+1;
 const OO_HOURS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
