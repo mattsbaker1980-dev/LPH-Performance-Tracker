@@ -1344,7 +1344,7 @@ function mgrFilterBar(kind){
   return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border-radius:8px;background:${c}12;border:1px solid ${c}55;">
     <span style="font-size:12.5px;font-weight:700;color:${c};">Showing only ${name}'s ${what}</span>
     <span style="flex:1"></span>
-    <button style="${btn}" onclick="mgrShare('${kind}','print')">&#128424; Print / PDF for dispatch</button>
+    <button style="${btn}" onclick="mgrShare('${kind}','print')">&#128424; Download PDF for dispatch</button>
     <button style="${btn}" onclick="mgrShare('${kind}','copy')">&#128203; Copy list</button>
     <button style="${btn}" onclick="setMgrPick('${kind}','${name.replace(/'/g,"\\'")}')">Show everyone</button>
   </div><div id="mgrCopyMsg_${kind}" style="display:none;font-size:12px;color:var(--green);font-weight:700;margin-top:6px;">Copied &mdash; paste it into a text, email or Teams message.</div>`;
@@ -1367,7 +1367,53 @@ function mgrShareRows(kind){
     .map(o=> ({date:o.date, time:`${fmtHour12(o.startTime)} \u2013 ${fmtHour12(o.endTime||ooEndTime(o.startTime))}`, who:o.employeeName, dept:o.department||'', extra:o.reserveRoom?'Meeting room':'Manager\u2019s office'}));
 }
 function mgrShareDow(iso){ const [y,m,d] = iso.split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric', year:'numeric'}); }
-function mgrShare(kind, mode){
+let mgrJsPdfPromise = null;
+function mgrLoadJsPdf(){
+  if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+  if(!mgrJsPdfPromise) mgrJsPdfPromise = new Promise((res, rej)=>{
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+    sc.onload = ()=> (window.jspdf && window.jspdf.jsPDF) ? res() : rej(new Error('jsPDF missing'));
+    sc.onerror = ()=>{ mgrJsPdfPromise = null; rej(new Error('jsPDF failed to load')); };
+    document.head.appendChild(sc);
+  });
+  return mgrJsPdfPromise;
+}
+// One-page-per-screenful PDF table of the manager's upcoming entries, saved straight to Downloads.
+function mgrDownloadPdf(kind, name, title, rows){
+  const plain = v=> String(v==null?'':v).replace(/[\u2013\u2014]/g,'-').replace(/\u2019/g,"'");
+  const doc = new window.jspdf.jsPDF({unit:'pt', format:'letter'});
+  const L = 40, R = 572, bottom = 752;
+  const cols = kind==='ra'
+    ? [{h:'Date',w:125,k:'date'},{h:'Technician',w:150,k:'who'},{h:'Dept',w:80,k:'dept'},{h:'Focus',w:177,k:'extra'}]
+    : [{h:'Date',w:118,k:'date'},{h:'Time',w:110,k:'time'},{h:'Employee',w:130,k:'who'},{h:'Dept',w:72,k:'dept'},{h:'Where',w:102,k:'extra'}];
+  let y = 50;
+  const header = ()=>{
+    doc.setFillColor(242,242,242); doc.setDrawColor(200); doc.rect(L, y, R-L, 22, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(17);
+    let x = L; cols.forEach(c=>{ doc.text(c.h, x+6, y+15); x += c.w; });
+    y += 22;
+  };
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(17); doc.text(plain(title), L, y); y += 16;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110);
+  doc.text(plain(`LPH Plumbing & Sewer  |  ${rows.length} scheduled  |  as of ${mgrShareDow(todayIso())}`), L, y); y += 16;
+  header();
+  doc.setFontSize(10);
+  if(!rows.length){ doc.setFont('helvetica','italic'); doc.setTextColor(110); doc.text('Nothing scheduled from today forward.', L+6, y+16); }
+  rows.forEach(r=>{
+    const cells = cols.map(c=> doc.splitTextToSize(plain(c.k==='date' ? mgrShareDow(r.date) : r[c.k]), c.w-12));
+    const h = Math.max(...cells.map(c=>c.length))*12 + 10;
+    if(y + h > bottom){ doc.addPage(); y = 50; header(); doc.setFontSize(10); }
+    doc.setDrawColor(200); doc.rect(L, y, R-L, h);
+    doc.setFont('helvetica','normal'); doc.setTextColor(17);
+    let x = L; cells.forEach((lines, i)=>{ if(i) doc.line(x, y, x, y+h); doc.text(lines, x+6, y+15); x += cols[i].w; });
+    y += h;
+  });
+  const file = plain(title).replace(/[^\w\- ]+/g,'').replace(/\s+/g,' ').trim() + '.pdf';
+  doc.save(file);
+}
+function mgrShare(kind, mode, opts){
+  opts = opts || {};
   const name = kind==='ra' ? raMgrPick : ooMgrPick; if(!name) return;
   const rows = mgrShareRows(kind);
   const title = kind==='ra' ? `${name} \u2014 Upcoming Ride-Alongs` : `${name} \u2014 Upcoming 1:1 Meetings`;
@@ -1381,6 +1427,12 @@ function mgrShare(kind, mode){
     const done = ()=>{ const m = document.getElementById('mgrCopyMsg_'+kind); if(m){ m.style.display='block'; setTimeout(()=>{ m.style.display='none'; }, 3000); } };
     const fallback = ()=>{ const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove(); done(); };
     if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    return;
+  }
+  if(mode==='print' && !opts.htmlFallback){
+    // Build the PDF right here and download it, so Edge's print screen (which freezes on these pages) is never used.
+    mgrLoadJsPdf().then(()=> mgrDownloadPdf(kind, name, title, rows))
+      .catch(()=> mgrShare(kind, 'print', {htmlFallback:true}));
     return;
   }
   const esc = v=> String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
