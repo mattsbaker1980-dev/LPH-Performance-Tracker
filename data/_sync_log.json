@@ -1,1 +1,6 @@
-{"time":"2026-11-19T13:10:00.604Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog2","confirmed_max_date":"2026-11-18","confirmed_row_counts":{"dd":1008,"td":5076,"install":1156},"report_revenue_reconciled":true}
+{
+  "time": "2026-11-20T12:08:54.290Z",
+  "stage": "failed",
+  "detail": "No \"Daily Job Report\" email from onservicetitan.com found for today (2026-11-20) as of 2026-11-20T12:08:54.290Z. Searched Outlook with sender noreply@onservicetitan.com and afterDateTime=2026-11-20T00:00:00Z (both a sender-filtered search and a subject-text search), zero results. Most recent such email found overall was from 2026-11-19 13:05 UTC. Based on the last two days, this report typically arrives around 13:03-13:08 UTC, and this primary run started at 12:06 UTC, so the report has likely simply not been sent yet (same early-timing pattern as the prior run, which completed via watchdog2). Stopping without guessing; deferring to the watchdog run to retry once the email has arrived.",
+  "run_context": "scheduled"
+}
