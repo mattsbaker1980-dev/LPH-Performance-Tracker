@@ -1462,7 +1462,8 @@ function mgrShare(kind, mode, opts){
   setTimeout(()=> URL.revokeObjectURL(url), 60000);
 }
 let ooCalYear = new Date().getFullYear(), ooCalMonth = new Date().getMonth()+1;
-const OO_HOURS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
+// 1:1 start times every half hour, 7:00 AM through 4:00 PM (each meeting runs an hour).
+const OO_HOURS = Array.from({length:19}, (_,i)=> String(7+Math.floor(i/2)).padStart(2,'0') + (i%2 ? ':30' : ':00'));
 let ttCalYear = new Date().getFullYear(), ttCalMonth = new Date().getMonth()+1;
 let ttLogDeptFilter = '';
 let evalDraft = null, scorecardFilterYear = new Date(LATEST_DATE).getFullYear(), scorecardFilterTech = '';
@@ -1971,7 +1972,12 @@ function fmtHour12(hhmm){ const [h,m] = hhmm.split(':').map(Number); const perio
 function ooEndTime(startTime){ const [h,m] = startTime.split(':').map(Number); return String(h+1).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 // Only bookings that actually reserved the shared meeting room can conflict with each other --
 // managers meeting in their own offices can freely overlap.
-function roomSlotTaken(date, startTime, excludeId){ return DATA.oneOnOnes.some(o=> o.reserveRoom && o.date===date && o.startTime===startTime && o.id!==excludeId); }
+// With half-hour start times, any overlap counts (a 7:30 meeting runs into an 8:00 one).
+function roomSlotTaken(date, startTime, excludeId){
+  const end = ooEndTime(startTime);
+  return DATA.oneOnOnes.some(o=> o.reserveRoom && o.date===date && o.id!==excludeId
+    && o.startTime < end && startTime < (o.endTime || ooEndTime(o.startTime)));
+}
 function oneOnOneStatusForTech(name){
   const today = todayIso();
   const now = new Date();
