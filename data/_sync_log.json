@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-20T12:36:03.548Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog check: no \"Daily Job Report\" email from onservicetitan.com found for today (2026-11-20) as of this check. Primary run at 12:08 UTC had already logged stage=failed for the same reason (report typically arrives 13:03-13:08 UTC). Watchdog ran at 12:35 UTC, still before the usual arrival window, so the report has very likely simply not been sent yet. Stopping without guessing.",
-  "run_context": "watchdog"
-}
+{"time":"2026-11-20T13:09:05.714Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/e2daa323-d16f-5462-8ff7-d38e97bf2fe6/tool-results/mcp-Microsoft_365-read_resource-1795180132426-0v3kn0.txt","run_context":"watchdog2"}
