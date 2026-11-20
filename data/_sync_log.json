@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-20T12:08:54.290Z",
-  "stage": "failed",
-  "detail": "No \"Daily Job Report\" email from onservicetitan.com found for today (2026-11-20) as of 2026-11-20T12:08:54.290Z. Searched Outlook with sender noreply@onservicetitan.com and afterDateTime=2026-11-20T00:00:00Z (both a sender-filtered search and a subject-text search), zero results. Most recent such email found overall was from 2026-11-19 13:05 UTC. Based on the last two days, this report typically arrives around 13:03-13:08 UTC, and this primary run started at 12:06 UTC, so the report has likely simply not been sent yet (same early-timing pattern as the prior run, which completed via watchdog2). Stopping without guessing; deferring to the watchdog run to retry once the email has arrived.",
-  "run_context": "scheduled"
+  "time": "2026-11-20T12:36:03.548Z",
+  "stage": "email_not_found",
+  "detail": "Watchdog check: no \"Daily Job Report\" email from onservicetitan.com found for today (2026-11-20) as of this check. Primary run at 12:08 UTC had already logged stage=failed for the same reason (report typically arrives 13:03-13:08 UTC). Watchdog ran at 12:35 UTC, still before the usual arrival window, so the report has very likely simply not been sent yet. Stopping without guessing.",
+  "run_context": "watchdog"
 }
