@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-21T13:08:02.419Z",
-  "stage": "email_not_found",
-  "detail": "Only ServiceTitan emails today (as of 2026-11-21T13:05 UTC) are subject Daily Materials Vs. Invoice Report and Employee Time; no Daily Job Report email with Daily Job Detail attachment present.",
-  "run_context": "watchdog2"
-}
+{"time":"2026-11-21T14:07:17.235Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/6b193771-9cf3-5428-85d7-dd1ad40c8223/tool-results/mcp-Microsoft_365-read_resource-1795270020351-e31xpq.txt","run_context":"watchdog3"}
