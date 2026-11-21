@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-21T12:36:02.524Z",
+  "time": "2026-11-21T13:08:02.419Z",
   "stage": "email_not_found",
-  "detail": "",
-  "run_context": "watchdog"
+  "detail": "Only ServiceTitan emails today (as of 2026-11-21T13:05 UTC) are subject Daily Materials Vs. Invoice Report and Employee Time; no Daily Job Report email with Daily Job Detail attachment present.",
+  "run_context": "watchdog2"
 }
