@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-21T12:08:08.100Z",
-  "stage": "failed",
-  "detail": "No 'Daily Job Report' email from onservicetitan.com found for today (2026-11-21) as of this scheduled run (~07:07 AM local). Most recent Daily Job Report email on file is from 2026-11-20 13:05 UTC. This may simply mean today's report has not been sent yet (reports historically arrive ~13:03-13:08 UTC / 8:03-8:08 AM local) rather than a pipeline failure. Stopping per Step 1 instructions; watchdog run should retry shortly.",
-  "run_context": "scheduled"
+  "time": "2026-11-21T12:36:02.524Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
 }
