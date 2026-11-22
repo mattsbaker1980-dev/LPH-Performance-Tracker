@@ -1,1 +1,6 @@
-{"time":"2026-11-22T12:07:45.315Z","stage":"failed","detail":"Step 1 (Microsoft 365 email search): no Daily Job Report email found from onservicetitan.com for today (2026-11-22, searched via outlook_email_search sender=onservicetitan.com afterDateTime=today and afterDateTime=2026-11-22T00:00:00). Most recent Daily Job Report email on file is dated 2026-11-21. Stopping before Step 2/3 per instructions; did not fetch or run daily_sync.js.","run_context":"scheduled"}
+{
+  "time": "2026-11-22T12:36:55.192Z",
+  "stage": "email_not_found",
+  "detail": "Watchdog run: no Daily Job Report email found from onservicetitan.com for today (2026-11-22). Searched via outlook_email_search sender=onservicetitan.com afterDateTime=today order=newest (0 results), and query='Daily Job Report' afterDateTime=2026-11-20 (most recent Daily Job Report email found was dated 2026-11-21T13:08:23Z). Primary sync (run 2026-11-22T12:07:45Z) found the same thing. Likely cause: both schedules fired ~12:0x-12:3x UTC today, about 30-60 min before ServiceTitan typically sends the report (~13:03-13:09 UTC / 8:03 AM ET), consistent with the known UTC/DST drift noted in task instructions since DST ended Nov 1. Did not fetch or run daily_sync.js.",
+  "run_context": "watchdog"
+}
