@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-23T12:36:26.317Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog run: no Daily Job Report email found for today (2026-11-23) as of this check. Searched Outlook via outlook_email_search (query 'Daily Job Report', all folders) - most recent match is still 2026-11-22T13:07:21Z (yesterday). Primary's own earlier attempt today at 2026-11-23T12:06Z also failed for the same reason. ServiceTitan's report typically sends ~8:03am ET / 13:03 UTC; this watchdog check ran before that time, so the report likely just hasn't been sent yet today.",
-  "run_context": "watchdog"
-}
+{"time":"2026-11-23T13:11:43.888Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/854cd683-4aa1-5cc3-9fdc-7ee1582dc1bb/tool-results/mcp-Microsoft_365-read_resource-1795439492626-s419xe.txt","run_context":"watchdog2"}
