@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-24T12:08:10.662Z",
-  "stage": "failed",
-  "detail": "Step 1: no \"Daily Job Report\" email from onservicetitan.com found for today's calendar date (2026-11-24, UTC). Most recent Daily Job Report email found was from 2026-11-23 13:04 UTC. ServiceTitan's daily reports typically arrive ~13:00-13:09 UTC, so this run (started 2026-11-24T12:05Z) may simply be too early; the watchdog task should recheck.",
-  "run_context": "scheduled"
+  "time": "2026-11-24T12:36:21.786Z",
+  "stage": "email_not_found",
+  "detail": "No \"Daily Job Report\" email from onservicetitan.com found for today's calendar date (2026-11-24, UTC) as of this watchdog check (~12:35 UTC). ServiceTitan's daily reports typically arrive ~13:00-13:09 UTC, so this is likely just too early rather than a missed report. The prior primary run (12:08 UTC) hit the same thing for the same reason. No fallback sync was run.",
+  "run_context": "watchdog"
 }
