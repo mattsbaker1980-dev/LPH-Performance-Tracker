@@ -1,1 +1,6 @@
-{"time":"2026-11-25T12:08:51.872Z","stage":"failed","detail":"Step 1: no Daily Job Report email from onservicetitan.com found for today (2026-11-25) as of 2026-11-25T12:08:51.872Z. Most recent Daily Job Report email in inbox is dated 2026-11-24T13:07:27Z (pattern suggests todays report typically arrives ~13:03-13:07 UTC, which is after this scheduled runs current time). Likely the report email simply has not been sent yet today; no sync attempted.","run_context":"scheduled"}
+{
+  "time": "2026-11-25T12:35:56.743Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
+}
