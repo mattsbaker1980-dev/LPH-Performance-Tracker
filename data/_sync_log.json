@@ -1,1 +1,1 @@
-{"time":"2026-11-26T13:09:25.170Z","stage":"done","detail":"Sync completed successfully","run_context":"watchdog2","confirmed_max_date":"2026-11-25","confirmed_row_counts":{"dd":1030,"td":5201,"install":1175},"report_revenue_reconciled":true}
+{"time":"2026-11-27T12:07:54.617Z","stage":"failed","detail":"Step 1: no Daily Job Report email found from onservicetitan.com for today (2026-11-27). Searched twice (sender=onservicetitan.com, afterDateTime=today) with no results; most recent Daily Job Report email on file is from 2026-11-26.","run_context":"scheduled"}
