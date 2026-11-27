@@ -1,1 +1,6 @@
-{"time":"2026-11-27T12:07:54.617Z","stage":"failed","detail":"Step 1: no Daily Job Report email found from onservicetitan.com for today (2026-11-27). Searched twice (sender=onservicetitan.com, afterDateTime=today) with no results; most recent Daily Job Report email on file is from 2026-11-26.","run_context":"scheduled"}
+{
+  "time": "2026-11-27T12:36:03.690Z",
+  "stage": "email_not_found",
+  "detail": "",
+  "run_context": "watchdog"
+}
