@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-28T12:36:22.478Z",
+  "time": "2026-11-28T13:06:33.037Z",
   "stage": "email_not_found",
-  "detail": "Watchdog run: no Daily Job Report email found yet for today (2026-11-28) as of this run. Only ServiceTitan email today is a PO Cost Refresh (unrelated). Report typically arrives ~13:03 UTC, which is after this watchdog run. Primary sync also logged failed/email_not_found earlier today for the same reason.",
-  "run_context": "watchdog"
+  "detail": "Watchdog2 run: no Daily Job Report email found yet for today (2026-11-28) as of this run. Only emails from onservicetitan.com today are \"Todays Sold Jobs\" (13:04 UTC, no attachment) and \"PO Cost Refresh\" (12:04 UTC, unrelated). Primary sync and watchdog1 also logged email_not_found earlier today for the same reason.",
+  "run_context": "watchdog2"
 }
