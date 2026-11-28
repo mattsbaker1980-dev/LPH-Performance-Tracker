@@ -1,6 +1,1 @@
-{
-  "time": "2026-11-28T13:06:33.037Z",
-  "stage": "email_not_found",
-  "detail": "Watchdog2 run: no Daily Job Report email found yet for today (2026-11-28) as of this run. Only emails from onservicetitan.com today are \"Todays Sold Jobs\" (13:04 UTC, no attachment) and \"PO Cost Refresh\" (12:04 UTC, unrelated). Primary sync and watchdog1 also logged email_not_found earlier today for the same reason.",
-  "run_context": "watchdog2"
-}
+{"time":"2026-11-28T14:06:53.966Z","stage":"started","detail":"Parsing /root/.claude/projects/-home-claude/a62d1e41-9450-55fa-a4bc-4f5b71208cd5/tool-results/mcp-Microsoft_365-read_resource-1795874797846-u1v2w2.txt","run_context":"watchdog3"}
