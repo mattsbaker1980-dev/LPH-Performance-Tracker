@@ -1,6 +1,6 @@
 {
-  "time": "2026-11-28T12:06:59Z",
-  "stage": "failed",
-  "detail": "Step 1: no Daily Job Report email found for today (2026-11-28). Mailbox search for sender onservicetitan.com / subject Daily Job Report shows most recent report dated 2026-11-27 13:08 UTC; none received yet for today as of this scheduled run (12:06 UTC). Report typically arrives ~13:03 UTC, i.e. after this run. Stopping per instructions rather than guessing.",
-  "run_context": "scheduled"
+  "time": "2026-11-28T12:36:22.478Z",
+  "stage": "email_not_found",
+  "detail": "Watchdog run: no Daily Job Report email found yet for today (2026-11-28) as of this run. Only ServiceTitan email today is a PO Cost Refresh (unrelated). Report typically arrives ~13:03 UTC, which is after this watchdog run. Primary sync also logged failed/email_not_found earlier today for the same reason.",
+  "run_context": "watchdog"
 }
